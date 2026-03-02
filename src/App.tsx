@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@lobehub/ui';
 import { BrainSplash } from './components/BrainSplash';
+import {CNSView} from "./components/CNSView.tsx";
 
 const LobePlaceholder = ({ title }: { title: string }) => (
     <div style={{
@@ -34,7 +35,7 @@ export default function App() {
                     <Route path="/lobe/occipital" element={<LobePlaceholder title="Occipital Lobe (Vision & UE5)" />} />
                     <Route path="/lobe/hippocampus" element={<LobePlaceholder title="Hippocampus (Long-Term Memory)" />} />
                     <Route path="/lobe/pfc" element={<LobePlaceholder title="Prefrontal Cortex (Agile Strategy)" />} />
-                    <Route path="/lobe/cns" element={<LobePlaceholder title="Central Nervous System (Routing)" />} />
+                    <Route path="/lobe/cns" element={<CNSView />} />
                 </Routes>
             </BrowserRouter>
         </ThemeProvider>
