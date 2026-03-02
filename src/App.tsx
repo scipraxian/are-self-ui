@@ -1,43 +1,28 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@lobehub/ui';
+
+// Import your existing Brain splash screen (adjust the path if yours is named differently)
 import { BrainSplash } from './components/BrainSplash';
-import {CNSView} from "./components/CNSView.tsx";
+import { Dashboard } from './pages/Dashboard';
+import { LiveMonitor } from './pages/LiveMonitor';
 
-const LobePlaceholder = ({ title }: { title: string }) => (
-    <div style={{
-        color: '#e2e8f0',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: '#050505'
-    }}>
-        <h1 style={{ fontSize: '3rem', margin: 0 }}>{title}</h1>
-        <p style={{ color: '#94a3b8', marginTop: '1rem', fontStyle: 'italic' }}>
-            Neural pathways currently forming...
-        </p>
-        <a href="/" style={{ marginTop: '2rem', color: '#38bdf8', textDecoration: 'none' }}>
-            ← Return to Brainstem
-        </a>
-    </div>
-);
-
-export default function App() {
+function App() {
     return (
         <ThemeProvider themeMode="dark">
-            <BrowserRouter>
+            <Router>
                 <Routes>
+                    {/* 1. The Front Door: Your 3D Brain */}
                     <Route path="/" element={<BrainSplash />} />
-                    <Route path="/lobe/frontal" element={<LobePlaceholder title="Frontal Lobe (Reasoning & Strategy)" />} />
-                    <Route path="/lobe/parietal" element={<LobePlaceholder title="Parietal Lobe (Tools & Sensory Input)" />} />
-                    <Route path="/lobe/temporal" element={<LobePlaceholder title="Temporal Lobe (Time & Shifts)" />} />
-                    <Route path="/lobe/occipital" element={<LobePlaceholder title="Occipital Lobe (Vision & UE5)" />} />
-                    <Route path="/lobe/hippocampus" element={<LobePlaceholder title="Hippocampus (Long-Term Memory)" />} />
-                    <Route path="/lobe/pfc" element={<LobePlaceholder title="Prefrontal Cortex (Agile Strategy)" />} />
-                    <Route path="/lobe/cns" element={<CNSView />} />
+
+                    {/* 2. Mission Control: The Swimlanes */}
+                    <Route path="/dashboard" element={<Dashboard />} />
+
+                    {/* 3. The War Room: The 3D LCARS Monitor */}
+                    <Route path="/monitor/:spikeTrainId" element={<LiveMonitor />} />
                 </Routes>
-            </BrowserRouter>
+            </Router>
         </ThemeProvider>
     );
 }
+
+export default App;

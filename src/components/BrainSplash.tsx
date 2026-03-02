@@ -53,17 +53,19 @@ const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, 
             />
             {isHovered && (
                 <Html position={[0, 1.8, 0]} center>
-                    <div style={{
-                        color: '#fff',
-                        background: 'rgba(15, 23, 42, 0.9)',
-                        padding: '6px 16px',
-                        borderRadius: '8px',
-                        fontFamily: 'monospace',
-                        border: `1px solid ${color}`,
-                        pointerEvents: 'none',
-                        whiteSpace: 'nowrap',
-                        boxShadow: `0 0 15px ${color}40`
-                    }}>
+                    <div
+                        style={{
+                            color: '#fff',
+                            background: 'rgba(15, 23, 42, 0.9)',
+                            padding: '6px 16px',
+                            borderRadius: '8px',
+                            fontFamily: 'monospace',
+                            border: `1px solid ${color}`,
+                            pointerEvents: 'none',
+                            whiteSpace: 'nowrap',
+                            boxShadow: `0 0 15px ${color}40`,
+                        }}
+                    >
                         {name}
                     </div>
                 </Html>
@@ -72,10 +74,14 @@ const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, 
     );
 };
 
-const BrainPlaceholder = ({ navigate }: { navigate: NavigateFunction }) => {
-    const [hoveredLobe, setHoveredLobe] = useState<string | null>(null);
+interface BrainPlaceholderProps {
+    navigate: NavigateFunction;
+    hoveredLobe: string | null;
+    setHoveredLobe: (name: string | null) => void;
+}
 
-    // Drei hook: Magically changes the DOM cursor to a pointer when hoveredLobe is not null!
+const BrainPlaceholder = ({ navigate, hoveredLobe, setHoveredLobe }: BrainPlaceholderProps) => {
+    // Drei hook: changes the DOM cursor to a pointer when hoveredLobe is not null
     useCursor(hoveredLobe !== null);
 
     // Memoize the geometry so it doesn't re-instantiate on every frame
@@ -89,7 +95,9 @@ const BrainPlaceholder = ({ navigate }: { navigate: NavigateFunction }) => {
             <LobeSphere position={[2.5, 0, 0]} color="#f59e0b" name="Occipital Lobe" path="/lobe/occipital" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} navigate={navigate} />
             <LobeSphere position={[0, -0.5, 0]} color="#ec4899" name="Hippocampus" path="/lobe/hippocampus" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} navigate={navigate} />
             <LobeSphere position={[0, 4, 0]} color="#06b6d4" name="Prefrontal Cortex" path="/lobe/pfc" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} navigate={navigate} />
-            <LobeSphere position={[0, -3.5, -1]} color="#ef4444" name="Brainstem / CNS" path="/lobe/cns" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} navigate={navigate} />
+
+            {/* Key change #1: navigate to an existing route */}
+            <LobeSphere position={[0, -3.5, -1]} color="#ef4444" name="Brainstem / CNS" path="/dashboard" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} navigate={navigate} />
 
             <lineSegments>
                 <edgesGeometry args={[boxGeo]} />
@@ -102,9 +110,11 @@ const BrainPlaceholder = ({ navigate }: { navigate: NavigateFunction }) => {
 export const BrainSplash = () => {
     const navigate = useNavigate();
 
+    // Key change #2: lift hover state up so OrbitControls can react to it
+    const [hoveredLobe, setHoveredLobe] = useState<string | null>(null);
+
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#050505', position: 'relative' }}>
-
             {/* HUD Overlay */}
             <div style={{ position: 'absolute', top: '8%', left: '50%', transform: 'translateX(-50%)', zIndex: 10, textAlign: 'center', pointerEvents: 'none' }}>
                 <h1 style={{ color: '#f8fafc', fontFamily: 'Inter', fontSize: '3.5rem', margin: 0, letterSpacing: '8px' }}>
@@ -121,9 +131,17 @@ export const BrainSplash = () => {
                 <pointLight position={[-10, -10, -5]} intensity={0.5} color="#3b82f6" />
                 <Environment preset="city" />
 
-                <BrainPlaceholder navigate={navigate} />
+                <BrainPlaceholder navigate={navigate} hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} />
 
-                <OrbitControls autoRotate autoRotateSpeed={0.8} enablePan={false} minDistance={5} maxDistance={20} />
+                {/* Key change #3: disable controls while hovering a lobe so click isn’t interpreted as a drag */}
+                <OrbitControls
+                    autoRotate
+                    autoRotateSpeed={0.8}
+                    enablePan={false}
+                    minDistance={5}
+                    maxDistance={20}
+                    enabled={hoveredLobe === null}
+                />
             </Canvas>
         </div>
     );
