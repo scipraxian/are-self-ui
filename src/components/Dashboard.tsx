@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,14 +22,14 @@ type DashboardSummary = {
 const DASHBOARD_SUMMARY_URL = 'http://localhost:8000/api/v2/dashboard/summary/';
 const POLL_INTERVAL_MS = 3000;
 
-const getMissionStatusColor = (mission: Mission): string => {
-    if (mission.is_alive) return '#f99f1b';
-    if (mission.ended_successfully) return '#4ade80';
-    if (mission.ended_badly) return '#ef4444';
-    return '#64748b';
-};
+function getMissionStatusColor(mission: Mission): string {
+  if (mission.is_alive) return '#f99f1b';
+  if (mission.ended_successfully) return '#4ade80';
+  if (mission.ended_badly) return '#ef4444';
+  return '#64748b';
+}
 
-const MissionRow = ({ mission, onClick }: { mission: Mission; onClick: () => void }) => {
+function MissionRow({ mission, onClick }: { mission: Mission; onClick: () => void }): ReactElement {
     const statusColor = getMissionStatusColor(mission);
 
     return (
@@ -56,10 +57,10 @@ const MissionRow = ({ mission, onClick }: { mission: Mission; onClick: () => voi
                 {mission.status?.name || 'UNKNOWN'}
             </div>
         </div>
-    );
-};
+  );
+}
 
-export const Dashboard = () => {
+export function Dashboard(): ReactElement {
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const navigate = useNavigate();
 
@@ -78,7 +79,7 @@ export const Dashboard = () => {
 
                 const data = (await res.json()) as DashboardSummary;
                 if (isMounted) setSummary(data);
-            } catch (err) {
+            } catch (err: unknown) {
                 // Ignore abort errors during cleanup.
                 if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error(err);
@@ -107,5 +108,5 @@ export const Dashboard = () => {
                 ))}
             </div>
         </div>
-    );
-};
+  );
+}

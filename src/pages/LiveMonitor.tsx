@@ -1,8 +1,10 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import type { ReactElement } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
 import { CommandCenterLayout } from '../components/CommandCenterLayout';
 import { CNSView } from '../components/CNSView';
 
-export const LiveMonitor = () => {
+export function LiveMonitor(): ReactElement {
     const { spikeTrainId } = useParams();
     const navigate = useNavigate();
 
@@ -31,5 +33,5 @@ export const LiveMonitor = () => {
             {/* We will update CNSView to accept the spikeTrainId in the next step */}
             <CNSView />
         </CommandCenterLayout>
-    );
-};
+  );
+}

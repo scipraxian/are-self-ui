@@ -1,10 +1,11 @@
-import type {SpikeData} from "../types";
+import type { ReactElement } from 'react';
+import type { SpikeData } from '../types';
 
 interface SpikeCardProps {
-    spike: SpikeData;
+  spike: SpikeData;
 }
 
-export const SpikeCard = ({ spike }: SpikeCardProps) => {
+export function SpikeCard({ spike }: SpikeCardProps): ReactElement {
     const statusId = spike.status_id || spike.status?.id;
     const isQueued = statusId === 1 || statusId === 2;
     const isActive = statusId === 3 || statusId === 8;
@@ -78,5 +79,5 @@ export const SpikeCard = ({ spike }: SpikeCardProps) => {
                 )}
             </div>
         </div>
-    );
-};
+  );
+}

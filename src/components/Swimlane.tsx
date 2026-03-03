@@ -1,14 +1,16 @@
-import {useNavigate} from 'react-router-dom';
-import {SpikeCard} from './SpikeCard';
-import {Eye, Edit, RotateCw} from 'lucide-react';
-import type {SpikeTrainData} from "../types";
+import type { ReactElement } from 'react';
+import { Edit, Eye, RotateCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
+import type { SpikeTrainData } from '../types';
+
+import { SpikeCard } from './SpikeCard';
 
 interface SwimlaneProps {
-    mission: SpikeTrainData;
+  mission: SpikeTrainData;
 }
 
-export const Swimlane = ({mission}: SwimlaneProps) => {
+export function Swimlane({ mission }: SwimlaneProps): ReactElement {
     const navigate = useNavigate();
 
     // Safely fallback to empty arrays if undefined
@@ -138,5 +140,5 @@ export const Swimlane = ({mission}: SwimlaneProps) => {
             </div>
 
         </div>
-    );
-};
+  );
+}

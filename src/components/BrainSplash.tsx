@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import type { ReactElement } from 'react';
+import { useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment, Html, useCursor } from '@react-three/drei';
+import { Environment, Html, OrbitControls, useCursor } from '@react-three/drei';
 import { useNavigate } from 'react-router-dom';
 import type { NavigateFunction } from 'react-router-dom';
 import * as THREE from 'three';
@@ -17,7 +18,7 @@ interface LobeSphereProps {
     navigate: NavigateFunction;
 }
 
-const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, navigate }: LobeSphereProps) => {
+function LobeSphere({ position, color, name, path, hoveredLobe, setHoveredLobe, navigate }: LobeSphereProps): ReactElement {
     const isHovered = hoveredLobe === name;
 
     const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
@@ -71,8 +72,8 @@ const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, 
                 </Html>
             )}
         </mesh>
-    );
-};
+  );
+}
 
 interface BrainPlaceholderProps {
     navigate: NavigateFunction;
@@ -80,7 +81,7 @@ interface BrainPlaceholderProps {
     setHoveredLobe: (name: string | null) => void;
 }
 
-const BrainPlaceholder = ({ navigate, hoveredLobe, setHoveredLobe }: BrainPlaceholderProps) => {
+function BrainPlaceholder({ navigate, hoveredLobe, setHoveredLobe }: BrainPlaceholderProps): ReactElement {
     // Drei hook: changes the DOM cursor to a pointer when hoveredLobe is not null
     useCursor(hoveredLobe !== null);
 
@@ -104,10 +105,10 @@ const BrainPlaceholder = ({ navigate, hoveredLobe, setHoveredLobe }: BrainPlaceh
                 <lineBasicMaterial color="#334155" transparent opacity={0.2} />
             </lineSegments>
         </group>
-    );
-};
+  );
+}
 
-export const BrainSplash = () => {
+export function BrainSplash(): ReactElement {
     const navigate = useNavigate();
 
     // Key change #2: lift hover state up so OrbitControls can react to it
@@ -144,5 +145,5 @@ export const BrainSplash = () => {
                 />
             </Canvas>
         </div>
-    );
-};
+  );
+}

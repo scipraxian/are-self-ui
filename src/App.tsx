@@ -1,12 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import type { ReactElement } from 'react';
 import { ThemeProvider } from '@lobehub/ui';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Import your existing Brain splash screen (adjust the path if yours is named differently)
 import { BrainSplash } from './components/BrainSplash';
 import { Dashboard } from './pages/Dashboard';
 import { LiveMonitor } from './pages/LiveMonitor';
 
-function App() {
+export function App(): ReactElement {
     return (
         <ThemeProvider themeMode="dark">
             <Router>
@@ -24,5 +24,3 @@ function App() {
         </ThemeProvider>
     );
 }
-
-export default App;

@@ -1,28 +1,27 @@
-import React from 'react';
+import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { ActionIcon } from '@lobehub/ui';
-import { Settings, Brain, Crosshair, TerminalSquare } from 'lucide-react';
+import { Brain, Crosshair, Settings, TerminalSquare } from 'lucide-react';
 
 interface CommandCenterLayoutProps {
-    children: React.ReactNode; // The 3D Background
-    leftPanel?: React.ReactNode;
-    rightPanel?: React.ReactNode;
+  children: ReactNode;
+  leftPanel?: ReactNode;
+  rightPanel?: ReactNode;
 }
 
-export const CommandCenterLayout = ({ children, leftPanel, rightPanel }: CommandCenterLayoutProps) => {
-    // Shared glassmorphism aesthetic for the floating panels
-    const glassStyle: React.CSSProperties = {
-        background: 'rgba(15, 23, 42, 0.7)', // Deep Slate with opacity
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
-        color: '#e2e8f0',
-        display: 'flex',
-        flexDirection: 'column',
-    };
+export function CommandCenterLayout({ children, leftPanel, rightPanel }: CommandCenterLayoutProps): ReactElement {
+  const glassStyle: CSSProperties = {
+    background: 'rgba(15, 23, 42, 0.7)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+    color: '#e2e8f0',
+    display: 'flex',
+    flexDirection: 'column',
+  };
 
-    return (
-        <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: '#020617' }}>
+  return (
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: '#020617' }}>
 
             {/* 1. Base Layer: The 3D Canvas */}
             <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
@@ -87,5 +86,5 @@ export const CommandCenterLayout = ({ children, leftPanel, rightPanel }: Command
             </div>
 
         </div>
-    );
-};
+  );
+}
