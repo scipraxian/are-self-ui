@@ -1,68 +1,167 @@
+/* =========================================
+   ARE-SELF GLOBAL STYLESHEET
+   ========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Core Backgrounds */
+  --bg-obsidian: #020617;      /* Deepest black/blue for the void */
+  --bg-panel: rgba(15, 23, 42, 0.75); /* Frosted slate for panels */
+  --bg-panel-hover: rgba(30, 41, 59, 0.85);
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Borders */
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-strong: rgba(255, 255, 255, 0.15);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  /* Typography Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Neon Accents (The Neural Colors) */
+  --accent-blue: #38bdf8;      /* Information / Standard */
+  --accent-purple: #a855f7;    /* AI / Telemetry / Frontal Lobe */
+  --accent-gold: #facc15;      /* Active / Running */
+  --accent-orange: #f99f1b;    /* LCARS Heritage / Temporal */
+  --accent-green: #4ade80;     /* Success / Online */
+  --accent-red: #ef4444;       /* Error / Halt */
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* --- RESET & BASE --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-obsidian);
+  color: var(--text-primary);
+  overflow: hidden; /* Fullscreen SPA, no native scrolling */
+  min-height: 100vh;
+  min-width: 100vw;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* --- TYPOGRAPHY UTILITIES --- */
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.85rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+
+.heading-tracking { letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* --- GLASSMORPHISM PANELS --- */
+.glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-body {
-  margin: 0;
+.glass-panel-header {
+  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  align-items: center;
+  gap: 8px;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.glass-panel-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+/* --- BUTTONS --- */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-glass-strong);
+}
+
+.btn-action {
+  background: var(--accent-blue);
+  color: var(--bg-obsidian);
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+}
+
+/* --- UTILITIES --- */
+.scroll-hidden {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Status Dots / Pulses */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-online {
+  background-color: var(--accent-green);
+  box-shadow: 0 0 10px var(--accent-green);
+}
+
+@keyframes pulse-glow {
+  0% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4); }
+  70% { opacity: 1; box-shadow: 0 0 0 6px rgba(250, 204, 21, 0); }
+  100% { opacity: 0.6; box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+}
+
+.status-active-pulse {
+  background-color: var(--accent-gold);
+  animation: pulse-glow 2s infinite;
 }

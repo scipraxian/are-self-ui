@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Settings, MessageSquare, Terminal } from 'lucide-react';
 import { BackgroundCanvas } from './BackgroundCanvas';
 
@@ -7,17 +7,8 @@ export const BloodBrainBarrier = () => {
     // null = closed (unobstructed 3D view)
     const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | null>(null);
 
-    const glassStyle: React.CSSProperties = {
-        background: 'rgba(15, 23, 42, 0.75)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        color: '#e2e8f0',
-        pointerEvents: 'auto', // Re-enable clicks for the actual panels
-    };
-
     return (
-        <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: '#020617' }}>
+        <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-obsidian)' }}>
 
             {/* LAYER 0: The 3D World Space */}
             <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
@@ -29,17 +20,17 @@ export const BloodBrainBarrier = () => {
             <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
 
                 {/* TOP: SystemMenu */}
-                <header style={{ height: '50px', ...glassStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0 }}>
+                <header className="glass-panel" style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none', pointerEvents: 'auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <Settings size={18} color="#94a3b8" style={{ cursor: 'pointer' }} />
-                        <h1 style={{ margin: 0, fontSize: '1rem', fontFamily: 'Outfit, sans-serif', fontWeight: 800, letterSpacing: '0.2em', color: '#f8fafc' }}>
+                        <Settings size={18} color="var(--text-secondary)" style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'} />
+                        <h1 className="font-display heading-tracking text-base" style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 800 }}>
                             ARE-SELF
                         </h1>
                     </div>
                     {/* Dummy trigger to test opening the viewport */}
                     <button
+                        className="btn-ghost text-xs"
                         onClick={() => setActiveViewport('iteration')}
-                        style={{ background: 'transparent', border: '1px solid #38bdf8', color: '#38bdf8', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
                     >
                         OPEN TEMPORAL MATRIX
                     </button>
@@ -49,35 +40,37 @@ export const BloodBrainBarrier = () => {
                 <div style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '20px', gap: '20px' }}>
 
                     {/* LEFT: IdentityPanel (The Roster) */}
-                    <aside style={{ width: '320px', ...glassStyle, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-                        <h2 style={{ fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.1em', marginTop: 0, fontWeight: 800 }}>IDENTITY ROSTER</h2>
-                        <div style={{ flex: 1, border: '1px dashed #334155', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                    <aside className="glass-panel" style={{ width: '320px', padding: '20px', display: 'flex', flexDirection: 'column', pointerEvents: 'auto' }}>
+                        <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
+                        <div style={{ flex: 1, border: '1px dashed var(--text-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginTop: '16px' }}>
                             [IdentityList / IdentityDiscList]
                         </div>
                     </aside>
 
                     {/* CENTER: ActiveViewport */}
-                    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        {activeViewport ? (
-                            <div style={{ flex: 1, ...glassStyle, borderRadius: '16px', padding: '20px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', pointerEvents: activeViewport ? 'auto' : 'none' }}>
+                        {activeViewport && (
+                            <div className="glass-panel" style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                                 <button
                                     onClick={() => setActiveViewport(null)}
-                                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '4px' }}
+                                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px', transition: 'color 0.2s' }}
+                                    onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-red)'}
+                                    onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                                 >✕</button>
-                                <h2 style={{ marginTop: 0, color: '#f8fafc', fontSize: '1.2rem', fontFamily: 'Outfit, sans-serif' }}>
+                                <h2 className="font-display heading-tracking text-xl" style={{ margin: 0, color: 'var(--text-primary)' }}>
                                     {activeViewport === 'iteration' ? 'TEMPORAL MATRIX' : 'IDENTITY SHEET'}
                                 </h2>
-                                <div style={{ flex: 1, border: '1px dashed #334155', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                                <div style={{ flex: 1, border: '1px dashed var(--text-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginTop: '16px' }}>
                                     [The Assembly Line / Character Sheet goes here]
                                 </div>
                             </div>
-                        ) : null}
+                        )}
                     </main>
 
                     {/* RIGHT: InspectorPanel */}
-                    <aside style={{ width: '350px', ...glassStyle, borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-                        <h2 style={{ fontSize: '0.75rem', color: '#94a3b8', letterSpacing: '0.1em', marginTop: 0, fontWeight: 800 }}>TACTICAL ANALYTICS</h2>
-                        <div style={{ flex: 1, border: '1px dashed #334155', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                    <aside className="glass-panel" style={{ width: '350px', padding: '20px', display: 'flex', flexDirection: 'column', pointerEvents: 'auto' }}>
+                        <h2 className="glass-panel-title">TACTICAL ANALYTICS</h2>
+                        <div style={{ flex: 1, border: '1px dashed var(--text-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginTop: '16px' }}>
                             [Hover/Click Context Details]
                         </div>
                     </aside>
@@ -85,12 +78,12 @@ export const BloodBrainBarrier = () => {
                 </div>
 
                 {/* BOTTOM: ThoughtStream & ChatToggle */}
-                <footer style={{ height: '40px', ...glassStyle, borderBottom: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono, monospace', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <footer className="glass-panel" style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderRadius: 0, borderBottom: 'none', borderLeft: 'none', borderRight: 'none', pointerEvents: 'auto' }}>
+                    <div className="font-mono text-xs" style={{ color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Terminal size={14} />
-                        <span style={{ color: '#e2e8f0' }}>"Awaiting neural spike_train synchronization..."</span>
+                        <span style={{ color: 'var(--text-primary)' }}>"Awaiting neural spike_train synchronization..."</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#f99f1b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'var(--accent-orange)' }}>
                         <MessageSquare size={18} />
                     </div>
                 </footer>
