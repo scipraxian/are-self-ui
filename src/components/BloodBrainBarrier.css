@@ -1,0 +1,166 @@
+/* src/components/BloodBrainBarrier.css */
+
+.bbb-wrapper {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-obsidian);
+}
+
+.bbb-layer-3d {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.bbb-layer-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.bbb-header {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-radius: 0;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    pointer-events: auto;
+}
+
+.bbb-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.bbb-header-icon {
+    cursor: pointer;
+    transition: color 0.2s;
+    color: var(--text-secondary);
+}
+
+.bbb-header-icon:hover {
+    color: var(--text-primary);
+}
+
+.bbb-header-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+/* Main Layout Areas */
+.bbb-main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: 20px;
+    gap: 20px;
+}
+
+/* FIX: flex: 0 0 320px makes it rigidly 320px. It will never shrink or grow. */
+.bbb-panel-side {
+    flex: 0 0 320px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+}
+
+/* FIX: flex: 0 0 350px makes it rigidly 350px. */
+.bbb-panel-right {
+    flex: 0 0 350px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+}
+
+.bbb-panel-center-wrapper {
+    flex: 1;
+    min-width: 0; /* FIX: Allows center to shrink, preventing it from squishing the sides */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    pointer-events: none;
+}
+
+.bbb-panel-center-active {
+    flex: 1;
+    min-width: 0; /* FIX: Same here */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    pointer-events: auto;
+}
+
+.bbb-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.bbb-close-btn:hover {
+    color: var(--accent-red);
+}
+
+.bbb-placeholder {
+    flex: 1;
+    border: 1px dashed var(--text-muted);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
+
+/* Footer */
+.bbb-footer {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-radius: 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    pointer-events: auto;
+}
+
+.bbb-footer-ticker {
+    color: var(--accent-purple);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bbb-footer-ticker-text {
+    color: var(--text-primary);
+}
+
+.bbb-footer-chat {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: var(--accent-orange);
+}

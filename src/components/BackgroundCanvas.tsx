@@ -3,14 +3,13 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { BrainPlaceholder } from './BrainSplash';
 
-export const BackgroundCanvas = () => {
-    const [hoveredLobe, setHoveredLobe] = useState<string | null>(null);
+// FIX: Explicitly accept the prop from BloodBrainBarrier
+interface BackgroundCanvasProps {
+    onLobeClick: (path: string) => void;
+}
 
-    // Standard string callback. No react-router-dom required.
-    const handleLobeClick = (path: string) => {
-        console.log('3D Lobe Clicked:', path);
-        // We will wire this to BloodBrainBarrier's setActiveViewport next.
-    };
+export const BackgroundCanvas = ({ onLobeClick }: BackgroundCanvasProps) => {
+    const [hoveredLobe, setHoveredLobe] = useState<string | null>(null);
 
     return (
         <Canvas camera={{ position: [8, 4, 10], fov: 45 }}>
@@ -20,7 +19,7 @@ export const BackgroundCanvas = () => {
             <Environment preset="city" />
 
             <BrainPlaceholder
-                onLobeClick={handleLobeClick}
+                onLobeClick={onLobeClick} // FIX: Pass it to the spheres
                 hoveredLobe={hoveredLobe}
                 setHoveredLobe={setHoveredLobe}
             />

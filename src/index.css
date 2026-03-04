@@ -6,8 +6,8 @@
 
 :root {
   /* Core Backgrounds */
-  --bg-obsidian: #020617;      /* Deepest black/blue for the void */
-  --bg-panel: rgba(15, 23, 42, 0.75); /* Frosted slate for panels */
+  --bg-obsidian: #020617;
+  --bg-panel: rgba(15, 23, 42, 0.75);
   --bg-panel-hover: rgba(30, 41, 59, 0.85);
 
   /* Borders */
@@ -20,12 +20,12 @@
   --text-muted: #64748b;
 
   /* Neon Accents (The Neural Colors) */
-  --accent-blue: #38bdf8;      /* Information / Standard */
-  --accent-purple: #a855f7;    /* AI / Telemetry / Frontal Lobe */
-  --accent-gold: #facc15;      /* Active / Running */
-  --accent-orange: #f99f1b;    /* LCARS Heritage / Temporal */
-  --accent-green: #4ade80;     /* Success / Online */
-  --accent-red: #ef4444;       /* Error / Halt */
+  --accent-blue: #38bdf8;
+  --accent-purple: #a855f7;
+  --accent-gold: #facc15;
+  --accent-orange: #f99f1b;
+  --accent-green: #4ade80;
+  --accent-red: #ef4444;
 
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -44,7 +44,7 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-obsidian);
   color: var(--text-primary);
-  overflow: hidden; /* Fullscreen SPA, no native scrolling */
+  overflow: hidden;
   min-height: 100vh;
   min-width: 100vw;
   -webkit-font-smoothing: antialiased;
@@ -136,10 +136,10 @@ body {
 /* --- UTILITIES --- */
 .scroll-hidden {
   overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
 .scroll-hidden::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none;
 }
 
 /* Status Dots / Pulses */

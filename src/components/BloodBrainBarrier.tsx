@@ -1,93 +1,93 @@
 import { useState } from 'react';
 import { Settings, MessageSquare, Terminal } from 'lucide-react';
 import { BackgroundCanvas } from './BackgroundCanvas';
+import { IdentityRoster } from './IdentityRoster';
+import { TemporalMatrix } from './TemporalMatrix';
+import { IdentitySheet } from './IdentitySheet';
+import './BloodBrainBarrier.css';
 
 export const BloodBrainBarrier = () => {
-    // Controls what is mounted in the center overlay.
-    // null = closed (unobstructed 3D view)
     const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | null>(null);
+    const [selectedEntity, setSelectedEntity] = useState<{ id: number | string, type: 'base' | 'disc' } | null>(null);
+
+    // --- THE MASTER ROUTER ---
+    const handleLobeClick = (path: string) => {
+        if (path === 'temporal') {
+            // Temporal Lobe -> Time/Iterations -> Mounts the Kanban Matrix
+            setActiveViewport('iteration');
+        } else if (path === 'frontal') {
+            // Frontal Lobe -> Identity/Logic -> Mounts the Character Sheet
+            setActiveViewport('identity');
+        } else {
+            // Click anywhere else to close the center window
+            setActiveViewport(null);
+        }
+    };
+
+    const handleIdentitySelect = (id: number | string, type: 'base' | 'disc') => {
+        setSelectedEntity({ id, type });
+        setActiveViewport('identity');
+    };
 
     return (
-        <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-obsidian)' }}>
-
-            {/* LAYER 0: The 3D World Space */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-                <BackgroundCanvas />
+        <div className="bbb-wrapper">
+            <div className="bbb-layer-3d">
+                <BackgroundCanvas onLobeClick={handleLobeClick} />
             </div>
 
-            {/* LAYER 1 & 2: The HUD and Viewport Container */}
-            {/* The wrapper ignores clicks so you can manipulate the 3D canvas through the empty space */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
-
-                {/* TOP: SystemMenu */}
-                <header className="glass-panel" style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderRadius: 0, borderTop: 'none', borderLeft: 'none', borderRight: 'none', pointerEvents: 'auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <Settings size={18} color="var(--text-secondary)" style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'} />
-                        <h1 className="font-display heading-tracking text-base" style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 800 }}>
+            <div className="bbb-layer-ui">
+                <header className="glass-panel bbb-header">
+                    <div className="bbb-header-brand">
+                        <Settings size={18} className="bbb-header-icon" />
+                        <h1 className="font-display heading-tracking text-base bbb-header-title">
                             ARE-SELF
                         </h1>
                     </div>
-                    {/* Dummy trigger to test opening the viewport */}
-                    <button
-                        className="btn-ghost text-xs"
-                        onClick={() => setActiveViewport('iteration')}
-                    >
-                        OPEN TEMPORAL MATRIX
-                    </button>
                 </header>
 
-                {/* MIDDLE: Left Panel, Center Viewport, Right Panel */}
-                <div style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '20px', gap: '20px' }}>
-
-                    {/* LEFT: IdentityPanel (The Roster) */}
-                    <aside className="glass-panel" style={{ width: '320px', padding: '20px', display: 'flex', flexDirection: 'column', pointerEvents: 'auto' }}>
+                <div className="bbb-main-content">
+                    {/* LEFT PANEL */}
+                    <aside className="glass-panel bbb-panel-side">
                         <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
-                        <div style={{ flex: 1, border: '1px dashed var(--text-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginTop: '16px' }}>
-                            [IdentityList / IdentityDiscList]
-                        </div>
+                        <IdentityRoster onSelectIdentity={handleIdentitySelect} />
                     </aside>
 
-                    {/* CENTER: ActiveViewport */}
-                    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', pointerEvents: activeViewport ? 'auto' : 'none' }}>
+                    {/* CENTER STAGE */}
+                    <main className={activeViewport ? "bbb-panel-center-active" : "bbb-panel-center-wrapper"}>
                         {activeViewport && (
-                            <div className="glass-panel" style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                                <button
-                                    onClick={() => setActiveViewport(null)}
-                                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px', transition: 'color 0.2s' }}
-                                    onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-red)'}
-                                    onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-                                >✕</button>
-                                <h2 className="font-display heading-tracking text-xl" style={{ margin: 0, color: 'var(--text-primary)' }}>
-                                    {activeViewport === 'iteration' ? 'TEMPORAL MATRIX' : 'IDENTITY SHEET'}
-                                </h2>
-                                <div style={{ flex: 1, border: '1px dashed var(--text-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginTop: '16px' }}>
-                                    [The Assembly Line / Character Sheet goes here]
-                                </div>
+                            <div className="glass-panel bbb-panel-center-active">
+                                <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+
+                                {activeViewport === 'iteration' && <TemporalMatrix />}
+
+                                {activeViewport === 'identity' && selectedEntity ? (
+                                    <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
+                                ) : activeViewport === 'identity' && !selectedEntity ? (
+                                    <div className="bbb-placeholder font-mono text-sm">Select an identity from the roster to view synaptic data.</div>
+                                ) : null}
+
                             </div>
                         )}
                     </main>
 
-                    {/* RIGHT: InspectorPanel */}
-                    <aside className="glass-panel" style={{ width: '350px', padding: '20px', display: 'flex', flexDirection: 'column', pointerEvents: 'auto' }}>
-                        <h2 className="glass-panel-title">TACTICAL ANALYTICS</h2>
-                        <div style={{ flex: 1, border: '1px dashed var(--text-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginTop: '16px' }}>
-                            [Hover/Click Context Details]
+                    {/* RIGHT PANEL */}
+                    <aside className="glass-panel bbb-panel-right">
+                        <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
+                        <div className="bbb-placeholder font-mono text-sm">
+                            [Contextual Node Details]
                         </div>
                     </aside>
-
                 </div>
 
-                {/* BOTTOM: ThoughtStream & ChatToggle */}
-                <footer className="glass-panel" style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', borderRadius: 0, borderBottom: 'none', borderLeft: 'none', borderRight: 'none', pointerEvents: 'auto' }}>
-                    <div className="font-mono text-xs" style={{ color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <footer className="glass-panel bbb-footer">
+                    <div className="font-mono text-xs bbb-footer-ticker">
                         <Terminal size={14} />
-                        <span style={{ color: 'var(--text-primary)' }}>"Awaiting neural spike_train synchronization..."</span>
+                        <span className="bbb-footer-ticker-text">"Awaiting neural spike_train synchronization..."</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'var(--accent-orange)' }}>
+                    <div className="bbb-footer-chat">
                         <MessageSquare size={18} />
                     </div>
                 </footer>
-
             </div>
         </div>
     );

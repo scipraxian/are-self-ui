@@ -1,0 +1,115 @@
+.sheet-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.sheet-pre {
+    text-align: left;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 16px;
+    color: var(--accent-blue);
+}
+
+.sheet-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-top: 1px solid var(--border-glass);
+    padding-top: 16px;
+    margin-top: 16px;
+}
+
+.sheet-section-title {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0;
+}
+
+.prompt-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    line-height: 1.5;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.badge-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border: 1px solid transparent;
+}
+
+.badge-tool {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+.badge-addon {
+    background: rgba(168, 85, 247, 0.1);
+    color: var(--accent-purple);
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.badge-tag {
+    background: rgba(250, 204, 21, 0.1);
+    color: var(--accent-gold);
+    border-color: rgba(250, 204, 21, 0.2);
+}
+
+.disc-specific-panel {
+    background: rgba(168, 85, 247, 0.05);
+    border: 1px dashed var(--accent-purple);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.stat-positive {
+    color: var(--accent-green);
+}
+
+.stat-negative {
+    color: var(--accent-red);
+}
+
+.stat-warning {
+    color: var(--accent-orange);
+}
+
+.memory-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px dashed var(--accent-blue);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 8px;
+}

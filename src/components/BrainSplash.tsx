@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import type { ThreeEvent } from '@react-three/fiber';
-import { Html, useCursor } from '@react-three/drei';
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Html, useCursor, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface LobeSphereProps {
@@ -15,45 +15,40 @@ interface LobeSphereProps {
 
 const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, onLobeClick }: LobeSphereProps) => {
     const isHovered = hoveredLobe === name;
+    const meshRef = useRef<THREE.Mesh>(null);
 
-    const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
-        e.stopPropagation();
-        setHoveredLobe(name);
-    };
-
-    const handlePointerOut = () => {
-        setHoveredLobe(null);
-    };
-
-    const handleClick = (e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        setHoveredLobe(null);
-        onLobeClick(path);
-    };
+    useFrame((state) => {
+        if (meshRef.current) {
+            meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2 + position[0]) * 0.15;
+        }
+    });
 
     return (
-        <mesh position={position} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick}>
-            <sphereGeometry args={[1.2, 32, 32]} />
-            <meshStandardMaterial
-                color={color}
-                emissive={isHovered ? color : '#000000'}
-                emissiveIntensity={isHovered ? 0.8 : 0}
-                wireframe={!isHovered}
-                transparent={true}
-                opacity={isHovered ? 1 : 0.4}
-            />
+        <group position={position}>
+            <Sphere
+                ref={meshRef}
+                args={[isHovered ? 1.6 : 1.5, 32, 32]}
+                onPointerOver={(e) => { e.stopPropagation(); setHoveredLobe(name); }}
+                onPointerOut={(e) => { e.stopPropagation(); setHoveredLobe(null); }}
+                onClick={(e) => { e.stopPropagation(); onLobeClick(path); }}
+            >
+                <meshStandardMaterial
+                    color={color}
+                    emissive={color}
+                    emissiveIntensity={isHovered ? 0.6 : 0.1}
+                    roughness={0.2}
+                    metalness={0.8}
+                    wireframe={isHovered}
+                />
+            </Sphere>
             {isHovered && (
-                <Html position={[0, 1.8, 0]} center>
-                    <div style={{
-                        color: '#fff', background: 'rgba(15, 23, 42, 0.9)', padding: '6px 16px',
-                        borderRadius: '8px', fontFamily: 'monospace', border: `1px solid ${color}`,
-                        pointerEvents: 'none', whiteSpace: 'nowrap', boxShadow: `0 0 15px ${color}40`,
-                    }}>
-                        {name}
+                <Html position={[0, -2.5, 0]} center style={{ pointerEvents: 'none' }}>
+                    <div className="font-display heading-tracking" style={{ color, textShadow: '0 2px 10px rgba(0,0,0,0.9)', fontSize: '0.85rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                        {name.toUpperCase()}
                     </div>
                 </Html>
             )}
-        </mesh>
+        </group>
     );
 };
 
@@ -64,23 +59,19 @@ export interface BrainPlaceholderProps {
 }
 
 export const BrainPlaceholder = ({ onLobeClick, hoveredLobe, setHoveredLobe }: BrainPlaceholderProps) => {
-    useCursor(hoveredLobe !== null);
-    const boxGeo = useMemo(() => new THREE.BoxGeometry(4, 6, 3), []);
+    useCursor(hoveredLobe !== null, 'pointer', 'auto');
 
     return (
         <group>
-            <LobeSphere position={[0, 2.5, 2]} color="#3b82f6" name="Frontal Lobe" path="frontal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[0, 2.5, -2]} color="#10b981" name="Parietal Lobe" path="parietal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[-2.5, 0, 0]} color="#8b5cf6" name="Temporal Lobe" path="temporal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[2.5, 0, 0]} color="#f59e0b" name="Occipital Lobe" path="occipital" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[0, -0.5, 0]} color="#ec4899" name="Hippocampus" path="hippocampus" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[0, 4, 0]} color="#06b6d4" name="Prefrontal Cortex" path="pfc" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[0, -3.5, -1]} color="#ef4444" name="Brainstem / CNS" path="dashboard" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+            {/* FIX: Using raw Hex colors so WebGL parses them correctly */}
+            <LobeSphere position={[0, 2, 2.5]} color="#a855f7" name="Frontal Lobe" path="frontal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+            <LobeSphere position={[-2.5, -1, 0]} color="#f99f1b" name="Temporal Lobe" path="temporal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+            <LobeSphere position={[0, 3, -2.5]} color="#38bdf8" name="Parietal Lobe" path="parietal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+            <LobeSphere position={[0, 0, -3.5]} color="#4ade80" name="Occipital Lobe" path="occipital" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
 
-            <lineSegments>
-                <edgesGeometry args={[boxGeo]} />
-                <lineBasicMaterial color="#334155" transparent opacity={0.2} />
-            </lineSegments>
+            <Sphere args={[1.2, 16, 16]} position={[0, 1, 0]}>
+                <meshStandardMaterial color="#333333" roughness={0.9} metalness={0.1} wireframe />
+            </Sphere>
         </group>
     );
 };

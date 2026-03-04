@@ -1,0 +1,178 @@
+/* src/components/TemporalMatrix.css */
+
+.temporal-matrix-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.matrix-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0; /* Keep header from shrinking vertically */
+}
+
+/* FIX: min-width: 0 forces overflow-x to activate on the child */
+.matrix-board-wrapper {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.matrix-board {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+}
+
+.matrix-board::-webkit-scrollbar {
+    display: none;
+}
+
+.matrix-scroll-btn {
+    align-self: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    color: var(--text-muted);
+    border-radius: 8px;
+    width: 36px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    z-index: 5;
+}
+
+.matrix-scroll-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+.matrix-scroll-btn:active {
+    transform: scale(0.95);
+}
+
+/* FIX: Rigid 320px columns that will not compress */
+.matrix-column {
+    flex: 0 0 320px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    max-height: 100%;
+}
+
+.matrix-column.active {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.1);
+}
+
+.matrix-column-header {
+    padding: 12px 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-glass);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.matrix-column-title {
+    font-weight: 800;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.matrix-column-title.active-text {
+    color: var(--accent-gold);
+}
+
+.matrix-column-stats {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    background: var(--bg-obsidian);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.matrix-column-stats:hover {
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+}
+
+.matrix-column-body {
+    padding: 12px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.matrix-drop-zone {
+    flex: 1;
+    border: 1px dashed transparent;
+    border-radius: 8px;
+    transition: all 0.2s;
+    min-height: 60px;
+}
+
+.matrix-drop-zone.drag-over {
+    border-color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.slotted-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glass-strong);
+    border-left: 3px solid var(--accent-purple);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.2s;
+}
+
+.slotted-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-purple);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+}
+
+.slotted-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slotted-card-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
