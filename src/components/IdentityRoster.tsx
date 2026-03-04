@@ -27,25 +27,22 @@ export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
     useEffect(() => {
         const fetchRoster = async () => {
             try {
-                const [idRes, discRes] = await Promise.all([
-                    fetch('/api/v2/identities/'),
-                    fetch('/api/v2/identity-discs/')
-                ]);
-
+                const [idRes, discRes] = await Promise.all([ fetch('/api/v2/identities/'), fetch('/api/v2/identity-discs/') ]);
                 if (idRes.ok && discRes.ok) {
                     const idData = await idRes.json();
                     const discData = await discRes.json();
                     setTemplates(idData.results || idData);
                     setDiscs(discData.results || discData);
                 }
-            } catch (error) {
-                console.error("Neural Link severed (API fetch failed):", error);
-            } finally {
-                setIsLoading(false);
-            }
+            } catch (error) { console.error("Neural fetch failed:", error); }
+            finally { setIsLoading(false); }
         };
 
         fetchRoster();
+
+        // Listen for the custom event we will fire from TemporalMatrix
+        window.addEventListener('sync-roster', fetchRoster);
+        return () => window.removeEventListener('sync-roster', fetchRoster);
     }, []);
 
     if (isLoading) {
@@ -69,6 +66,13 @@ export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
                     key={`disc-${disc.id}`}
                     className={`roster-item active-disc clickable ${disc.available ? 'draggable' : 'unavailable'}`}
                     onClick={() => onSelectIdentity(disc.id, 'disc')}
+                    draggable={disc.available}
+                    onDragStart={(e) => {
+                        if (disc.available) {
+                            // Pack the Disc ID into the drag payload
+                            e.dataTransfer.setData('application/json', JSON.stringify({ type: 'disc', id: disc.id }));
+                        }
+                    }}
                 >
                     {disc.available ? (
                         <GripVertical size={14} color="var(--text-muted)" className="roster-item-handle" />
@@ -102,6 +106,10 @@ export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
                     key={`template-${template.id}`}
                     className="roster-item base-template clickable draggable"
                     onClick={() => onSelectIdentity(template.id, 'base')}
+                    draggable={true}
+                    onDragStart={(e) => {
+                        e.dataTransfer.setData('application/json', JSON.stringify({ type: 'base', id: template.id }));
+                    }}
                 >
                     <GripVertical size={14} color="var(--text-muted)" />
                     <div className="roster-base-content">

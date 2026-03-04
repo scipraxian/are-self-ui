@@ -1,5 +1,3 @@
-/* src/components/TemporalMatrix.css */
-
 .temporal-matrix-container {
     display: flex;
     flex-direction: column;
@@ -11,10 +9,10 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    flex-shrink: 0; /* Keep header from shrinking vertically */
+    flex-shrink: 0;
+    padding-right: 32px;
 }
 
-/* FIX: min-width: 0 forces overflow-x to activate on the child */
 .matrix-board-wrapper {
     display: flex;
     align-items: stretch;
@@ -176,3 +174,20 @@
     font-size: 0.95rem;
     color: var(--text-primary);
 }
+
+.gestation-chamber {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+}
+
+.gestation-blueprints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 24px;
+}
+
