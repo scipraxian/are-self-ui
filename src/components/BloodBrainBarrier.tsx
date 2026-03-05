@@ -3,11 +3,12 @@ import { Settings, MessageSquare, Terminal } from 'lucide-react';
 import { BackgroundCanvas } from './BackgroundCanvas';
 import { IdentityRoster } from './IdentityRoster';
 import { TemporalMatrix } from './TemporalMatrix';
+import { PrefrontalCortex } from './PrefrontalCortex';
 import { IdentitySheet } from './IdentitySheet';
 import './BloodBrainBarrier.css';
 
 export const BloodBrainBarrier = () => {
-    const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | null>(null);
+    const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | 'pfc' | null>(null);
     const [selectedEntity, setSelectedEntity] = useState<{ id: number | string, type: 'base' | 'disc' } | null>(null);
 
     // --- THE MASTER ROUTER ---
@@ -16,8 +17,8 @@ export const BloodBrainBarrier = () => {
             // Temporal Lobe -> Time/Iterations -> Mounts the Kanban Matrix
             setActiveViewport('iteration');
         } else if (path === 'frontal') {
-            // Frontal Lobe -> Identity/Logic -> Mounts the Character Sheet
-            setActiveViewport('identity');
+            // Frontal Lobe -> Logic/Planning -> Mounts the Prefrontal Cortex
+            setActiveViewport('pfc');
         } else {
             // Click anywhere else to close the center window
             setActiveViewport(null);
@@ -59,6 +60,7 @@ export const BloodBrainBarrier = () => {
                                 <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
 
                                 {activeViewport === 'iteration' && <TemporalMatrix />}
+                                {activeViewport === 'pfc' && <PrefrontalCortex />}
 
                                 {activeViewport === 'identity' && selectedEntity ? (
                                     <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
