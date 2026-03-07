@@ -113,3 +113,37 @@ export interface GraphLink {
     target: string | GraphNode;
     type: string;
 }
+// --- CNS GRAPH EDITOR TYPES ---
+
+export interface CNSEffector {
+    id: number;
+    name: string;
+    category: string;
+    is_book?: boolean;
+}
+
+export interface CNSContextRow {
+    key: string;
+    source: 'default' | 'override' | 'global';
+    value: string;
+    display_value: string;
+    is_readonly: boolean;
+}
+
+export interface CNSNeuron {
+    id: number | string; // string for 'temp_' nodes before DB sync
+    title: string;
+    x: number;
+    y: number;
+    effector_id: number | null;
+    is_root: boolean;
+    has_override: boolean;
+    invoked_pathway_id?: string | null;
+    status_id?: number | string; // Used in monitor mode
+}
+
+export interface CNSWire {
+    from_node_id: number | string;
+    to_node_id: number | string;
+    status_id: 'flow' | 'success' | 'fail';
+}

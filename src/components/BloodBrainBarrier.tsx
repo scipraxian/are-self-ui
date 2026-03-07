@@ -7,10 +7,13 @@ import { PrefrontalCortex } from './PrefrontalCortex';
 import { IdentitySheet } from './IdentitySheet';
 import { ReasoningGraph3D } from './ReasoningGraph3D';
 import { ReasoningSidebar, ReasoningInspector } from './ReasoningPanels';
+import { CNSSidebar } from './CNSSidebar';   // <-- ADD IMPORT
+import { CNSEditor } from './CNSEditor';     // <-- ADD IMPORT
 import './BloodBrainBarrier.css';
 
 export const BloodBrainBarrier = () => {
-    const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | 'pfc' | 'reasoning' | null>(null);
+    // Add 'cns' to the viewport state
+    const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | 'pfc' | 'reasoning' | 'cns' | null>(null);
     const [selectedEntity, setSelectedEntity] = useState<{ id: number | string, type: 'base' | 'disc' } | null>(null);
 
     // Frontal Lobe State
@@ -18,12 +21,14 @@ export const BloodBrainBarrier = () => {
     const [selectedNode, setSelectedNode] = useState<any>(null);
     const [cortexStats, setCortexStats] = useState<any>(null);
 
+    // CNS State
+    const [activePathwayId, setActivePathwayId] = useState<string | null>(null);
+
     const handleLobeClick = (path: string) => {
         if (path === 'temporal') setActiveViewport('iteration');
         else if (path === 'pfc') setActiveViewport('pfc');
-        else if (path === 'frontal') {
-            setActiveViewport('reasoning');
-        }
+        else if (path === 'frontal') setActiveViewport('reasoning');
+        else if (path === 'cns') setActiveViewport('cns'); // <-- ADD ROUTING
         else setActiveViewport(null);
     };
 
@@ -33,10 +38,10 @@ export const BloodBrainBarrier = () => {
     };
 
     const isReasoningGraphActive = activeViewport === 'reasoning' && activeSessionId !== null;
+    const isCNSEditorActive = activeViewport === 'cns' && activePathwayId !== null;
 
     return (
         <div className="bbb-wrapper">
-
             {/* --- DYNAMIC BACKGROUND LAYER --- */}
             <div className="bbb-layer-3d">
                 {isReasoningGraphActive ? (
@@ -67,6 +72,12 @@ export const BloodBrainBarrier = () => {
                                 onSelectSession={setActiveSessionId}
                                 onExit={() => { setActiveSessionId(null); setActiveViewport(null); }}
                             />
+                        ) : activeViewport === 'cns' ? (
+                            <CNSSidebar
+                                activePathwayId={activePathwayId}
+                                onSelectPathway={setActivePathwayId}
+                                onExit={() => { setActivePathwayId(null); setActiveViewport(null); }}
+                            />
                         ) : (
                             <>
                                 <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
@@ -75,45 +86,58 @@ export const BloodBrainBarrier = () => {
                         )}
                     </aside>
 
-                    {/* CENTER STAGE - Layout Preserver */}
-                    <main className={activeViewport && !isReasoningGraphActive ? "bbb-panel-center-active" : "bbb-panel-center-wrapper"}>
+                    {/* CNS EDITOR OVERRIDE - Takes up both Center and Right panels */}
+                    {isCNSEditorActive ? (
+                        <div className="glass-panel bbb-panel-center-active" style={{ padding: 0, overflow: 'hidden', flexDirection: 'row' }}>
+                            <button className="bbb-close-btn" style={{ zIndex: 100 }} onClick={() => setActivePathwayId(null)}>✕</button>
+                            {/* Mount the Editor inside the BBB panel */}
+                            <CNSEditor pathwayId={activePathwayId as string} />
+                        </div>
+                    ) : (
+                        <>
+                            {/* NORMAL CENTER STAGE */}
+                            <main className={activeViewport && !isReasoningGraphActive ? "bbb-panel-center-active" : "bbb-panel-center-wrapper"}>
+                                {activeViewport && !isReasoningGraphActive && activeViewport !== 'reasoning' && activeViewport !== 'cns' && (
+                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%' }}>
+                                        <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                        {activeViewport === 'iteration' && <TemporalMatrix />}
+                                        {activeViewport === 'pfc' && <PrefrontalCortex />}
+                                        {activeViewport === 'identity' && selectedEntity ? (
+                                            <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
+                                        ) : activeViewport === 'identity' && !selectedEntity ? (
+                                            <div className="bbb-placeholder font-mono text-sm">Select an identity from the roster to view synaptic data.</div>
+                                        ) : null}
+                                    </div>
+                                )}
 
-                        {/* Render standard windows */}
-                        {activeViewport && !isReasoningGraphActive && activeViewport !== 'reasoning' && (
-                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%' }}>
-                                <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                {activeViewport === 'iteration' && <TemporalMatrix />}
-                                {activeViewport === 'pfc' && <PrefrontalCortex />}
-                                {activeViewport === 'identity' && selectedEntity ? (
-                                    <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
-                                ) : activeViewport === 'identity' && !selectedEntity ? (
-                                    <div className="bbb-placeholder font-mono text-sm">Select an identity from the roster to view synaptic data.</div>
-                                ) : null}
-                            </div>
-                        )}
+                                {activeViewport === 'reasoning' && !activeSessionId && (
+                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                        <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                        <div className="bbb-placeholder font-mono text-sm">Select a Cognitive Thread from the left panel to engage the Cortex.</div>
+                                    </div>
+                                )}
 
-                        {/* Special Case: Prompt to select a session */}
-                        {activeViewport === 'reasoning' && !activeSessionId && (
-                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                <div className="bbb-placeholder font-mono text-sm">Select a Cognitive Thread from the left panel to engage the Cortex.</div>
-                            </div>
-                        )}
+                                {activeViewport === 'cns' && !activePathwayId && (
+                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                        <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                        <div className="bbb-placeholder font-mono text-sm">Select a Neural Pathway from the left panel to map its Logic.</div>
+                                    </div>
+                                )}
+                            </main>
 
-                        {/* If isReasoningGraphActive is TRUE, this <main> wrapper is entirely empty but holds its Flex space so the Right Panel doesn't move! */}
-                    </main>
-
-                    {/* RIGHT PANEL */}
-                    <aside className="glass-panel bbb-panel-right">
-                        {isReasoningGraphActive ? (
-                            <ReasoningInspector node={selectedNode} />
-                        ) : (
-                            <>
-                                <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
-                                <div className="bbb-placeholder font-mono text-sm">[Contextual Node Details]</div>
-                            </>
-                        )}
-                    </aside>
+                            {/* NORMAL RIGHT PANEL */}
+                            <aside className="glass-panel bbb-panel-right">
+                                {isReasoningGraphActive ? (
+                                    <ReasoningInspector node={selectedNode} />
+                                ) : (
+                                    <>
+                                        <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
+                                        <div className="bbb-placeholder font-mono text-sm">[Contextual Node Details]</div>
+                                    </>
+                                )}
+                            </aside>
+                        </>
+                    )}
                 </div>
 
                 <footer className="glass-panel bbb-footer">
