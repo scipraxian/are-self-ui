@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SpikeTrainCard } from './SpikeTrainCard';
-import type {SpikeTrain} from "../types.ts";
+import type { SpikeTrain } from "../types.ts";
+import { apiFetch } from '../api';
 
 // Add a prop to talk to your BloodBrainBarrier
 interface CNSViewProps {
@@ -27,7 +28,7 @@ export const CNSView: React.FC<CNSViewProps> = ({ onOpenPathway }) => {
     }, []);
 
     const handleStop = async (spikeTrainId: number) => {
-        await fetch(`/api/v2/spiketrains/${spikeTrainId}/stop/`, { method: 'POST' });
+        await apiFetch(`/api/v2/spiketrains/${spikeTrainId}/stop/`, { method: 'POST' });
     };
 
     return (

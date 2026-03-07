@@ -10,7 +10,7 @@ import { ReasoningSidebar, ReasoningInspector } from './ReasoningPanels';
 import { CNSSidebar } from './CNSSidebar';   // <-- ADD IMPORT
 import { CNSEditor } from './CNSEditor';     // <-- ADD IMPORT
 import './BloodBrainBarrier.css';
-import {CNSView} from "./CNSView.tsx";
+import { CNSView } from "./CNSView.tsx";
 
 export const BloodBrainBarrier = () => {
     // Add 'cns' to the viewport state
@@ -92,7 +92,7 @@ export const BloodBrainBarrier = () => {
                         <div className="glass-panel bbb-panel-center-active" style={{ padding: 0, overflow: 'hidden', flexDirection: 'row' }}>
                             <button className="bbb-close-btn" style={{ zIndex: 100 }} onClick={() => setActivePathwayId(null)}>✕</button>
                             {/* Mount the Editor inside the BBB panel */}
-                            <CNSEditor pathwayId={activePathwayId as string} />
+                            <CNSEditor pathwayId={activePathwayId as string} onDrillDown={setActivePathwayId} />
                         </div>
                     ) : (
                         <>
