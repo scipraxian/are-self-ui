@@ -147,3 +147,68 @@ export interface CNSWire {
     to_node_id: number | string;
     status_id: 'flow' | 'success' | 'fail';
 }
+
+export interface Spike {
+    id: number;
+    status: number;
+    status_name: string;
+    neuron: number;
+    effector: number;
+    effector_name: string;
+    created: string;
+    modified: string;
+    target_hostname: string | null;
+    result_code: number | null;
+}
+
+export interface SpikeTrain {
+    id: number;
+    status: number;
+    status_name: string;
+    pathway: number;
+    pathway_name: string;
+    created: string;
+    modified: string;
+    spikes: Spike[];
+}
+
+export interface CNSTag {
+    id: number;
+    name: string;
+}
+
+export interface Effector {
+    id: number;
+    name: string;
+    description: string;
+    distribution_mode: string;
+}
+
+export interface NeuralPathway {
+    id: number;
+    name: string;
+    description: string;
+    is_favorite: boolean;
+    tags: CNSTag[];
+    ui_json: any; // We'll type this strictly later if you use React Flow
+}
+
+export interface Neuron {
+    id: number;
+    pathway: number;
+    effector: number | null;
+    effector_name: string | null;
+    invoked_pathway: number | null;
+    invoked_pathway_name: string | null;
+    ui_json: any;
+    is_root: boolean;
+}
+
+export interface Axon {
+    id: number;
+    pathway: number;
+    source: number;
+    target: number;
+    type: number;
+    type_name: string;
+}

@@ -1,298 +1,179 @@
-import React, { useEffect, useState, useRef, type MouseEvent } from 'react';
-import { CNSNode } from './CNSNode';
-import { CNSInspector } from './CNSInspector';
-import type {CNSNeuron, CNSWire} from "../types.ts";
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import ReactFlow, {
+    Background,
+    Controls,
+    applyNodeChanges,
+    applyEdgeChanges,
+    type NodeChange,
+    type EdgeChange
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import type { Effector, Neuron } from "../types.ts";
+import { NeuronNode } from './NeuronNode';
 
 interface CNSEditorProps {
     pathwayId: string;
 }
 
-interface RawAxon {
-    source_neuron_id: number | string;
-    target_neuron_id: number | string;
-    status_id: 'flow' | 'success' | 'fail';
-}
+const nodeTypes = {
+    neuron: NeuronNode
+};
 
+export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId }) => {
+    const [effectors, setEffectors] = useState<Effector[]>([]);
+    const [pathwayData, setPathwayData] = useState<any>(null);
+    const [selectedNode, setSelectedNode] = useState<Neuron | null>(null);
 
-export const CNSEditor = ({ pathwayId }: CNSEditorProps) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [neurons, setNeurons] = useState<CNSNeuron[]>([]);
-    const [wires, setWires] = useState<CNSWire[]>([]);
-    const [activeNode, setActiveNode] = useState<CNSNeuron | null>(null);
+    // React Flow State
+    const [nodes, setNodes] = useState<any[]>([]);
+    const [edges, setEdges] = useState<any[]>([]);
 
-    // Pan/Zoom State
-    const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [isPanning, setIsPanning] = useState(false);
-
-    // Drag State
-    const [draggingNode, setDraggingNode] = useState<CNSNeuron | null>(null);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
-    // Wiring State
-    const [activeWire, setActiveWire] = useState<{ sourceNodeId: string|number, portIdx: number, color: string, startX: number, startY: number } | null>(null);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const onNodesChange = useCallback(
+        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
+        []
+    );
+    const onEdgesChange = useCallback(
+        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+        []
+    );
 
     useEffect(() => {
-        // Fetch Graph Layout
-        fetch(`/central_nervous_system/graph/${pathwayId}/`)
+        fetch('/api/v2/effectors/')
+            .then(res => res.json())
+            .then(data => setEffectors(data));
+
+        fetch(`/api/v2/neuralpathways/${pathwayId}/`)
             .then(res => res.json())
             .then(data => {
-                if (data.neurons) setNeurons(data.neurons);
+                setPathwayData(data);
+
+                // 1. Map Django Neurons to React Flow Nodes
+                if (data.neurons) {
+                    const flowNodes = data.neurons.map((neuron: any) => {
+                        // Safely extract the exact X and Y coordinates from your ui_json string
+                        let posX = 0;
+                        let posY = 0;
+
+                        if (neuron.ui_json) {
+                            try {
+                                const uiData = typeof neuron.ui_json === 'string' ? JSON.parse(neuron.ui_json) : neuron.ui_json;
+                                posX = typeof uiData.x === 'number' ? uiData.x : 0;
+                                posY = typeof uiData.y === 'number' ? uiData.y : 0;
+                            } catch (e) {
+                                console.warn("Failed to parse ui_json for node", neuron.id);
+                            }
+                        }
+
+                        return {
+                            id: neuron.id.toString(),
+                            type: 'neuron', // CRITICAL: Hooks into the 4-port NeuronNode.tsx
+                            position: { x: posX, y: posY }, // <--- FIXED: Exact mapping, no syntax errors
+                            data: {
+                                label: neuron.effector_name || neuron.invoked_pathway_name || 'Action Node',
+                                effectorName: neuron.effector_name
+                            },
+                            sourceData: neuron // Store raw DB data for the Right Panel Inspector
+                        };
+                    });
+                    setNodes(flowNodes);
+                }
+
+                // 2. Map Django Axons to React Flow Edges
                 if (data.axons) {
-                    setWires(data.axons.map((a: RawAxon) => ({
-                        from_node_id: a.source_neuron_id,
-                        to_node_id: a.target_neuron_id,
-                        status_id: a.status_id
-                    })));
+                    const flowEdges = data.axons.map((axon: any) => {
+
+                        // Map your specific Axon types to the correct port ID and color
+                        let sourcePortId = 'always';
+                        let wireColor = '#38bdf8'; // Cyan (Default / Flow)
+
+                        // Match against either the string name or the integer ID from your DB
+                        if (axon.type_name === 'success' || axon.type === 2) {
+                            sourcePortId = 'success';
+                            wireColor = '#10b981'; // Green
+                        } else if (axon.type_name === 'failure' || axon.type === 3 || axon.type_name === 'fail') {
+                            sourcePortId = 'failure';
+                            wireColor = '#ef4444'; // Red
+                        }
+
+                        return {
+                            id: axon.id.toString(),
+                            source: axon.source.toString(),
+                            target: axon.target.toString(),
+                            sourceHandle: sourcePortId, // Connects to the specific colored port on the right
+                            targetHandle: 'in',         // Connects to the single input port on the left
+                            type: 'smoothstep',         // Orthogonal right-angle lines
+                            animated: true,
+                            style: { stroke: wireColor, strokeWidth: 2 },
+                        };
+                    });
+                    setEdges(flowEdges);
                 }
             });
     }, [pathwayId]);
 
-    // Math from graph_editor.js
-    const toCanvasCoords = (clientX: number, clientY: number) => {
-        if (!containerRef.current) return { x: 0, y: 0 };
-        const rect = containerRef.current.getBoundingClientRect();
-        return {
-            x: (clientX - rect.left - pan.x) / zoom,
-            y: (clientY - rect.top - pan.y) / zoom
-        };
-    };
-
-    const calculateBezierPath = (x1: number, y1: number, x2: number, y2: number) => {
-        let dx = Math.abs(x1 - x2) * 0.5;
-        const minHandle = 50;
-        dx = x1 > x2 ? Math.max(dx, minHandle) + (x1 - x2) * 0.2 : Math.max(dx, minHandle);
-        return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-    };
-
-    // Canvas Events
-    const handleMouseDown = (e: MouseEvent) => {
-        if (e.button === 1 || e.target === containerRef.current) {
-            setIsPanning(true);
-            setActiveNode(null); // Deselect on background click
-        }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-        if (isPanning) {
-            setPan(prev => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
-        }
-
-        if (draggingNode) {
-            const coords = toCanvasCoords(e.clientX, e.clientY);
-            setNeurons(prev => prev.map(n =>
-                n.id === draggingNode.id
-                    ? { ...n, x: coords.x - dragOffset.x, y: coords.y - dragOffset.y }
-                    : n
-            ));
-        }
-
-        if (activeWire) {
-            const coords = toCanvasCoords(e.clientX, e.clientY);
-            setMousePos(coords);
-        }
-    };
-
-    const handleMouseUp = async (e: MouseEvent) => {
-        setIsPanning(false);
-
-        if (draggingNode && !String(draggingNode.id).startsWith('temp_')) {
-            // Save new position
-            await fetch(`/central_nervous_system/graph/${pathwayId}/move_neuron`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ neuron_id: draggingNode.id, x: Math.round(draggingNode.x), y: Math.round(draggingNode.y) })
-            });
-            setDraggingNode(null);
-        }
-
-        if (activeWire) {
-            // Check if we dropped on a valid input pin
-            const target = e.target as HTMLElement;
-            if (target.classList.contains('pin-input')) {
-                const targetNodeId = target.getAttribute('data-node-id');
-                if (targetNodeId && targetNodeId !== String(activeWire.sourceNodeId)) {
-
-                    const typeMap: Record<string, 'flow' | 'success' | 'fail'> = {
-                        '#ffffff': 'flow', '#4caf50': 'success', '#f44336': 'fail'
-                    };
-                    const type = typeMap[activeWire.color] || 'flow';
-
-                    // Optimistic update
-                    setWires(prev => [...prev, { from_node_id: activeWire.sourceNodeId, to_node_id: targetNodeId, status_id: type }]);
-
-                    await fetch(`/central_nervous_system/graph/${pathwayId}/connect`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ source_neuron_id: activeWire.sourceNodeId, target_neuron_id: targetNodeId, type })
-                    });
-                }
-            }
-            setActiveWire(null);
-        }
-    };
-
-    const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault();
-        const delta = -e.deltaY;
-        const factor = Math.pow(1.1, delta / 100);
-        const newZoom = Math.min(Math.max(zoom * factor, 0.2), 3);
-
-        const mouseX = e.clientX - pan.x;
-        const mouseY = e.clientY - pan.y;
-
-        setPan({
-            x: pan.x - mouseX * (newZoom / zoom - 1),
-            y: pan.y - mouseY * (newZoom / zoom - 1)
-        });
-        setZoom(newZoom);
-    };
-
-    const handleNodeDragStart = (e: MouseEvent, node: CNSNeuron) => {
-        const rect = (e.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
-        setDragOffset({
-            x: (e.clientX - rect.left) / zoom,
-            y: (e.clientY - rect.top) / zoom
-        });
-        setDraggingNode(node);
-    };
-
-    const handlePinMouseDown = (e: MouseEvent, nodeId: string | number, portIndex: number, color: string) => {
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        const coords = toCanvasCoords(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        setActiveWire({ sourceNodeId: nodeId, portIdx: portIndex, color, startX: coords.x, startY: coords.y });
-        setMousePos(coords);
-    };
-
-    const handleDeleteNode = async (id: string | number) => {
-        setNeurons(prev => prev.filter(n => n.id !== id));
-        setWires(prev => prev.filter(w => w.from_node_id !== id && w.to_node_id !== id));
-        setActiveNode(null);
-
-        if (!String(id).startsWith('temp_')) {
-            await fetch(`/central_nervous_system/graph/${pathwayId}/delete_neuron`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ neuron_id: id })
-            });
-        }
-    };
-
-    const handleContextChange = async (nodeId: string | number, key: string, value: string) => {
-        await fetch(`/central_nervous_system/graph/${pathwayId}/save_neuron_context`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ neuron_id: nodeId, updates: [{ key, value }] })
-        });
-    };
-
-    // Calculate wire DOM positions dynamically
-    const renderWires = () => {
-        return wires.map((wire, idx) => {
-            const src = neurons.find(n => n.id == wire.from_node_id);
-            const tgt = neurons.find(n => n.id == wire.to_node_id);
-            if (!src || !tgt) return null;
-
-            // Approximating pin coordinates based on component layout offsets
-            // Input pin is top-leftish, Output pins are right side
-            let portOffsetY = 50;
-            if (wire.status_id === 'success') portOffsetY = 70;
-            if (wire.status_id === 'fail') portOffsetY = 90;
-
-            const startX = src.x + 220; // Width of node
-            const startY = src.y + portOffsetY;
-            const endX = tgt.x;
-            const endY = tgt.y + 50; // Input pin height
-
-            const path = calculateBezierPath(startX, startY, endX, endY);
-
-            const colorMap = { 'flow': '#ffffff', 'success': '#4caf50', 'fail': '#f44336' };
-            const strokeColor = colorMap[wire.status_id] || '#ffffff';
-
-            return (
-                <path
-                    key={idx}
-                    d={path}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth="3"
-                    strokeOpacity="0.8"
-                    className="hover:stroke-[5px] transition-all cursor-pointer"
-                />
-            );
-        });
+    const onNodeClick = (event: React.MouseEvent, node: any) => {
+        // When a node is clicked, send its raw Django data to the Right Panel Inspector
+        setSelectedNode(node.sourceData);
     };
 
     return (
-        <div className="flex h-full w-full overflow-hidden text-white font-sans relative rounded-xl">
+        <div style={{ display: 'flex', width: '100%', height: '100%', backgroundColor: 'var(--bg-obsidian)' }}>
 
-            {/* MAIN CANVAS */}
-            <main
-                id="editor-container"
-                ref={containerRef}
-                className="flex-1 relative overflow-hidden bg-transparent"
-                style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onWheel={handleWheel}
-            >
-                <div
-                    style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0' }}
-                    className="absolute inset-0 pointer-events-none w-[10000px] h-[10000px]"
-                >
-                    {/* SVG LAYER */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-auto z-10 overflow-visible">
-                        {renderWires()}
-                        {activeWire && (
-                            <path
-                                d={calculateBezierPath(activeWire.startX, activeWire.startY, mousePos.x, mousePos.y)}
-                                fill="none"
-                                stroke={activeWire.color}
-                                strokeWidth="2"
-                                strokeDasharray="8,4"
-                            />
-                        )}
-                    </svg>
-
-                    {/* HTML LAYER */}
-                    <div className="absolute inset-0 z-20">
-                        {neurons.map(node => (
-                            <CNSNode
-                                key={node.id}
-                                node={node}
-                                isSelected={activeNode?.id === node.id}
-                                onSelect={(n) => setActiveNode(n)}
-                                onDelete={handleDeleteNode}
-                                onDragStart={handleNodeDragStart}
-                                onPinMouseDown={handlePinMouseDown}
-                                isMonitorMode={false}
-                            />
-                        ))}
-                        {/* Hidden target pins for the wire drop zone logic */}
-                        {neurons.map(node => !node.is_root && (
-                            <div
-                                key={`pin-${node.id}`}
-                                className="pin-input absolute w-6 h-6 z-50 rounded-full"
-                                style={{ left: node.x - 12, top: node.y + 40 }}
-                                data-node-id={node.id}
-                            ></div>
-                        ))}
-                    </div>
+            {/* LEFT: Editor Palette */}
+            <div style={{ width: '250px', borderRight: '1px solid #334155', padding: '16px', display: 'flex', flexDirection: 'column', backgroundColor: 'rgba(15, 23, 42, 0.9)' }}>
+                <h3 style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '16px', letterSpacing: '1px' }}>EFFECTORS</h3>
+                <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {effectors.map(eff => (
+                        <div key={eff.id} draggable className="cns-effector-drag-item" style={{
+                            padding: '8px', backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '4px', cursor: 'grab', color: '#cbd5e1', fontSize: '0.8rem'
+                        }}>
+                            {eff.name}
+                        </div>
+                    ))}
                 </div>
-            </main>
+            </div>
 
-            {/* RIGHT PANEL: INSPECTOR */}
-            {activeNode && (
-                <CNSInspector
-                    key={activeNode.id}
-                    node={activeNode}
-                    pathwayId={pathwayId}
-                    onDelete={handleDeleteNode}
-                    onContextChange={handleContextChange}
-                />
-            )}
+            {/* CENTER: THE ACTUAL REACT FLOW CANVAS */}
+            <div style={{ flex: 1, position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '16px', left: '16px', zIndex: 10, pointerEvents: 'none' }}>
+                    <h2 style={{ color: '#e2e8f0', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                        {pathwayData?.name || 'Loading...'}
+                    </h2>
+                </div>
+
+                {/* THE ENGINE IS HERE */}
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onNodeClick={onNodeClick}
+                    nodeTypes={nodeTypes}
+                    fitView
+                    theme="dark" // If using React Flow 11+
+                >
+                    <Background color="#334155" gap={20} size={1} />
+                    <Controls style={{ button: { backgroundColor: '#1e293b', border: '1px solid #334155', fill: '#e2e8f0' } }} />
+                </ReactFlow>
+            </div>
+
+            {/* RIGHT: Node Inspector */}
+            <div style={{ width: '300px', borderLeft: '1px solid #334155', padding: '16px', backgroundColor: 'rgba(15, 23, 42, 0.9)', display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ color: '#e2e8f0', fontSize: '0.9rem', marginBottom: '16px', letterSpacing: '1px' }}>SYNAPTIC INSPECTOR</h3>
+
+                {selectedNode ? (
+                    <div style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
+                        <p><strong>ID:</strong> {selectedNode.id}</p>
+                        <p><strong>Effector:</strong> {selectedNode.effector_name || 'N/A'}</p>
+                        <p><strong>Invokes:</strong> {selectedNode.invoked_pathway_name || 'None'}</p>
+                    </div>
+                ) : (
+                    <div className="bbb-placeholder font-mono text-sm">
+                        Select a Neuron on the canvas to inspect its parameters.
+                    </div>
+                )}
+            </div>
+
         </div>
     );
 };

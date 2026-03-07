@@ -10,6 +10,7 @@ import { ReasoningSidebar, ReasoningInspector } from './ReasoningPanels';
 import { CNSSidebar } from './CNSSidebar';   // <-- ADD IMPORT
 import { CNSEditor } from './CNSEditor';     // <-- ADD IMPORT
 import './BloodBrainBarrier.css';
+import {CNSView} from "./CNSView.tsx";
 
 export const BloodBrainBarrier = () => {
     // Add 'cns' to the viewport state
@@ -118,9 +119,14 @@ export const BloodBrainBarrier = () => {
                                 )}
 
                                 {activeViewport === 'cns' && !activePathwayId && (
-                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                        <div className="bbb-placeholder font-mono text-sm">Select a Neural Pathway from the left panel to map its Logic.</div>
+                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', flexDirection: 'column', alignItems: 'stretch' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px' }}>
+                                            <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                        </div>
+                                        <CNSView onOpenPathway={(pathwayId) => {
+                                            setActivePathwayId(pathwayId);
+                                        }} />
+
                                     </div>
                                 )}
                             </main>

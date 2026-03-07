@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import type {NeuralPathway} from "../types.ts";
+
 
 interface CNSSidebarProps {
     activePathwayId: string | null;
@@ -7,43 +8,63 @@ interface CNSSidebarProps {
     onExit: () => void;
 }
 
-export const CNSSidebar = ({ activePathwayId, onSelectPathway, onExit }: CNSSidebarProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [pathways, setPathways] = useState<any[]>([]);
+export const CNSSidebar: React.FC<CNSSidebarProps> = ({ activePathwayId, onSelectPathway, onExit }) => {
+    const [pathways, setPathways] = useState<NeuralPathway[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/v1/pathways/')
-            .then(res => res.json())
-            .then(data => setPathways(data.results || data))
-            .catch(console.error);
+        const fetchPathways = async () => {
+            try {
+                // Hitting your new v2 endpoint
+                const res = await fetch('/api/v2/neuralpathways/');
+                const data = await res.json();
+                setPathways(data);
+            } catch (error) {
+                console.error("Failed to fetch pathways", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchPathways();
     }, []);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h2 className="glass-panel-title" style={{ marginBottom: '16px' }}>NEURAL PATHWAYS</h2>
-            <div className="scroll-hidden" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {pathways.map(p => (
-                    <div key={p.id} onClick={() => onSelectPathway(p.id)}
-                         style={{
-                             padding: '12px', borderRadius: '8px', cursor: 'pointer',
-                             background: p.id === activePathwayId ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.02)',
-                             border: `1px solid ${p.id === activePathwayId ? '#38bdf8' : 'var(--border-glass)'}`,
-                             transition: 'all 0.2s ease'
-                         }}>
-                        <div className="font-display text-sm" style={{ color: '#f8fafc', fontWeight: 700 }}>{p.name}</div>
-                        <div className="font-mono text-xs" style={{ color: '#94a3b8', marginTop: '4px' }}>
-                            Nodes: {p.node_count || 0}
-                        </div>
-                    </div>
-                ))}
-                {pathways.length === 0 && <div className="font-mono text-xs text-[#64748b]">No pathways found.</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 className="glass-panel-title" style={{ margin: 0 }}>NEURAL PATHWAYS</h2>
+                <button onClick={onExit} className="bbb-close-btn" style={{ position: 'relative', top: 0, right: 0 }}>✕</button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-glass)' }}>
-                <button className="btn-ghost" onClick={onExit} style={{ justifyContent: 'flex-start' }}>
-                    <LogOut size={14} /> EXIT TO MAP
-                </button>
-            </div>
+            {isLoading ? (
+                <div className="bbb-placeholder font-mono text-sm">Loading networks...</div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
+                    {pathways.map(pw => (
+                        <div
+                            key={pw.id}
+                            onClick={() => onSelectPathway(pw.id.toString())}
+                            style={{
+                                padding: '12px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                backgroundColor: activePathwayId === pw.id.toString() ? 'rgba(56, 189, 248, 0.2)' : 'rgba(30, 41, 59, 0.5)',
+                                border: `1px solid ${activePathwayId === pw.id.toString() ? '#38bdf8' : '#334155'}`,
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <div style={{ color: '#e2e8f0', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>{pw.name}</span>
+                                {pw.is_favorite && <span style={{ color: '#facc15' }}>★</span>}
+                            </div>
+                            {pw.description && (
+                                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {pw.description}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
