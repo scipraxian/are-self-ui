@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Loader2, ChevronLeft, ChevronRight, BrainCircuit, MoreVertical } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
 import './PrefrontalCortex.css';
 
 // --- STRICT TYPESCRIPT INTERFACES ---
@@ -58,16 +58,28 @@ function getCookie(name: string): string | null {
     return cookieValue;
 }
 
+// Unified Interface
+interface PFCAgileItem {
+    id: string;
+    item_type: 'EPIC' | 'STORY' | 'TASK';
+    name: string;
+    description: string;
+    status: { id: number; name: string };
+    complexity?: number;
+    priority?: number;
+    tags: { id: number; name: string }[];
+    owning_disc: { id: number; name: string } | null;
+    parent_name?: string;
+}
+
 export const PrefrontalCortex = () => {
     const boardRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    // API State
-    const [statuses, setStatuses] = useState<PFCItemStatus[]>([]);
-    const [stories, setStories] = useState<PFCStory[]>([]);
+    const [statuses, setStatuses] = useState<any[]>([]);
+    const [items, setItems] = useState<PFCAgileItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [dragOverStatus, setDragOverStatus] = useState<number | null>(null);
 
     const checkScroll = () => {
         if (boardRef.current) {
@@ -79,25 +91,43 @@ export const PrefrontalCortex = () => {
 
     const scrollBoard = (direction: 'left' | 'right') => {
         if (boardRef.current) {
-            const scrollAmount = 336;
-            boardRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+            boardRef.current.scrollBy({ left: direction === 'left' ? -336 : 336, behavior: 'smooth' });
         }
     };
 
     const fetchData = async () => {
         try {
-            const [statusRes, storyRes] = await Promise.all([
+            const [statusRes, epicRes, storyRes, taskRes] = await Promise.all([
                 fetch('/api/v2/pre-frontal-item-status/'),
-                fetch('/api/v2/pfc-stories/?full=true')
+                fetch('/api/v2/pfc-epics/?full=true'),
+                fetch('/api/v2/pfc-stories/?full=true'),
+                fetch('/api/v2/pfc-tasks/?full=true')
             ]);
+
             if (statusRes.ok) {
                 const statusData = await statusRes.json();
                 setStatuses(statusData.results || statusData);
             }
-            if (storyRes.ok) {
-                const storyData = await storyRes.json();
-                setStories(storyData.results || storyData);
+
+            let allItems: PFCAgileItem[] = [];
+
+            if (epicRes.ok) {
+                const data = await epicRes.json();
+                const epics = (data.results || data).map((e: any) => ({ ...e, item_type: 'EPIC' }));
+                allItems = [...allItems, ...epics];
             }
+            if (storyRes.ok) {
+                const data = await storyRes.json();
+                const stories = (data.results || data).map((s: any) => ({ ...s, item_type: 'STORY', parent_name: s.epic?.name }));
+                allItems = [...allItems, ...stories];
+            }
+            if (taskRes.ok) {
+                const data = await taskRes.json();
+                const tasks = (data.results || data).map((t: any) => ({ ...t, item_type: 'TASK', parent_name: t.story?.name }));
+                allItems = [...allItems, ...tasks];
+            }
+
+            setItems(allItems);
         } catch (err) {
             console.error("Failed to fetch PFC data:", err);
         } finally {
@@ -107,55 +137,21 @@ export const PrefrontalCortex = () => {
 
     useEffect(() => {
         fetchData();
+        // Optional: Set an interval here to watch the PM work live!
+        const intervalId = setInterval(fetchData, 3000);
+        return () => clearInterval(intervalId);
     }, []);
 
     useEffect(() => {
         checkScroll();
         window.addEventListener('resize', checkScroll);
         return () => window.removeEventListener('resize', checkScroll);
-    }, [statuses, stories]);
+    }, [statuses, items]);
 
-    const handleDrop = async (e: React.DragEvent, statusId: number) => {
-        e.preventDefault();
-        setDragOverStatus(null);
-
-        const payload = e.dataTransfer.getData('application/json');
-        if (!payload) return;
-
-        const { type, id: droppedStoryId } = JSON.parse(payload);
-        if (type !== 'story') return;
-
-        // Optimistic update
-        setStories(prev => prev.map(s => {
-            if (s.id === droppedStoryId) {
-                const newStatus = statuses.find(st => st.id === statusId);
-                return newStatus ? { ...s, status: newStatus } : s;
-            }
-            return s;
-        }));
-
-        const csrfToken = getCookie('csrftoken');
-        try {
-            const res = await fetch(`/api/v2/pfc-stories/${droppedStoryId}/`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
-                body: JSON.stringify({ status: statusId })
-            });
-
-            if (!res.ok) {
-                console.error("Failed to update story status");
-                // Revert fetch on failure
-                fetchData();
-            }
-        } catch (err) {
-            console.error("Network error during drop:", err);
-            fetchData();
-        }
-    };
-
-    const handleDragStart = (e: React.DragEvent, story: PFCStory) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({ type: 'story', id: story.id }));
-        e.dataTransfer.effectAllowed = 'move';
+    const getItemColor = (type: string) => {
+        if (type === 'EPIC') return '#a855f7'; // Purple
+        if (type === 'STORY') return '#3b82f6'; // Blue
+        return '#4ade80'; // Green Task
     };
 
     if (isLoading) {
@@ -166,121 +162,68 @@ export const PrefrontalCortex = () => {
         );
     }
 
-    if (statuses.length === 0) {
-        return (
-            <div className="pfc-container loader-container">
-                <BrainCircuit size={48} className="text-muted" style={{ opacity: 0.2 }} />
-                <h2 className="font-display heading-tracking text-lg m-0 text-primary">Prefrontal Cortex</h2>
-                <p className="text-muted font-mono text-sm m-0">No item statuses defined.</p>
-            </div>
-        );
-    }
-
     return (
         <div className="pfc-container">
             <div className="pfc-header">
                 <div>
                     <h3 className="font-display heading-tracking text-base m-0 text-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BrainCircuit size={18} color="#a855f7" />
-                        PREFRONTAL CORTEX (LOGIC & PLANNING)
+                        <BrainCircuit size={18} color="#ef4444" />
+                        PREFRONTAL CORTEX (AGILE BOARD)
                     </h3>
-                    <div className="font-mono text-xs text-muted" style={{ marginTop: '4px' }}>
-                        Active Strategies & Tactics
-                    </div>
                 </div>
             </div>
 
             <div className="pfc-board-wrapper">
-                {canScrollLeft ? (
-                    <button className="pfc-scroll-btn" onClick={() => scrollBoard('left')}>
-                        <ChevronLeft size={24} />
-                    </button>
-                ) : <div style={{ width: '36px', flexShrink: 0 }} />}
+                {canScrollLeft ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('left')}><ChevronLeft size={24} /></button> : <div style={{ width: '36px', flexShrink: 0 }} />}
 
                 <div className="pfc-board" ref={boardRef} onScroll={checkScroll}>
-
                     {statuses.map(status => {
-                        const columnStories = stories.filter(s => s.status && s.status.id === status.id);
+                        const columnItems = items.filter(i => i.status && i.status.id === status.id);
 
                         return (
                             <div key={status.id} className="pfc-column">
                                 <div className="pfc-column-header">
-                                    <span className="pfc-column-title">
-                                        {status.name}
-                                    </span>
-                                    <span className="pfc-column-stats" title="Items">{columnStories.length}</span>
+                                    <span className="pfc-column-title">{status.name}</span>
+                                    <span className="pfc-column-stats">{columnItems.length}</span>
                                 </div>
 
-                                <div
-                                    className={`pfc-column-body ${dragOverStatus === status.id ? 'drag-over' : ''}`}
-                                    onDragOver={(e) => { e.preventDefault(); setDragOverStatus(status.id); }}
-                                    onDragLeave={() => setDragOverStatus(null)}
-                                    onDrop={(e) => handleDrop(e, status.id)}
-                                >
-                                    {columnStories.map(story => (
-                                        <div
-                                            key={story.id}
-                                            className="pfc-card"
-                                            draggable
-                                            onDragStart={(e) => handleDragStart(e, story)}
-                                        >
+                                <div className="pfc-column-body">
+                                    {columnItems.map(item => (
+                                        <div key={`${item.item_type}-${item.id}`} className="pfc-card" style={{ borderLeftColor: getItemColor(item.item_type) }}>
                                             <div className="pfc-card-header">
                                                 <div>
-                                                    {story.epic && (
-                                                        <div className="pfc-card-epic-name">{story.epic.name}</div>
-                                                    )}
-                                                    <div className="pfc-card-title">{story.name}</div>
+                                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                                                        <span className="font-mono text-xs" style={{ color: getItemColor(item.item_type), fontWeight: 800 }}>[{item.item_type}]</span>
+                                                        {item.parent_name && <span className="font-mono text-xs text-muted">of {item.parent_name.substring(0, 15)}...</span>}
+                                                    </div>
+                                                    <div className="pfc-card-title">{item.name}</div>
                                                 </div>
-                                                <button
-                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
-                                                    title="Options"
-                                                >
-                                                    <MoreVertical size={14} className="text-muted" style={{ transition: 'color 0.2s' }}
-                                                        onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-purple)'}
-                                                        onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                                                    />
-                                                </button>
                                             </div>
 
-                                            {story.description && (
+                                            {item.description && (
                                                 <div className="font-mono text-xs text-muted" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                                    {story.description}
+                                                    {item.description}
                                                 </div>
                                             )}
 
                                             <div className="pfc-card-meta">
-                                                {story.complexity > 0 && (
-                                                    <span className="pfc-tag font-mono" style={{ color: 'var(--accent-green)', borderColor: 'rgba(74, 222, 128, 0.3)' }}>
-                                                        CX: {story.complexity}
+                                                {item.owning_disc && (
+                                                    <span className="pfc-tag font-mono" style={{ color: 'var(--bg-obsidian)', background: 'var(--accent-gold)', borderColor: 'var(--accent-gold)' }}>
+                                                        {item.owning_disc.name}
                                                     </span>
                                                 )}
-                                                {story.owning_disc && (
-                                                    <span className="pfc-tag font-mono" style={{ color: 'var(--accent-blue)', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
-                                                        {story.owning_disc.name}
-                                                    </span>
+                                                {item.complexity !== undefined && item.complexity > 0 && (
+                                                    <span className="pfc-tag font-mono" style={{ color: 'var(--accent-green)' }}>CX: {item.complexity}</span>
                                                 )}
-                                                {story.tags && story.tags.map(tag => (
-                                                    <span key={tag.id} className="pfc-tag">
-                                                        {tag.name}
-                                                    </span>
-                                                ))}
                                             </div>
                                         </div>
                                     ))}
-
-                                    <div className="pfc-drop-zone"></div>
                                 </div>
                             </div>
                         );
                     })}
-
                 </div>
-
-                {canScrollRight ? (
-                    <button className="pfc-scroll-btn" onClick={() => scrollBoard('right')}>
-                        <ChevronRight size={24} />
-                    </button>
-                ) : <div style={{ width: '36px', flexShrink: 0 }} />}
+                {canScrollRight ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('right')}><ChevronRight size={24} /></button> : <div style={{ width: '36px', flexShrink: 0 }} />}
             </div>
         </div>
     );

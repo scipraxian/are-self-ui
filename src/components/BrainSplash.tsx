@@ -63,11 +63,14 @@ export const BrainPlaceholder = ({ onLobeClick, hoveredLobe, setHoveredLobe }: B
 
     return (
         <group>
-            {/* FIX: Using raw Hex colors so WebGL parses them correctly */}
+            {/* Frontal Lobe -> Reasoning (LCARS) */}
             <LobeSphere position={[0, 2, 2.5]} color="#a855f7" name="Frontal Lobe" path="frontal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+
+            {/* Temporal Lobe -> Iterations */}
             <LobeSphere position={[-2.5, -1, 0]} color="#f99f1b" name="Temporal Lobe" path="temporal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[0, 3, -2.5]} color="#38bdf8" name="Parietal Lobe" path="parietal" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
-            <LobeSphere position={[0, 0, -3.5]} color="#4ade80" name="Occipital Lobe" path="occipital" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+
+            {/* Prefrontal Cortex (Replaced Parietal) -> Agile Board */}
+            <LobeSphere position={[0, 3, -2.5]} color="#ef4444" name="Prefrontal Cortex" path="pfc" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
 
             <Sphere args={[1.2, 16, 16]} position={[0, 1, 0]}>
                 <meshStandardMaterial color="#333333" roughness={0.9} metalness={0.1} wireframe />
