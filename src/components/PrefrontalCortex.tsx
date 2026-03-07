@@ -2,63 +2,6 @@ import { useRef, useState, useEffect } from 'react';
 import { Loader2, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
 import './PrefrontalCortex.css';
 
-// --- STRICT TYPESCRIPT INTERFACES ---
-interface PFCItemStatus {
-    id: number;
-    name: string;
-}
-
-interface PFCTag {
-    id: number;
-    name: string;
-}
-
-interface IdentityDisc {
-    id: number;
-    name: string;
-    level: number;
-    xp: number;
-    available: boolean;
-}
-
-interface PFCEpic {
-    id: string;
-    name: string;
-    description: string;
-    status: PFCItemStatus;
-    complexity: number;
-    tags: PFCTag[];
-    owning_disc: IdentityDisc | null;
-}
-
-interface PFCStory {
-    id: string;
-    name: string;
-    description: string;
-    status: PFCItemStatus;
-    epic: PFCEpic;
-    complexity: number;
-    tags: PFCTag[];
-    owning_disc: IdentityDisc | null;
-}
-
-// CSRF Helper
-function getCookie(name: string): string | null {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// Unified Interface
 interface PFCAgileItem {
     id: string;
     item_type: 'EPIC' | 'STORY' | 'TASK';
@@ -77,6 +20,7 @@ export const PrefrontalCortex = () => {
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [statuses, setStatuses] = useState<any[]>([]);
     const [items, setItems] = useState<PFCAgileItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -113,17 +57,19 @@ export const PrefrontalCortex = () => {
 
             if (epicRes.ok) {
                 const data = await epicRes.json();
-                const epics = (data.results || data).map((e: any) => ({ ...e, item_type: 'EPIC' }));
+                const epics = (data.results || data).map((e: Partial<PFCAgileItem>) => ({ ...e, item_type: 'EPIC' })) as PFCAgileItem[];
                 allItems = [...allItems, ...epics];
             }
             if (storyRes.ok) {
                 const data = await storyRes.json();
-                const stories = (data.results || data).map((s: any) => ({ ...s, item_type: 'STORY', parent_name: s.epic?.name }));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const stories = (data.results || data).map((s: any) => ({ ...s, item_type: 'STORY', parent_name: s.epic?.name })) as PFCAgileItem[];
                 allItems = [...allItems, ...stories];
             }
             if (taskRes.ok) {
                 const data = await taskRes.json();
-                const tasks = (data.results || data).map((t: any) => ({ ...t, item_type: 'TASK', parent_name: t.story?.name }));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const tasks = (data.results || data).map((t: any) => ({ ...t, item_type: 'TASK', parent_name: t.story?.name })) as PFCAgileItem[];
                 allItems = [...allItems, ...tasks];
             }
 
@@ -137,7 +83,6 @@ export const PrefrontalCortex = () => {
 
     useEffect(() => {
         fetchData();
-        // Optional: Set an interval here to watch the PM work live!
         const intervalId = setInterval(fetchData, 3000);
         return () => clearInterval(intervalId);
     }, []);
@@ -149,9 +94,9 @@ export const PrefrontalCortex = () => {
     }, [statuses, items]);
 
     const getItemColor = (type: string) => {
-        if (type === 'EPIC') return '#a855f7'; // Purple
-        if (type === 'STORY') return '#3b82f6'; // Blue
-        return '#4ade80'; // Green Task
+        if (type === 'EPIC') return '#a855f7';
+        if (type === 'STORY') return '#3b82f6';
+        return '#4ade80';
     };
 
     if (isLoading) {

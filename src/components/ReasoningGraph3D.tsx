@@ -1,19 +1,27 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
+import type {
+    GraphLink,
+    GraphNode,
+    ReasoningGoalData,
+    ReasoningSessionData,
+    ReasoningTurnData, TalosEngramData,
+    ToolCallData
+} from "../types.ts";
 
 interface ReasoningGraphProps {
     sessionId: string;
-    onNodeSelect: (node: any) => void;
-    onStatsUpdate: (stats: any) => void;
+    onNodeSelect: (node: GraphNode) => void;
+    onStatsUpdate: (stats: { level: number, focus: string, xp: number, status: string, latestThought: string }) => void;
 }
 
 export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: ReasoningGraphProps) => {
-    const fgRef = useRef<any>();
-    const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fgRef = useRef<any>(null);
+    const [graphData, setGraphData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
     const prevDataRef = useRef<string>("");
 
-    // Store references to active meshes so we can animate them outside the React cycle
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
 
     const parseDuration = (str: string) => {
@@ -29,7 +37,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
         try {
             const res = await fetch(`/api/v1/reasoning_sessions/${sessionId}/graph_data/`);
             if (!res.ok) return;
-            const data = await res.json();
+            const data: ReasoningSessionData = await res.json();
 
             let latestThought = "Awaiting cortex synchronization...";
             let totalSeconds = 0;
@@ -42,8 +50,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                         break;
                     }
                 }
-                // Pre-calculate the exact average delta for node sizing parity
-                data.turns.forEach((t: any) => {
+                data.turns.forEach((t: ReasoningTurnData) => {
                     const sec = parseDuration(t.inference_time || t.delta);
                     if (sec > 0) {
                         totalSeconds += sec;
@@ -62,20 +69,19 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                 latestThought
             });
 
-            const newNodes: any[] = [];
-            const newLinks: any[] = [];
-            let firstTurnId = null;
+            const newNodes: GraphNode[] = [];
+            const newLinks: GraphLink[] = [];
+            let firstTurnId: string | null = null;
 
             if (data.goals) {
-                data.goals.forEach((g: any) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
+                data.goals.forEach((g: ReasoningGoalData) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
             }
 
             if (data.turns) {
-                data.turns.forEach((t: any, index: number) => {
+                data.turns.forEach((t: ReasoningTurnData, index: number) => {
                     const tId = `turn-${t.id}`;
                     if (index === 0) firstTurnId = tId;
 
-                    // Inject the pre-calculated ratio into the node data
                     const sec = parseDuration(t.inference_time || t.delta);
                     let ratio = sec / avgDelta;
                     if (isNaN(ratio) || ratio === 0) ratio = 1;
@@ -88,7 +94,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                     }
 
                     if (t.tool_calls) {
-                        t.tool_calls.forEach((c: any, cIdx: number) => {
+                        t.tool_calls.forEach((c: ToolCallData, cIdx: number) => {
                             const cId = `tool-${t.id}-${cIdx}`;
                             newNodes.push({ ...c, id: cId, type: 'tool', label: c.tool_name });
                             newLinks.push({ source: tId, target: cId, type: 'tool_call' });
@@ -98,15 +104,15 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             }
 
             if (firstTurnId && data.goals) {
-                data.goals.forEach((g: any) => newLinks.push({ source: firstTurnId, target: `goal-${g.id}`, type: 'anchor' }));
+                data.goals.forEach((g: ReasoningGoalData) => newLinks.push({ source: firstTurnId as string, target: `goal-${g.id}`, type: 'anchor' }));
             }
 
             if (data.engrams) {
-                data.engrams.forEach((e: any) => {
+                data.engrams.forEach((e: TalosEngramData) => {
                     const eId = `engram-${e.id}`;
                     newNodes.push({ ...e, id: eId, type: 'engram', label: e.name });
                     if (e.source_turns) {
-                        e.source_turns.forEach((st: any) => newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' }));
+                        e.source_turns.forEach((st: number) => newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' }));
                     }
                 });
             }
@@ -120,7 +126,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             }
 
             const validIds = new Set(newNodes.map(n => n.id));
-            const safeLinks = newLinks.filter(l => validIds.has(l.source) && validIds.has(l.target));
+            const safeLinks = newLinks.filter(l => validIds.has(l.source as string) && validIds.has(l.target as string));
 
             const topologySignature = JSON.stringify({
                 nodes: newNodes.map(n => ({ id: n.id, status: n.status_name, ratio: n.sizeRatio })),
@@ -129,9 +135,8 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
 
             if (topologySignature !== prevDataRef.current) {
                 prevDataRef.current = topologySignature;
-                // Clear active meshes on topology change to prevent memory leaks
                 activeMeshesRef.current = [];
-                setGraphData({ nodes: newNodes, links: safeLinks as never[] });
+                setGraphData({ nodes: newNodes, links: safeLinks });
             }
 
         } catch (err) {
@@ -146,14 +151,11 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
         return () => clearInterval(interval);
     }, [sessionId]);
 
-    // Setup the WebGL Animation Loop for Active Nodes
     useEffect(() => {
         let frameId: number;
         const animate = () => {
             const time = Date.now() * 0.003;
-            // Breathe scale from 1.0 to 1.3
             const scale = 1.0 + Math.abs(Math.sin(time)) * 0.3;
-            // Glow intensity from 0.5 to 1.5
             const intensity = 0.5 + Math.abs(Math.sin(time));
 
             activeMeshesRef.current.forEach(mesh => {
@@ -170,25 +172,22 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
         return () => cancelAnimationFrame(frameId);
     }, []);
 
-    const renderNode = useCallback((node: any) => {
+    const renderNode = useCallback((nodeObj: object) => {
+        const node = nodeObj as GraphNode;
         let geometry;
         let color: THREE.Color | string = '#ffffff';
         let emissiveIntensity = 0.5;
-        const isActive = ['Active', 'Running', 'Pending', 'Thinking'].includes(node.status_name);
+        const isActive = ['Active', 'Running', 'Pending', 'Thinking'].includes(node.status_name || '');
 
         if (node.type === 'turn') {
             const ratio = node.sizeRatio || 1;
             const baseRadius = 6 * ratio;
             geometry = new THREE.SphereGeometry(baseRadius, 32, 32);
 
-            // --- GRADIENT LOGIC ---
-            // Map the ratio to a 0.0 (Fast/Green) to 1.0 (Slow/Orange) scale
-            // Assuming 0.5 is great, 2.5 is very slow. Clamp between 0 and 1.
             const t = Math.max(0, Math.min(1, (ratio - 0.5) / 2.0));
             const colorGreen = new THREE.Color('#4ade80');
             const colorOrange = new THREE.Color('#f99f1b');
 
-            // Blend the two colors based on the node's relative performance
             color = colorGreen.clone().lerp(colorOrange, t);
 
             if (isActive) emissiveIntensity = 1.0;
@@ -216,7 +215,6 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
 
         const mesh = new THREE.Mesh(geometry, material);
 
-        // Track this specific mesh for the animation loop
         if (isActive && node.type === 'turn') {
             activeMeshesRef.current.push(mesh);
         }
@@ -234,26 +232,34 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                 linkSource="source"
                 linkTarget="target"
                 linkWidth={1.5}
-                linkColor={(link: any) => {
+                linkColor={(linkObj: object) => {
+                    const link = linkObj as GraphLink;
                     if (link.type === 'tool_call') return '#ef4444';
                     if (link.type === 'memory') return '#a855f7';
                     if (link.type === 'anchor') return 'rgba(56, 189, 248, 0.2)';
                     return '#ffffff';
                 }}
-                linkDirectionalParticles={(link: any) => {
+                linkDirectionalParticles={(linkObj: object) => {
+                    const link = linkObj as GraphLink;
                     if (link.type === 'sequence') return 4;
                     if (link.type === 'tool_call') return 2;
                     return 0;
                 }}
                 linkDirectionalParticleWidth={2}
                 linkDirectionalParticleSpeed={0.005}
-                onNodeClick={(node: any) => {
+                onNodeClick={(nodeObj: object) => {
+                    const node = nodeObj as GraphNode;
                     const distance = 60;
-                    const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+
+                    const nx = (node.x as number) || 0;
+                    const ny = (node.y as number) || 0;
+                    const nz = (node.z as number) || 0;
+
+                    const distRatio = 1 + distance / Math.hypot(nx, ny, nz);
                     if (fgRef.current) {
                         fgRef.current.cameraPosition(
-                            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                            node,
+                            { x: nx * distRatio, y: ny * distRatio, z: nz * distRatio },
+                            { x: nx, y: ny, z: nz },
                             1000
                         );
                     }
