@@ -172,15 +172,25 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
 
     const renderNode = useCallback((node: any) => {
         let geometry;
-        let color = '#ffffff';
+        let color: THREE.Color | string = '#ffffff';
         let emissiveIntensity = 0.5;
         const isActive = ['Active', 'Running', 'Pending', 'Thinking'].includes(node.status_name);
 
         if (node.type === 'turn') {
-            // Apply the exact ratio sizing from lcars_graph.js
-            const baseRadius = 6 * (node.sizeRatio || 1);
+            const ratio = node.sizeRatio || 1;
+            const baseRadius = 6 * ratio;
             geometry = new THREE.SphereGeometry(baseRadius, 32, 32);
-            color = isActive ? '#4ade80' : '#f99f1b'; // Green when active, Gold otherwise
+
+            // --- GRADIENT LOGIC ---
+            // Map the ratio to a 0.0 (Fast/Green) to 1.0 (Slow/Orange) scale
+            // Assuming 0.5 is great, 2.5 is very slow. Clamp between 0 and 1.
+            const t = Math.max(0, Math.min(1, (ratio - 0.5) / 2.0));
+            const colorGreen = new THREE.Color('#4ade80');
+            const colorOrange = new THREE.Color('#f99f1b');
+
+            // Blend the two colors based on the node's relative performance
+            color = colorGreen.clone().lerp(colorOrange, t);
+
             if (isActive) emissiveIntensity = 1.0;
         } else if (node.type === 'tool') {
             geometry = new THREE.BoxGeometry(6, 6, 6);
