@@ -11,8 +11,10 @@ interface ReasoningGraphProps {
 export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: ReasoningGraphProps) => {
     const fgRef = useRef<any>();
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
-    // Track previous data hash to prevent physics engine resets
     const prevDataRef = useRef<string>("");
+
+    // Store references to active meshes so we can animate them outside the React cycle
+    const activeMeshesRef = useRef<THREE.Mesh[]>([]);
 
     const parseDuration = (str: string) => {
         if (!str) return 0;
@@ -30,6 +32,9 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             const data = await res.json();
 
             let latestThought = "Awaiting cortex synchronization...";
+            let totalSeconds = 0;
+            let validTurnsCount = 0;
+
             if (data.turns && data.turns.length > 0) {
                 for (let i = data.turns.length - 1; i >= 0; i--) {
                     if (data.turns[i].thought_process) {
@@ -37,7 +42,18 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                         break;
                     }
                 }
+                // Pre-calculate the exact average delta for node sizing parity
+                data.turns.forEach((t: any) => {
+                    const sec = parseDuration(t.inference_time || t.delta);
+                    if (sec > 0) {
+                        totalSeconds += sec;
+                        validTurnsCount++;
+                    }
+                });
             }
+
+            const avgDelta = validTurnsCount > 0 ? totalSeconds / validTurnsCount : 1.0;
+
             onStatsUpdate({
                 level: data.current_level || 1,
                 focus: `${data.current_focus || 0} / ${data.max_focus || 10}`,
@@ -51,10 +67,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             let firstTurnId = null;
 
             if (data.goals) {
-                data.goals.forEach((g: any) => {
-                    // FIX: Spread the backend object first, THEN apply our strict React IDs and Types
-                    newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` });
-                });
+                data.goals.forEach((g: any) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
             }
 
             if (data.turns) {
@@ -62,8 +75,13 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                     const tId = `turn-${t.id}`;
                     if (index === 0) firstTurnId = tId;
 
-                    // FIX: Spread first
-                    newNodes.push({ ...t, id: tId, type: 'turn', label: `Turn ${t.turn_number}` });
+                    // Inject the pre-calculated ratio into the node data
+                    const sec = parseDuration(t.inference_time || t.delta);
+                    let ratio = sec / avgDelta;
+                    if (isNaN(ratio) || ratio === 0) ratio = 1;
+                    ratio = Math.max(0.3, Math.min(ratio, 4.0));
+
+                    newNodes.push({ ...t, id: tId, type: 'turn', label: `Turn ${t.turn_number}`, sizeRatio: ratio });
 
                     if (index > 0) {
                         newLinks.push({ source: `turn-${data.turns[index - 1].id}`, target: tId, type: 'sequence' });
@@ -72,7 +90,6 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                     if (t.tool_calls) {
                         t.tool_calls.forEach((c: any, cIdx: number) => {
                             const cId = `tool-${t.id}-${cIdx}`;
-                            // FIX: Spread first
                             newNodes.push({ ...c, id: cId, type: 'tool', label: c.tool_name });
                             newLinks.push({ source: tId, target: cId, type: 'tool_call' });
                         });
@@ -81,38 +98,39 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             }
 
             if (firstTurnId && data.goals) {
-                data.goals.forEach((g: any) => {
-                    newLinks.push({ source: firstTurnId, target: `goal-${g.id}`, type: 'anchor' });
-                });
+                data.goals.forEach((g: any) => newLinks.push({ source: firstTurnId, target: `goal-${g.id}`, type: 'anchor' }));
             }
 
             if (data.engrams) {
                 data.engrams.forEach((e: any) => {
                     const eId = `engram-${e.id}`;
-                    // FIX: Spread first
                     newNodes.push({ ...e, id: eId, type: 'engram', label: e.name });
-
                     if (e.source_turns) {
-                        e.source_turns.forEach((st: any) => {
-                            newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' });
-                        });
+                        e.source_turns.forEach((st: any) => newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' }));
                     }
                 });
             }
 
-            // SAFE LINKS: Drop any links where the source or target node doesn't exist
+            if (data.conclusion) {
+                const cId = `conclusion-${data.conclusion.id}`;
+                newNodes.push({ ...data.conclusion, id: cId, type: 'conclusion', label: 'Final Report' });
+                if (data.turns && data.turns.length > 0) {
+                    newLinks.push({ source: `turn-${data.turns[data.turns.length - 1].id}`, target: cId, type: 'sequence' });
+                }
+            }
+
             const validIds = new Set(newNodes.map(n => n.id));
             const safeLinks = newLinks.filter(l => validIds.has(l.source) && validIds.has(l.target));
 
-            // Generate a lightweight signature of the current state
             const topologySignature = JSON.stringify({
-                nodes: newNodes.map(n => ({ id: n.id, status: n.status_name })),
+                nodes: newNodes.map(n => ({ id: n.id, status: n.status_name, ratio: n.sizeRatio })),
                 links: safeLinks.length
             });
 
-            // ONLY update React state if something biological actually changed
             if (topologySignature !== prevDataRef.current) {
                 prevDataRef.current = topologySignature;
+                // Clear active meshes on topology change to prevent memory leaks
+                activeMeshesRef.current = [];
                 setGraphData({ nodes: newNodes, links: safeLinks as never[] });
             }
 
@@ -122,34 +140,60 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
     };
 
     useEffect(() => {
-        // Reset ref when session changes to force immediate redraw
         prevDataRef.current = "";
         fetchGraphData();
         const interval = setInterval(fetchGraphData, 3000);
         return () => clearInterval(interval);
     }, [sessionId]);
 
+    // Setup the WebGL Animation Loop for Active Nodes
+    useEffect(() => {
+        let frameId: number;
+        const animate = () => {
+            const time = Date.now() * 0.003;
+            // Breathe scale from 1.0 to 1.3
+            const scale = 1.0 + Math.abs(Math.sin(time)) * 0.3;
+            // Glow intensity from 0.5 to 1.5
+            const intensity = 0.5 + Math.abs(Math.sin(time));
+
+            activeMeshesRef.current.forEach(mesh => {
+                if (mesh) {
+                    mesh.scale.set(scale, scale, scale);
+                    if (mesh.material instanceof THREE.MeshPhongMaterial) {
+                        mesh.material.emissiveIntensity = intensity;
+                    }
+                }
+            });
+            frameId = requestAnimationFrame(animate);
+        };
+        animate();
+        return () => cancelAnimationFrame(frameId);
+    }, []);
+
     const renderNode = useCallback((node: any) => {
         let geometry;
         let color = '#ffffff';
         let emissiveIntensity = 0.5;
+        const isActive = ['Active', 'Running', 'Pending', 'Thinking'].includes(node.status_name);
 
         if (node.type === 'turn') {
-            const seconds = parseDuration(node.inference_time || node.delta);
-            // Dynamic scale: min 4, max 12 based on time spent thinking
-            const size = Math.max(4, Math.min(12, 4 + (seconds * 0.5)));
-            geometry = new THREE.SphereGeometry(size, 32, 32);
-            color = '#f99f1b'; // Gold
-            if (['Active', 'Running', 'Pending'].includes(node.status_name)) emissiveIntensity = 1.0;
+            // Apply the exact ratio sizing from lcars_graph.js
+            const baseRadius = 6 * (node.sizeRatio || 1);
+            geometry = new THREE.SphereGeometry(baseRadius, 32, 32);
+            color = isActive ? '#4ade80' : '#f99f1b'; // Green when active, Gold otherwise
+            if (isActive) emissiveIntensity = 1.0;
         } else if (node.type === 'tool') {
             geometry = new THREE.BoxGeometry(6, 6, 6);
-            color = '#ef4444'; // Red
+            color = '#ef4444';
         } else if (node.type === 'engram') {
             geometry = new THREE.OctahedronGeometry(5);
-            color = '#a855f7'; // Purple
+            color = '#a855f7';
         } else if (node.type === 'goal') {
             geometry = new THREE.OctahedronGeometry(8);
-            color = '#38bdf8'; // Blue
+            color = '#38bdf8';
+        } else if (node.type === 'conclusion') {
+            geometry = new THREE.OctahedronGeometry(10);
+            color = '#4ade80';
         }
 
         const material = new THREE.MeshPhongMaterial({
@@ -160,7 +204,14 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             opacity: 0.9
         });
 
-        return new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // Track this specific mesh for the animation loop
+        if (isActive && node.type === 'turn') {
+            activeMeshesRef.current.push(mesh);
+        }
+
+        return mesh;
     }, []);
 
     return (
@@ -172,11 +223,11 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                 nodeThreeObject={renderNode}
                 linkSource="source"
                 linkTarget="target"
-                linkWidth={1}
+                linkWidth={1.5}
                 linkColor={(link: any) => {
                     if (link.type === 'tool_call') return '#ef4444';
                     if (link.type === 'memory') return '#a855f7';
-                    if (link.type === 'anchor') return '#38bdf8';
+                    if (link.type === 'anchor') return 'rgba(56, 189, 248, 0.2)';
                     return '#ffffff';
                 }}
                 linkDirectionalParticles={(link: any) => {
