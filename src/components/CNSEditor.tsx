@@ -100,6 +100,13 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown }) 
         });
     }, []);
 
+    // Helper: Double Click Edges to Delete
+    const onEdgeDoubleClick = useCallback((event: React.MouseEvent, edge: any) => {
+        event.stopPropagation();
+        setEdges(eds => eds.filter(e => e.id !== edge.id));
+        apiFetch(`/api/v2/axons/${edge.id}/`, { method: 'DELETE' }).catch(console.error);
+    }, []);
+
     useEffect(() => {
         setSelectedNode(null); // Clear selection on pathway change
 
@@ -227,6 +234,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown }) 
                     onConnect={onConnect}
                     onNodesDelete={onNodesDelete}
                     onEdgesDelete={onEdgesDelete}
+                    onEdgeDoubleClick={onEdgeDoubleClick}
                     nodeTypes={nodeTypes}
                     onDragOver={(e) => {
                         e.preventDefault();
