@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
-import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2 } from 'lucide-react';
+import {Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu} from 'lucide-react';
 
 interface PFCInspectorProps {
     item: PFCAgileItem;
@@ -189,6 +189,37 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
 
                     <Accordion title="Demo Specifics" color="#a855f7" icon={<Zap size={14}/>}>
                         {renderTextarea('demo_specifics', 'How will this be demonstrated at the end of the shift?')}
+                    </Accordion>
+                    <Accordion title="Assignment & Chain of Custody" color="#facc15" icon={<Cpu size={14}/>} open>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px 15px', color: '#e2e8f0', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem' }}>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ color: '#94a3b8', width: '120px' }}>ACTIVE OWNER:</span>
+                                {item.owning_disc ? (
+                                    <span style={{ background: 'var(--accent-gold)', color: 'var(--bg-obsidian)', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                                        {item.owning_disc.name}
+                                    </span>
+                                ) : (
+                                    <span style={{ color: '#64748b', fontStyle: 'italic' }}>Unassigned / Backlog</span>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                <span style={{ color: '#94a3b8', width: '120px' }}>PREVIOUS:</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1 }}>
+                                    {item.previous_owners && item.previous_owners.length > 0 ? (
+                                        item.previous_owners.map(prev => (
+                                            <span key={prev.id} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', padding: '2px 8px', borderRadius: '4px', color: '#cbd5e1' }}>
+                                                {prev.name}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span style={{ color: '#64748b', fontStyle: 'italic' }}>No prior chain of custody</span>
+                                    )}
+                                </div>
+                            </div>
+
+                        </div>
                     </Accordion>
                 </div>
             </div>

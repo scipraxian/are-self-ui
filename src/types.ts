@@ -223,6 +223,7 @@ export interface PFCAgileItem {
     priority?: number;
     tags: { id: number; name: string }[];
     owning_disc: { id: number; name: string } | null;
+    previous_owners?: { id: number; name: string }[];
     parent_name?: string;
 
     // PFCTicketMixin Deep Fields
