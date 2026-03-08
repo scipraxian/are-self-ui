@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Loader2, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, BrainCircuit, ChevronsUp, ChevronUp, Minus, ChevronDown } from 'lucide-react';
 import './PrefrontalCortex.css';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
@@ -9,16 +9,25 @@ interface PrefrontalCortexProps {
     selectedItemId?: string | null;
 }
 
+interface PFCItemStatus {
+    id: number;
+    name: string;
+}
+
+// Temporary interfaces to catch the raw Django nested relationships before we map them
+interface RawEpic extends Partial<PFCAgileItem> {}
+interface RawStory extends Partial<PFCAgileItem> { epic?: { name: string } }
+interface RawTask extends Partial<PFCAgileItem> { story?: { name: string } }
+
 export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCortexProps) => {
     const boardRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const [statuses, setStatuses] = useState<any[]>([]);
+    const [statuses, setStatuses] = useState<PFCItemStatus[]>([]);
     const [items, setItems] = useState<PFCAgileItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Drag and drop state
     const [dragOverStatus, setDragOverStatus] = useState<number | null>(null);
 
     const checkScroll = () => {
@@ -52,23 +61,22 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
             let allItems: PFCAgileItem[] = [];
             if (epicRes.ok) {
                 const data = await epicRes.json();
-                const epics = (data.results || data).map((e: Partial<PFCAgileItem>) => ({ ...e, item_type: 'EPIC' })) as PFCAgileItem[];
+                const epics = (data.results || data).map((e: RawEpic) => ({ ...e, item_type: 'EPIC' })) as PFCAgileItem[];
                 allItems = [...allItems, ...epics];
             }
             if (storyRes.ok) {
                 const data = await storyRes.json();
-                const stories = (data.results || data).map((s: any) => ({ ...s, item_type: 'STORY', parent_name: s.epic?.name })) as PFCAgileItem[];
+                const stories = (data.results || data).map((s: RawStory) => ({ ...s, item_type: 'STORY', parent_name: s.epic?.name })) as PFCAgileItem[];
                 allItems = [...allItems, ...stories];
             }
             if (taskRes.ok) {
                 const data = await taskRes.json();
-                const tasks = (data.results || data).map((t: any) => ({ ...t, item_type: 'TASK', parent_name: t.story?.name })) as PFCAgileItem[];
+                const tasks = (data.results || data).map((t: RawTask) => ({ ...t, item_type: 'TASK', parent_name: t.story?.name })) as PFCAgileItem[];
                 allItems = [...allItems, ...tasks];
             }
 
             setItems(allItems);
 
-            // If we have a selected item, update it in the parent state so the inspector stays fresh
             if (selectedItemId && onItemSelect) {
                 const updatedSelected = allItems.find(i => i.id === selectedItemId);
                 if (updatedSelected) onItemSelect(updatedSelected);
@@ -85,7 +93,7 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
         fetchData();
         const intervalId = setInterval(fetchData, 3000);
         return () => clearInterval(intervalId);
-    }, [selectedItemId]); // re-bind interval if selection changes so data stays fresh
+    }, [selectedItemId]);
 
     useEffect(() => {
         checkScroll();
@@ -99,7 +107,16 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
         return '#4ade80';
     };
 
-    // --- DRAG AND DROP HANDLERS ---
+    const getPriorityIcon = (priority?: number) => {
+        switch (priority) {
+            case 1: return <span title="P1: Critical"><ChevronsUp size={14} color="#ef4444" /></span>;
+            case 2: return <span title="P2: High"><ChevronUp size={14} color="#f99f1b" /></span>;
+            case 3: return <span title="P3: Normal"><Minus size={14} color="#94a3b8" /></span>;
+            case 4: return <span title="P4: Low"><ChevronDown size={14} color="#64748b" /></span>;
+            default: return null;
+        }
+    };
+
     const handleDragStart = (e: React.DragEvent, item: PFCAgileItem) => {
         e.dataTransfer.setData('application/json', JSON.stringify({ id: item.id, item_type: item.item_type }));
         e.dataTransfer.effectAllowed = 'move';
@@ -113,14 +130,12 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
         if (!payloadStr) return;
 
         const payload = JSON.parse(payloadStr);
-        // Ignore drops from the identity roster or other areas
         if (!payload.item_type) return;
 
         const { id, item_type } = payload;
         const endpointMap = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
         const endpoint = endpointMap[item_type as keyof typeof endpointMap];
 
-        // Optimistic UI Update
         const targetStatusObj = statuses.find(s => s.id === targetStatusId);
         setItems(prev => prev.map(i => i.id === id ? { ...i, status: targetStatusObj || i.status } : i));
 
@@ -130,10 +145,10 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: targetStatusId })
             });
-            fetchData(); // Confirm with backend
+            fetchData();
         } catch (err) {
             console.error("Failed to update status", err);
-            fetchData(); // Revert on failure
+            fetchData();
         }
     };
 
@@ -212,6 +227,11 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
                                                 )}
 
                                                 <div className="pfc-card-meta">
+                                                    {item.priority !== undefined && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '4px' }}>
+                                                            {getPriorityIcon(item.priority)}
+                                                        </div>
+                                                    )}
                                                     {item.owning_disc && (
                                                         <span className="pfc-tag font-mono" style={{ color: 'var(--bg-obsidian)', background: 'var(--accent-gold)', borderColor: 'var(--accent-gold)' }}>
                                                             {item.owning_disc.name}

@@ -15,7 +15,7 @@ import { apiFetch } from '../api';
 import './BloodBrainBarrier.css';
 import { CNSView } from "./CNSView.tsx";
 import { PFCInspector } from './PFCInspector';
-import type { PFCAgileItem } from '../types';
+import type {GraphNode, PFCAgileItem} from '../types';
 
 export const BloodBrainBarrier = () => {
     // Add 'cns' to the viewport state
@@ -24,8 +24,8 @@ export const BloodBrainBarrier = () => {
 
     // Frontal Lobe State
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-    const [selectedNode, setSelectedNode] = useState<any>(null);
-    const [cortexStats, setCortexStats] = useState<any>(null);
+    const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+    const [cortexStats, setCortexStats] = useState<{ level: number, focus: string, xp: number, status: string, latestThought: string } | null>(null);
 
     // PFC State
     const [selectedPfcItem, setSelectedPfcItem] = useState<PFCAgileItem | null>(null);

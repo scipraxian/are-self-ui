@@ -1,11 +1,11 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
 import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2 } from 'lucide-react';
 
 interface PFCInspectorProps {
     item: PFCAgileItem;
-    onUpdate: () => void; // Callback to tell the board to re-fetch
+    onUpdate: () => void;
 }
 
 interface AccordionProps {
@@ -46,8 +46,8 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
     const endpointMap = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
     const color = getItemColor(item.item_type);
 
-    const handleSave = async (field: keyof PFCAgileItem, value: any) => {
-        if (localData[field] === value) return; // Prevent unnecessary API calls if unchanged
+    const handleSave = async (field: keyof PFCAgileItem, value: string | number | undefined) => {
+        if (localData[field] === value) return;
 
         try {
             const endpoint = endpointMap[item.item_type];
@@ -58,26 +58,53 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
             });
 
             if (res.ok) {
-                onUpdate(); // Trigger board refresh
+                onUpdate();
             }
         } catch (err) {
             console.error(`Failed to update ${field}:`, err);
         }
     };
 
+    const handlePriorityChange = async (direction: 'up' | 'down') => {
+        const current = localData.priority || 3;
+        let next = current;
+
+        if (direction === 'up' && current > 1) next = current - 1; // 1 is highest priority
+        if (direction === 'down' && current < 4) next = current + 1; // 4 is lowest priority
+
+        if (next === current) return;
+
+        setLocalData(prev => ({ ...prev, priority: next }));
+
+        try {
+            const endpoint = endpointMap[item.item_type];
+            const res = await apiFetch(`/api/v2/${endpoint}/${item.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priority: next })
+            });
+            if (res.ok) onUpdate();
+        } catch (err) {
+            console.error("Failed to update priority", err);
+        }
+    };
+
+    const getPriorityLabel = (p?: number) => {
+        switch(p) {
+            case 1: return "P1: CRITICAL";
+            case 2: return "P2: HIGH";
+            case 3: return "P3: NORMAL";
+            case 4: return "P4: LOW";
+            default: return "P3: NORMAL";
+        }
+    };
+
     const renderTextarea = (field: keyof PFCAgileItem, placeholder: string) => (
         <textarea
             style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                color: '#e2e8f0',
-                padding: '12px 15px',
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '0.8rem',
-                minHeight: '80px',
-                resize: 'vertical',
-                outline: 'none'
+                width: '100%', background: 'transparent', border: 'none', color: '#e2e8f0',
+                padding: '12px 15px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem',
+                minHeight: '80px', resize: 'vertical', outline: 'none'
             }}
             value={localData[field] as string || ''}
             placeholder={placeholder}
@@ -92,11 +119,33 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
 
                 {/* Header */}
                 <div style={{ marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <span className="font-mono text-xs" style={{ background: `${color}20`, color: color, padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
-                            {item.item_type}
-                        </span>
-                        <span className="font-mono text-xs text-muted">ID: {item.id.split('-')[0]}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="font-mono text-xs" style={{ background: `${color}20`, color: color, padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                                {item.item_type}
+                            </span>
+                            <span className="font-mono text-xs text-muted">ID: {item.id.split('-')[0]}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', padding: '2px 6px', borderRadius: '6px' }}>
+                            <button
+                                onClick={() => handlePriorityChange('up')}
+                                disabled={localData.priority === 1}
+                                style={{ background: 'transparent', border: 'none', color: localData.priority === 1 ? '#333' : '#e2e8f0', cursor: localData.priority === 1 ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center' }}
+                            >
+                                ▲
+                            </button>
+                            <span className="font-mono text-xs" style={{ color: localData.priority === 1 ? '#ef4444' : localData.priority === 2 ? '#f99f1b' : '#94a3b8', width: '85px', textAlign: 'center', fontWeight: 800 }}>
+                                {getPriorityLabel(localData.priority)}
+                            </span>
+                            <button
+                                onClick={() => handlePriorityChange('down')}
+                                disabled={localData.priority === 4}
+                                style={{ background: 'transparent', border: 'none', color: localData.priority === 4 ? '#333' : '#e2e8f0', cursor: localData.priority === 4 ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center' }}
+                            >
+                                ▼
+                            </button>
+                        </div>
                     </div>
 
                     <input
@@ -113,14 +162,11 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-
-                    {/* Core Description */}
                     <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-glass)', overflow: 'hidden' }}>
                         <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-glass)', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Description</div>
                         {renderTextarea('description', 'Enter general description...')}
                     </div>
 
-                    {/* Definition of Ready / Done Data */}
                     <Accordion title="Perspective (The Why/Who)" color="#38bdf8" icon={<Target size={14}/>} open>
                         {renderTextarea('perspective', 'e.g. As a User, I want to...')}
                     </Accordion>
