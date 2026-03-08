@@ -7,8 +7,11 @@ import { PrefrontalCortex } from './PrefrontalCortex';
 import { IdentitySheet } from './IdentitySheet';
 import { ReasoningGraph3D } from './ReasoningGraph3D';
 import { ReasoningSidebar, ReasoningInspector } from './ReasoningPanels';
-import { CNSSidebar } from './CNSSidebar';   // <-- ADD IMPORT
-import { CNSEditor } from './CNSEditor';     // <-- ADD IMPORT
+import { CNSSidebar } from './CNSSidebar';
+import { CNSEditor } from './CNSEditor';
+import { CNSEditorPalette } from './CNSEditorPalette';
+import { CNSInspector } from './CNSInspector';
+import { apiFetch } from '../api';
 import './BloodBrainBarrier.css';
 import { CNSView } from "./CNSView.tsx";
 
@@ -51,6 +54,12 @@ export const BloodBrainBarrier = () => {
                         onNodeSelect={setSelectedNode}
                         onStatsUpdate={setCortexStats}
                     />
+                ) : isCNSEditorActive ? (
+                    <CNSEditor
+                        pathwayId={activePathwayId as string}
+                        onDrillDown={setActivePathwayId}
+                        onNodeSelect={setSelectedNode}
+                    />
                 ) : (
                     <BackgroundCanvas onLobeClick={handleLobeClick} />
                 )}
@@ -74,11 +83,18 @@ export const BloodBrainBarrier = () => {
                                 onExit={() => { setActiveSessionId(null); setActiveViewport(null); }}
                             />
                         ) : activeViewport === 'cns' ? (
-                            <CNSSidebar
-                                activePathwayId={activePathwayId}
-                                onSelectPathway={setActivePathwayId}
-                                onExit={() => { setActivePathwayId(null); setActiveViewport(null); }}
-                            />
+                            isCNSEditorActive ? (
+                                <CNSEditorPalette
+                                    pathwayId={activePathwayId as string}
+                                    onBack={() => setActivePathwayId(null)}
+                                />
+                            ) : (
+                                <CNSSidebar
+                                    activePathwayId={activePathwayId}
+                                    onSelectPathway={setActivePathwayId}
+                                    onExit={() => { setActivePathwayId(null); setActiveViewport(null); }}
+                                />
+                            )
                         ) : (
                             <>
                                 <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
@@ -87,63 +103,74 @@ export const BloodBrainBarrier = () => {
                         )}
                     </aside>
 
-                    {/* CNS EDITOR OVERRIDE - Takes up both Center and Right panels */}
-                    {isCNSEditorActive ? (
-                        <div className="glass-panel bbb-panel-center-active" style={{ padding: 0, overflow: 'hidden', flexDirection: 'row' }}>
-                            <button className="bbb-close-btn" style={{ zIndex: 100 }} onClick={() => setActivePathwayId(null)}>✕</button>
-                            {/* Mount the Editor inside the BBB panel */}
-                            <CNSEditor pathwayId={activePathwayId as string} onDrillDown={setActivePathwayId} />
-                        </div>
-                    ) : (
-                        <>
-                            {/* NORMAL CENTER STAGE */}
-                            <main className={activeViewport && !isReasoningGraphActive ? "bbb-panel-center-active" : "bbb-panel-center-wrapper"}>
-                                {activeViewport && !isReasoningGraphActive && activeViewport !== 'reasoning' && activeViewport !== 'cns' && (
-                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%' }}>
-                                        <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                        {activeViewport === 'iteration' && <TemporalMatrix />}
-                                        {activeViewport === 'pfc' && <PrefrontalCortex />}
-                                        {activeViewport === 'identity' && selectedEntity ? (
-                                            <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
-                                        ) : activeViewport === 'identity' && !selectedEntity ? (
-                                            <div className="bbb-placeholder font-mono text-sm">Select an identity from the roster to view synaptic data.</div>
-                                        ) : null}
-                                    </div>
-                                )}
+                    {/* NORMAL CENTER STAGE */}
+                    <main className={activeViewport && !isReasoningGraphActive && !isCNSEditorActive ? "bbb-panel-center-active" : "bbb-panel-center-wrapper"}>
+                        {activeViewport && !isReasoningGraphActive && !isCNSEditorActive && activeViewport !== 'reasoning' && activeViewport !== 'cns' && (
+                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%' }}>
+                                <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                {activeViewport === 'iteration' && <TemporalMatrix />}
+                                {activeViewport === 'pfc' && <PrefrontalCortex />}
+                                {activeViewport === 'identity' && selectedEntity ? (
+                                    <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
+                                ) : activeViewport === 'identity' && !selectedEntity ? (
+                                    <div className="bbb-placeholder font-mono text-sm">Select an identity from the roster to view synaptic data.</div>
+                                ) : null}
+                            </div>
+                        )}
 
-                                {activeViewport === 'reasoning' && !activeSessionId && (
-                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                        <div className="bbb-placeholder font-mono text-sm">Select a Cognitive Thread from the left panel to engage the Cortex.</div>
-                                    </div>
-                                )}
+                        {activeViewport === 'reasoning' && !activeSessionId && (
+                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                <div className="bbb-placeholder font-mono text-sm">Select a Cognitive Thread from the left panel to engage the Cortex.</div>
+                            </div>
+                        )}
 
-                                {activeViewport === 'cns' && !activePathwayId && (
-                                    <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', flexDirection: 'column', alignItems: 'stretch' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px' }}>
-                                            <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                        </div>
-                                        <CNSView onOpenPathway={(pathwayId) => {
-                                            setActivePathwayId(pathwayId);
-                                        }} />
+                        {activeViewport === 'cns' && !activePathwayId && (
+                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', flexDirection: 'column', alignItems: 'stretch' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px' }}>
+                                    <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
+                                </div>
+                                <CNSView onOpenPathway={(pathwayId) => {
+                                    setActivePathwayId(pathwayId);
+                                }} />
 
-                                    </div>
-                                )}
-                            </main>
+                            </div>
+                        )}
+                    </main>
 
-                            {/* NORMAL RIGHT PANEL */}
-                            <aside className="glass-panel bbb-panel-right">
-                                {isReasoningGraphActive ? (
-                                    <ReasoningInspector node={selectedNode} />
-                                ) : (
-                                    <>
-                                        <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
-                                        <div className="bbb-placeholder font-mono text-sm">[Contextual Node Details]</div>
-                                    </>
-                                )}
-                            </aside>
-                        </>
-                    )}
+                    {/* NORMAL RIGHT PANEL */}
+                    <aside className="glass-panel bbb-panel-right">
+                        {isReasoningGraphActive ? (
+                            <ReasoningInspector node={selectedNode} />
+                        ) : isCNSEditorActive ? (
+                            <CNSInspector
+                                node={selectedNode}
+                                pathwayId={activePathwayId as string}
+                                onDelete={(id) => {
+                                    apiFetch(`/api/v2/neurons/${id}/`, { method: 'DELETE' })
+                                        .then(() => {
+                                            const event = new CustomEvent('cns-node-deleted', { detail: id });
+                                            window.dispatchEvent(event);
+                                        }).catch(console.error);
+                                }}
+                                onContextChange={(nodeId, key, value) => {
+                                    apiFetch(`/central_nervous_system/graph/${activePathwayId}/save_neuron_context/`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            neuron_id: nodeId,
+                                            updates: [{ key, value }]
+                                        })
+                                    }).catch(console.error);
+                                }}
+                            />
+                        ) : (
+                            <>
+                                <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
+                                <div className="bbb-placeholder font-mono text-sm">[Contextual Node Details]</div>
+                            </>
+                        )}
+                    </aside>
                 </div>
 
                 <footer className="glass-panel bbb-footer">

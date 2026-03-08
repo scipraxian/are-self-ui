@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import type {NeuralPathway} from "../types.ts";
+import type { NeuralPathway } from "../types.ts";
+import { apiFetch } from '../api';
 
 
 interface CNSSidebarProps {
@@ -16,7 +17,7 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({ activePathwayId, onSelec
         const fetchPathways = async () => {
             try {
                 // Hitting your new v2 endpoint
-                const res = await fetch('/api/v2/neuralpathways/');
+                const res = await apiFetch('/api/v2/neuralpathways/');
                 const data = await res.json();
                 setPathways(data);
             } catch (error) {
@@ -29,7 +30,7 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({ activePathwayId, onSelec
     }, []);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 className="glass-panel-title" style={{ margin: 0 }}>NEURAL PATHWAYS</h2>
                 <button onClick={onExit} className="bbb-close-btn" style={{ position: 'relative', top: 0, right: 0 }}>✕</button>

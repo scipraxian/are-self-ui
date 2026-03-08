@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Settings, Trash2 } from 'lucide-react';
-import type {CNSContextRow, CNSNeuron} from "../types.ts";
+import { apiFetch } from '../api';
+import type { CNSContextRow } from "../types.ts";
 
 interface CNSInspectorProps {
-    node: CNSNeuron | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    node: any;
     pathwayId: string;
     onDelete: (id: string | number) => void;
     onContextChange: (nodeId: string | number, key: string, value: string) => void;
@@ -22,7 +24,7 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
     useEffect(() => {
         if (!node?.id) return;
         let isMounted = true;
-        fetch(`/central_nervous_system/graph/${pathwayId}/neuron_details?neuron_id=${node.id}`)
+        apiFetch(`/central_nervous_system/graph/${pathwayId}/neuron_details?neuron_id=${node.id}`)
             .then(res => res.json())
             .then(data => {
                 if (isMounted) setDetails(data);
@@ -36,14 +38,15 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
 
     if (!node) {
         return (
-            <div className="w-[380px] bg-[#0f172a] border-l border-[#1e293b] flex flex-col items-center justify-center p-8 text-center text-[#64748b]">
+            <div className="flex flex-col items-center justify-center p-8 text-center text-[#64748b] h-full">
+                <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
                 Select a neuron to inspect its properties or telemetry.
             </div>
         );
     }
 
     if (!details) {
-        return <div className="w-[380px] bg-[#0f172a] border-l border-[#1e293b] flex items-center justify-center text-[#64748b]">Loading details...</div>;
+        return <div className="flex items-center justify-center text-[#64748b] h-full">Loading details...</div>;
     }
 
     const handleAddVariable = () => {
@@ -59,7 +62,7 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
     };
 
     return (
-        <div className="w-[380px] bg-[#0f172a] border-l border-[#1e293b] flex flex-col h-full overflow-y-auto text-[#f1f5f9] p-5 shadow-[-4px_0_15px_rgba(0,0,0,0.3)] z-20">
+        <div className="flex flex-col h-full overflow-y-auto text-[#f1f5f9]">
 
             <div className="mb-5">
                 <div className="text-[0.8rem] text-[#94a3b8] mb-1">SPELL</div>
@@ -123,7 +126,7 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                                         <button
                                             onClick={() => {
                                                 onContextChange(node.id, item.key, '');
-                                                setDetails(prev => prev ? {...prev, context_matrix: prev.context_matrix.map(m => m.key === item.key ? {...m, source: 'default', value: ''} : m)} : null);
+                                                setDetails(prev => prev ? { ...prev, context_matrix: prev.context_matrix.map(m => m.key === item.key ? { ...m, source: 'default', value: '' } : m) } : null);
                                             }}
                                             className="absolute right-2 top-2 text-red-500/70 hover:text-red-500 cursor-pointer"
                                             title="Reset to Default"

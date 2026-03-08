@@ -17,7 +17,7 @@ export const LiveMonitor = () => {
                         ← Back to Mission Control
                     </button>
                     <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
-                        Monitoring SpikeTrain:<br/>
+                        Monitoring SpikeTrain:<br />
                         <strong style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{spikeTrainId}</strong>
                     </div>
                 </div>
@@ -29,7 +29,7 @@ export const LiveMonitor = () => {
             }
         >
             {/* We will update CNSView to accept the spikeTrainId in the next step */}
-            <CNSView />
+            <CNSView onOpenPathway={(pid) => navigate(`/editor/${pid}`)} />
         </CommandCenterLayout>
     );
 };

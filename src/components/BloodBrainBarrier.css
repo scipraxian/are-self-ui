@@ -75,6 +75,7 @@
     display: flex;
     flex-direction: column;
     pointer-events: auto;
+    overflow: hidden;
 }
 
 /* FIX: flex: 0 0 350px makes it rigidly 350px. */
@@ -84,6 +85,7 @@
     display: flex;
     flex-direction: column;
     pointer-events: auto;
+    overflow: hidden;
 }
 
 .bbb-panel-center-wrapper {
