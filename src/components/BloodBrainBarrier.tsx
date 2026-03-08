@@ -204,6 +204,7 @@ export const BloodBrainBarrier = () => {
                                     onUpdate={() => {
                                         // The board auto-polls, but we can leave this here
                                     }}
+                                    onDelete={() => setSelectedPfcItem(null)}
                                 />
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>

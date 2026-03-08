@@ -213,6 +213,15 @@ export interface Axon {
     type_name: string;
 }
 
+// Add this new interface above PFCAgileItem
+export interface PFCCommentData {
+    id: string;
+    text: string;
+    created: string;
+    user?: { id: number; username: string } | null;
+}
+
+// Update PFCAgileItem
 export interface PFCAgileItem {
     id: string;
     item_type: 'EPIC' | 'STORY' | 'TASK';
@@ -226,6 +235,7 @@ export interface PFCAgileItem {
     previous_owners?: { id: number; name: string }[];
     parent_name?: string;
     environment?: { id: string; name: string } | null;
+    comments?: PFCCommentData[]; // <--- ADD THIS
 
     // PFCTicketMixin Deep Fields
     perspective?: string;
