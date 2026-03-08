@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
-import {Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu} from 'lucide-react';
+import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu, Globe } from 'lucide-react';
 
 interface PFCInspectorProps {
     item: PFCAgileItem;
@@ -32,6 +32,19 @@ const Accordion = ({ title, color, icon, open = false, children }: AccordionProp
 
 export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
     const [localData, setLocalData] = useState<PFCAgileItem>(item);
+    const [environments, setEnvironments] = useState<{id: string, name: string}[]>([]);
+
+    // Fetch available environments for the dropdown
+    useEffect(() => {
+        let isMounted = true;
+        apiFetch('/api/v1/environments/')
+            .then(res => res.json())
+            .then(data => {
+                if (isMounted) setEnvironments(data.results || data);
+            })
+            .catch(console.error);
+        return () => { isMounted = false; };
+    }, []);
 
     useEffect(() => {
         setLocalData(item);
@@ -65,12 +78,28 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
         }
     };
 
+    const handleEnvironmentChange = async (envId: string | null) => {
+        const envObj = environments.find(env => env.id === envId) || null;
+        setLocalData(prev => ({ ...prev, environment: envObj }));
+
+        try {
+            const res = await apiFetch(`/api/v2/pfc-epics/${item.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ environment: envId }) // DRF expects the UUID or null
+            });
+            if (res.ok) onUpdate();
+        } catch (err) {
+            console.error("Failed to update environment", err);
+        }
+    };
+
     const handlePriorityChange = async (direction: 'up' | 'down') => {
         const current = localData.priority || 3;
         let next = current;
 
-        if (direction === 'up' && current > 1) next = current - 1; // 1 is highest priority
-        if (direction === 'down' && current < 4) next = current + 1; // 4 is lowest priority
+        if (direction === 'up' && current > 1) next = current - 1;
+        if (direction === 'down' && current < 4) next = current + 1;
 
         if (next === current) return;
 
@@ -127,6 +156,7 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
                             <span className="font-mono text-xs text-muted">ID: {item.id.split('-')[0]}</span>
                         </div>
 
+                        {/* Interactive Priority Controller */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', padding: '2px 6px', borderRadius: '6px' }}>
                             <button
                                 onClick={() => handlePriorityChange('up')}
@@ -161,35 +191,37 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
                     />
                 </div>
 
+                {/* Epic-Specific: Environment Routing */}
+                {item.item_type === 'EPIC' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                        <Globe size={16} color="#38bdf8" />
+                        <span className="font-mono text-xs" style={{ color: '#94a3b8', width: '90px' }}>ENVIRONMENT:</span>
+                        <select
+                            value={localData.environment?.id || ''}
+                            onChange={(e) => handleEnvironmentChange(e.target.value || null)}
+                            style={{
+                                flex: 1, background: 'var(--bg-obsidian)', border: '1px solid var(--border-glass)',
+                                color: '#f8fafc', padding: '4px 8px', borderRadius: '4px', outline: 'none',
+                                fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem', cursor: 'pointer'
+                            }}
+                        >
+                            <option value="">Global (Unscoped)</option>
+                            {environments.map(env => (
+                                <option key={env.id} value={env.id}>{env.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                    {/* Core Description */}
                     <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-glass)', overflow: 'hidden' }}>
                         <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-glass)', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Description</div>
                         {renderTextarea('description', 'Enter general description...')}
                     </div>
 
-                    <Accordion title="Perspective (The Why/Who)" color="#38bdf8" icon={<Target size={14}/>} open>
-                        {renderTextarea('perspective', 'e.g. As a User, I want to...')}
-                    </Accordion>
-
-                    <Accordion title="Assertions (Success Criteria)" color="#4ade80" icon={<ListChecks size={14}/>} open>
-                        {renderTextarea('assertions', '- Assert that the system does X\n- Assert that Y is returned')}
-                    </Accordion>
-
-                    <Accordion title="Outside (Negative Constraints)" color="#ef4444" icon={<ShieldAlert size={14}/>}>
-                        {renderTextarea('outside', 'What should the AI specifically AVOID doing?')}
-                    </Accordion>
-
-                    <Accordion title="Dependencies" color="#facc15" icon={<Link2 size={14}/>}>
-                        {renderTextarea('dependencies', 'Required blockers or preceding tickets...')}
-                    </Accordion>
-
-                    <Accordion title="DoD Exceptions" color="#f99f1b" icon={<AlertTriangle size={14}/>}>
-                        {renderTextarea('dod_exceptions', 'Any exceptions to the standard Definition of Done...')}
-                    </Accordion>
-
-                    <Accordion title="Demo Specifics" color="#a855f7" icon={<Zap size={14}/>}>
-                        {renderTextarea('demo_specifics', 'How will this be demonstrated at the end of the shift?')}
-                    </Accordion>
+                    {/* ASSIGNMENT & HISTORY */}
                     <Accordion title="Assignment & Chain of Custody" color="#facc15" icon={<Cpu size={14}/>} open>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px 15px', color: '#e2e8f0', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem' }}>
 
@@ -218,8 +250,32 @@ export const PFCInspector = ({ item, onUpdate }: PFCInspectorProps) => {
                                     )}
                                 </div>
                             </div>
-
                         </div>
+                    </Accordion>
+
+                    {/* Definition of Ready / Done Data */}
+                    <Accordion title="Perspective (The Why/Who)" color="#38bdf8" icon={<Target size={14}/>}>
+                        {renderTextarea('perspective', 'e.g. As a User, I want to...')}
+                    </Accordion>
+
+                    <Accordion title="Assertions (Success Criteria)" color="#4ade80" icon={<ListChecks size={14}/>}>
+                        {renderTextarea('assertions', '- Assert that the system does X\n- Assert that Y is returned')}
+                    </Accordion>
+
+                    <Accordion title="Outside (Negative Constraints)" color="#ef4444" icon={<ShieldAlert size={14}/>}>
+                        {renderTextarea('outside', 'What should the AI specifically AVOID doing?')}
+                    </Accordion>
+
+                    <Accordion title="Dependencies" color="#facc15" icon={<Link2 size={14}/>}>
+                        {renderTextarea('dependencies', 'Required blockers or preceding tickets...')}
+                    </Accordion>
+
+                    <Accordion title="DoD Exceptions" color="#f99f1b" icon={<AlertTriangle size={14}/>}>
+                        {renderTextarea('dod_exceptions', 'Any exceptions to the standard Definition of Done...')}
+                    </Accordion>
+
+                    <Accordion title="Demo Specifics" color="#a855f7" icon={<Zap size={14}/>}>
+                        {renderTextarea('demo_specifics', 'How will this be demonstrated at the end of the shift?')}
                     </Accordion>
                 </div>
             </div>

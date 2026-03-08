@@ -225,6 +225,7 @@ export interface PFCAgileItem {
     owning_disc: { id: number; name: string } | null;
     previous_owners?: { id: number; name: string }[];
     parent_name?: string;
+    environment?: { id: string; name: string } | null;
 
     // PFCTicketMixin Deep Fields
     perspective?: string;

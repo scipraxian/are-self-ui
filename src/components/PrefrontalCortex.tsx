@@ -9,7 +9,7 @@ import {
     Minus,
     ChevronDown,
     Cpu,
-    History
+    History, Globe
 } from 'lucide-react';
 import './PrefrontalCortex.css';
 import {apiFetch} from '../api';
@@ -290,7 +290,11 @@ export const PrefrontalCortex = ({onItemSelect, selectedItemId}: PrefrontalCorte
                                                             {getPriorityIcon(item.priority)}
                                                         </div>
                                                     )}
-
+                                                    {item.item_type === 'EPIC' && item.environment && (
+                                                        <span className="pfc-tag font-mono" title={`Scoped to Environment: ${item.environment.name}`} style={{ color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'rgba(56, 189, 248, 0.2)', background: 'rgba(56, 189, 248, 0.05)' }}>
+                                                            <Globe size={10} /> {item.environment.name}
+                                                        </span>
+                                                    )}
                                                     {item.owning_disc ? (
                                                         <span className="pfc-tag font-mono" style={{
                                                             color: 'var(--bg-obsidian)',
