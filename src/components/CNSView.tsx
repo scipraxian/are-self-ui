@@ -1,3 +1,4 @@
+import "./CNSView.css";
 import React, { useEffect, useState } from 'react';
 import { SpikeTrainCard } from './SpikeTrainCard';
 import type { SpikeTrain } from "../types.ts";
@@ -32,10 +33,10 @@ export const CNSView: React.FC<CNSViewProps> = ({ onOpenPathway }) => {
     };
 
     return (
-        <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
-            <h2 style={{ color: '#e2e8f0', fontSize: '1.2rem', marginBottom: '16px' }}>Active SpikeTrains</h2>
+        <div className="cnsview-ui-34">
+            <h2 className="cnsview-ui-33">Active SpikeTrains</h2>
             {spikeTrains.length === 0 ? (
-                <div style={{ color: '#94a3b8' }}>No activity in the CNS.</div>
+                <div className="common-layout-19">No activity in the CNS.</div>
             ) : (
                 spikeTrains.map(st => (
                     <SpikeTrainCard

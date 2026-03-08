@@ -1,0 +1,240 @@
+.pfcinspector-ui-107 {
+  background: transparent;
+  border: 1px solid rgba(239,68,68,0.5);
+  color: #ef4444;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.pfcinspector-ui-108 {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.pfcinspector-ui-109 {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border-glass);
+  color: #f8fafc;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  min-height: 60px;
+  resize: vertical;
+  outline: none;
+  font-family: Inter, sans-serif;
+}
+
+.pfcinspector-ui-110 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-glass);
+  padding-top: 12px;
+}
+
+.pfcinspector-ui-111 {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+  text-align: center;
+  padding: 10px;
+}
+
+.pfcinspector-ui-112 {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.pfcinspector-ui-113 {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: JetBrains Mono, monospace;
+}
+
+.pfcinspector-ui-114 {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.pfcinspector-ui-115 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 15px;
+}
+
+.pfcinspector-ui-116 {
+  color: #64748b;
+  font-style: italic;
+}
+
+.pfcinspector-ui-117 {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-glass);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #cbd5e1;
+}
+
+.pfcinspector-ui-118 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.pfcinspector-ui-119 {
+  color: #94a3b8;
+  width: 120px;
+}
+
+.pfcinspector-ui-120 {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pfcinspector-ui-121 {
+  color: #64748b;
+  font-style: italic;
+}
+
+.pfcinspector-ui-122 {
+  background: var(--accent-gold);
+  color: var(--bg-obsidian);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.pfcinspector-ui-123 {
+  color: #94a3b8;
+  width: 120px;
+}
+
+.pfcinspector-ui-124 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 15px;
+  color: #e2e8f0;
+  font-family: JetBrains Mono, monospace;
+  font-size: 0.8rem;
+}
+
+.pfcinspector-ui-125 {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-glass);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.pfcinspector-ui-126 {
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  border: 1px solid var(--border-glass);
+  overflow: hidden;
+}
+
+.pfcinspector-ui-127 {
+  flex: 1;
+  background: var(--bg-obsidian);
+  border: 1px solid var(--border-glass);
+  color: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  font-family: JetBrains Mono, monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.pfcinspector-ui-128 {
+  color: #94a3b8;
+  width: 90px;
+}
+
+.pfcinspector-ui-129 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: rgba(0,0,0,0.3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-glass);
+}
+
+.pfcinspector-ui-130 {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #f8fafc;
+  font-family: Outfit, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.pfcinspector-ui-131 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border-glass);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.pfcinspector-ui-132 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.pfcinspector-ui-133 {
+  margin-bottom: 20px;
+}
+
+.pfcinspector-ui-134 {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  padding: 12px 15px;
+  font-family: JetBrains Mono, monospace;
+  font-size: 0.8rem;
+  min-height: 80px;
+  resize: vertical;
+  outline: none;
+}
+
+.pfcinspector-ui-135 {
+  padding: 0;
+}
+

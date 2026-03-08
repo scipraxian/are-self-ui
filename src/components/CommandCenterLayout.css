@@ -1,0 +1,105 @@
+.commandcenterlayout-ui-35 {
+  color: #64748b;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.commandcenterlayout-ui-36 {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.commandcenterlayout-ui-37 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.1em;
+}
+
+.commandcenterlayout-ui-38 {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.commandcenterlayout-ui-39 {
+  color: #64748b;
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.commandcenterlayout-ui-40 {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.commandcenterlayout-ui-41 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.1em;
+}
+
+.commandcenterlayout-ui-42 {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.commandcenterlayout-ui-43 {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4ade80;
+  box-shadow: 0 0 10px #4ade80;
+}
+
+.commandcenterlayout-ui-44 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #4ade80;
+}
+
+.commandcenterlayout-ui-45 {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.commandcenterlayout-ui-46 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-family: Outfit, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #f8fafc;
+}
+
+.commandcenterlayout-ui-47 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.commandcenterlayout-ui-48 {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background-color: #020617;
+}
+

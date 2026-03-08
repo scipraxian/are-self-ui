@@ -1,3 +1,4 @@
+import "./ReasoningPanels.css";
 import {type ReactNode, useEffect, useState} from 'react';
 import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download } from 'lucide-react';
 import type {GraphNode, ReasoningSessionData, ToolCallData} from "../types.ts";
@@ -16,7 +17,7 @@ const Accordion = ({ title, color, open = false, children }: AccordionProps) => 
             <summary style={{ backgroundColor: `${color}33`, color: color, padding: '8px 15px', fontFamily: 'Outfit, sans-serif', fontSize: '0.95rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' }}>
                 ► {title}
             </summary>
-            <div style={{ padding: '12px' }}>
+            <div className="common-layout-7">
                 {children}
             </div>
         </details>
@@ -68,9 +69,9 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit }: R
     const isAlive = activeSession && ['Active', 'Pending', 'Running', 'Thinking'].includes(activeSession.status_name);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h2 className="glass-panel-title" style={{ marginBottom: '16px' }}>COGNITIVE THREADS</h2>
-            <div className="scroll-hidden" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="reasoningpanels-ui-184">
+            <h2 className="glass-panel-title reasoningpanels-ui-183">COGNITIVE THREADS</h2>
+            <div className="scroll-hidden reasoningpanels-ui-182">
                 {sessions.map(s => (
                     <div key={s.id} onClick={() => onSelectSession(s.id)}
                          style={{
@@ -78,7 +79,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit }: R
                              background: s.id === activeSessionId ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
                              border: `1px solid ${s.id === activeSessionId ? '#a855f7' : 'var(--border-glass)'}`
                          }}>
-                        <div className="font-mono text-xs" style={{ color: '#f8fafc', fontWeight: 700 }}>{s.id.split('-')[0].toUpperCase()}</div>
+                        <div className="font-mono text-xs reasoningpanels-ui-181">{s.id.split('-')[0].toUpperCase()}</div>
                         <div className="font-mono text-xs" style={{ color: s.status_name === 'Active' ? '#facc15' : '#94a3b8', marginTop: '4px' }}>
                             {s.status_name}
                         </div>
@@ -87,22 +88,22 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit }: R
             </div>
 
             {activeSessionId && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-glass)' }}>
+                <div className="reasoningpanels-ui-180">
                     {isAlive ? (
-                        <button className="btn-ghost" onClick={() => handleAction('stop')} style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', justifyContent: 'flex-start' }}>
+                        <button className="btn-ghost reasoningpanels-ui-179" onClick={() => handleAction('stop')}>
                             <Power size={14} /> HALT CORTEX
                         </button>
                     ) : (
                         <>
-                            <button className="btn-ghost" onClick={() => handleAction('rerun')} style={{ color: '#facc15', borderColor: 'rgba(250,204,21,0.3)', justifyContent: 'flex-start' }}>
+                            <button className="btn-ghost reasoningpanels-ui-178" onClick={() => handleAction('rerun')}>
                                 <RefreshCw size={14} /> REBOOT CORTEX
                             </button>
-                            <button className="btn-ghost" onClick={handleDump} style={{ color: '#38bdf8', borderColor: 'rgba(56,189,248,0.3)', justifyContent: 'flex-start' }}>
+                            <button className="btn-ghost reasoningpanels-ui-177" onClick={handleDump}>
                                 <Download size={14} /> DUMP DATA
                             </button>
                         </>
                     )}
-                    <button className="btn-ghost" onClick={onExit} style={{ justifyContent: 'flex-start' }}>
+                    <button className="btn-ghost reasoningpanels-ui-176" onClick={onExit}>
                         <LogOut size={14} /> EXIT TO MAP
                     </button>
                 </div>
@@ -172,16 +173,16 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
 
                                 return (
                                     <Accordion key={idx} title={title} color={innerColor}>
-                                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                                        <pre className="reasoningpanels-ui-175">
                                             {body}
                                         </pre>
                                     </Accordion>
                                 );
                             }
-                            return <div key={idx} style={{ color: '#cbd5e1', fontSize: '0.8rem', marginBottom: '8px' }}>{sec.trim()}</div>;
+                            return <div className="reasoningpanels-ui-174" key={idx}>{sec.trim()}</div>;
                         })
                     ) : (
-                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', color: '#e2e8f0' }}>
+                        <pre className="reasoningpanels-ui-173">
                             {msg.content}
                         </pre>
                     )}
@@ -191,26 +192,26 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
     };
 
     return (
-        <div className="scroll-hidden" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-            <div style={{ flex: 1 }}>
-                <h2 className="glass-panel-title" style={{ marginBottom: '16px', color: '#f8fafc' }}>
+        <div className="scroll-hidden common-layout-8">
+            <div className="common-layout-9">
+                <h2 className="glass-panel-title reasoningpanels-ui-172">
                     {String(n.type).toUpperCase()} DETAILS
                 </h2>
 
                 {n.type === 'turn' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'flex', gap: '10px', fontFamily: 'Outfit', textTransform: 'uppercase' }}>
-                            <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: '#f99f1b', color: 'black', fontWeight: 800, borderRadius: '20px' }}>TURN {n.turn_number}</div>
-                            <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: '#cc99cc', color: 'black', fontWeight: 800, borderRadius: '20px' }}>IN {n.tokens_input}</div>
-                            <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: '#38bdf8', color: 'black', fontWeight: 800, borderRadius: '20px' }}>OUT {n.tokens_output}</div>
-                            <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: '#4ade80', color: 'black', fontWeight: 800, borderRadius: '20px' }}>{n.inference_time || n.delta || '--'}</div>
+                    <div className="common-layout-10">
+                        <div className="common-layout-11">
+                            <div className="reasoningpanels-ui-171">TURN {n.turn_number}</div>
+                            <div className="common-layout-12">IN {n.tokens_input}</div>
+                            <div className="reasoningpanels-ui-170">OUT {n.tokens_output}</div>
+                            <div className="reasoningpanels-ui-169">{n.inference_time || n.delta || '--'}</div>
                         </div>
 
                         <div style={{ color: n.status_name === 'Error' ? '#ef4444' : '#4ade80', fontWeight: 700, marginTop: '8px', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>Status: {n.status_name}</div>
 
                         {n.thought_process && (
                             <Accordion title="THOUGHT PROCESS" color="#cc99cc" open>
-                                <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', color: '#e2e8f0', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                <div className="reasoningpanels-ui-168">
                                     {String(n.thought_process).replace(/^(THOUGHT:\s*)+/i, '').trim()}
                                 </div>
                             </Accordion>
@@ -224,7 +225,7 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
 
                         {n.tool_calls && Array.isArray(n.tool_calls) && n.tool_calls.length > 0 && (
                             <Accordion title={`TOOL CALLS (${n.tool_calls.length})`} color="#4ade80" open>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <div className="common-layout-14">
                                     {/* FIX 3: Strictly type the call parameter using ToolCallData */}
                                     {n.tool_calls.map((call: ToolCallData, idx: number) => {
                                         const isError = call.traceback || (call.result_payload && String(call.result_payload).includes('FIZZLE'));
@@ -237,7 +238,7 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                                                     &gt; CALL [{idx + 1}]: {call.tool_name}
                                                 </div>
                                                 <Accordion title="ARGUMENTS" color="#99ccff">
-                                                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', color: '#99ccff' }}>
+                                                    <pre className="reasoningpanels-ui-167">
                                                         {argsStr || '{}'}
                                                     </pre>
                                                 </Accordion>
@@ -256,13 +257,13 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                 )}
 
                 {n.type === 'tool' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                    <div className="common-layout-32">
+                        <div className="reasoningpanels-ui-166">
                             <Terminal size={16} /> {n.tool_name || n.label}
                         </div>
 
                         <Accordion title="ARGUMENTS" color="#38bdf8" open>
-                            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', color: '#e2e8f0' }}>
+                            <pre className="reasoningpanels-ui-165">
                                 {n.arguments ? (typeof n.arguments === 'object' ? JSON.stringify(n.arguments, null, 2) : String(n.arguments)) : '{}'}
                             </pre>
                         </Accordion>
@@ -276,36 +277,36 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                 )}
 
                 {n.type === 'conclusion' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="common-layout-32">
                         <Accordion title="EXECUTIVE SUMMARY" color="#4ade80" open>
-                            <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', color: '#e2e8f0', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            <div className="reasoningpanels-ui-164">
                                 {n.summary}
                             </div>
                         </Accordion>
                         <Accordion title="REASONING TRACE" color="#a855f7">
-                            <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', color: '#e2e8f0', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            <div className="reasoningpanels-ui-163">
                                 {n.reasoning_trace}
                             </div>
                         </Accordion>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <div style={{ flex: 1, padding: '10px', background: 'rgba(0,0,0,0.5)', border: '1px solid #38bdf8', borderRadius: '5px' }}>
-                                <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.7rem', textTransform: 'uppercase' }}>Outcome Status</div>
-                                <div style={{ color: 'white', fontSize: '1rem', marginTop: '4px' }}>{n.outcome_status}</div>
+                        <div className="reasoningpanels-ui-162">
+                            <div className="reasoningpanels-ui-161">
+                                <div className="reasoningpanels-ui-160">Outcome Status</div>
+                                <div className="reasoningpanels-ui-159">{n.outcome_status}</div>
                             </div>
-                            <div style={{ flex: 1, padding: '10px', background: 'rgba(0,0,0,0.5)', border: '1px solid #f99f1b', borderRadius: '5px' }}>
-                                <div style={{ color: '#f99f1b', fontWeight: 'bold', fontSize: '0.7rem', textTransform: 'uppercase' }}>Recommended Action</div>
-                                <div style={{ color: 'white', fontSize: '1rem', marginTop: '4px' }}>{n.recommended_action}</div>
+                            <div className="reasoningpanels-ui-158">
+                                <div className="reasoningpanels-ui-157">Recommended Action</div>
+                                <div className="reasoningpanels-ui-156">{n.recommended_action}</div>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {n.type === 'engram' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                    <div className="common-layout-32">
+                        <div className="reasoningpanels-ui-155">
                             <Database size={16} /> {n.name}
                         </div>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                        <div className="common-layout-13">
                             {n.description}
                         </div>
                         <div className="font-mono text-xs text-muted">Relevance: {n.relevance_score}</div>
@@ -313,38 +314,23 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                 )}
 
                 {n.type === 'goal' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                    <div className="common-layout-32">
+                        <div className="reasoningpanels-ui-154">
                             <Target size={16} /> {n.label}
                         </div>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                        <div className="common-layout-13">
                             {n.rendered_goal}
                         </div>
                     </div>
                 )}
             </div>
 
-            <div style={{ marginTop: '20px', textAlign: 'center', paddingBottom: '20px' }}>
+            <div className="common-layout-16">
                 {/* Note we pass `node` instead of `n` here so we pass the strictly typed variable to the helper */}
-                <a
+                <a className="common-layout-17"
                     href={getAdminUrl(node)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                        display: 'inline-block',
-                        padding: '10px 20px',
-                        backgroundColor: '#cc3333',
-                        color: 'black',
-                        fontFamily: 'Outfit, sans-serif',
-                        fontWeight: 800,
-                        fontSize: '1.2rem',
-                        textDecoration: 'none',
-                        borderRadius: '20px',
-                        border: '2px solid #ef4444',
-                        width: '80%',
-                        textTransform: 'uppercase',
-                        transition: 'transform 0.1s'
-                    }}
                     onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                     onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >

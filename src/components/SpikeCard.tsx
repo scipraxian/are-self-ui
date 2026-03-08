@@ -1,3 +1,4 @@
+import "./SpikeCard.css";
 import type {SpikeData} from "../types";
 
 interface SpikeCardProps {
@@ -54,7 +55,7 @@ export const SpikeCard = ({ spike }: SpikeCardProps) => {
             borderRadius: '6px', padding: '8px 10px', width: '170px', height: '80px', flexShrink: 0,
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'transform 0.2s'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="spikecard-ui-191">
                 <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isQueued ? '#888' : '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {spike.effector_name?.toUpperCase() || 'NODE'}
                 </div>
@@ -63,18 +64,18 @@ export const SpikeCard = ({ spike }: SpikeCardProps) => {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.65rem' }}>
-                <span style={{ color: '#666' }}>{spike.timestamp_str || '--:--'}</span>
+            <div className="spikecard-ui-190">
+                <span className="spikecard-ui-189">{spike.timestamp_str || '--:--'}</span>
                 <span style={{ color: isActive ? '#f99f1b' : '#666' }}>{spike.target_name || 'LOCAL'}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: '0.6rem', fontFamily: 'JetBrains Mono, monospace' }}>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <div className="spikecard-ui-188">
+                <div className="spikecard-ui-187">
                     <span style={{ color: trendColor }}>{trendSymbol} {currentSec.toFixed(1)}s</span>
-                    <span style={{ color: '#666' }}>AVG: {avgSec.toFixed(1)}s</span>
+                    <span className="spikecard-ui-186">AVG: {avgSec.toFixed(1)}s</span>
                 </div>
                 {hasBlackboard && (
-                    <span style={{ color: '#38bdf8', fontWeight: 900 }}>[BB]</span>
+                    <span className="spikecard-ui-185">[BB]</span>
                 )}
             </div>
         </div>

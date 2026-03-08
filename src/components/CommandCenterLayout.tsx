@@ -1,3 +1,4 @@
+import "./CommandCenterLayout.css";
 import React from 'react';
 import { ActionIcon } from '@lobehub/ui';
 import { Settings, Brain, Crosshair, TerminalSquare } from 'lucide-react';
@@ -22,10 +23,10 @@ export const CommandCenterLayout = ({ children, leftPanel, rightPanel }: Command
     };
 
     return (
-        <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: '#020617' }}>
+        <div className="commandcenterlayout-ui-48">
 
             {/* 1. Base Layer: The 3D Canvas */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            <div className="common-layout-2">
                 {children}
             </div>
 
@@ -35,18 +36,18 @@ export const CommandCenterLayout = ({ children, leftPanel, rightPanel }: Command
                 ...glassStyle, borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0,
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', zIndex: 10
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="commandcenterlayout-ui-47">
                     <Brain color="#38bdf8" size={26} />
-                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontFamily: 'Outfit, sans-serif', fontWeight: 800, letterSpacing: '0.15em', color: '#f8fafc' }}>
+                    <h1 className="commandcenterlayout-ui-46">
                         TALOS CORTEX
                     </h1>
                 </div>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', color: '#4ade80' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 10px #4ade80' }} />
+                <div className="commandcenterlayout-ui-45">
+                    <div className="commandcenterlayout-ui-44">
+                        <span className="commandcenterlayout-ui-43" />
                         SYSTEM ONLINE
                     </div>
-                    <ActionIcon icon={Settings} title="System Settings" style={{ color: '#94a3b8' }} />
+                    <ActionIcon className="common-layout-19" icon={Settings} title="System Settings" />
                 </div>
             </div>
 
@@ -55,13 +56,13 @@ export const CommandCenterLayout = ({ children, leftPanel, rightPanel }: Command
                 position: 'absolute', top: '80px', left: '20px', bottom: '20px', width: '380px',
                 borderRadius: '16px', ...glassStyle, zIndex: 10, padding: '20px'
             }}>
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="commandcenterlayout-ui-42">
                     <Crosshair size={18} color="#facc15" />
-                    <h2 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em' }}>TEMPORAL LOBE (STRATEGY)</h2>
+                    <h2 className="commandcenterlayout-ui-41">TEMPORAL LOBE (STRATEGY)</h2>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div className="commandcenterlayout-ui-40">
                     {leftPanel || (
-                        <div style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                        <div className="commandcenterlayout-ui-39">
                             Agile Board context initializing...
                         </div>
                     )}
@@ -73,13 +74,13 @@ export const CommandCenterLayout = ({ children, leftPanel, rightPanel }: Command
                 position: 'absolute', top: '80px', right: '20px', bottom: '20px', width: '450px',
                 borderRadius: '16px', ...glassStyle, zIndex: 10, padding: '20px'
             }}>
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="commandcenterlayout-ui-38">
                     <TerminalSquare size={18} color="#a855f7" />
-                    <h2 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em' }}>PARIETAL LOBE (TELEMETRY)</h2>
+                    <h2 className="commandcenterlayout-ui-37">PARIETAL LOBE (TELEMETRY)</h2>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <div className="commandcenterlayout-ui-36">
                     {rightPanel || (
-                        <div style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                        <div className="commandcenterlayout-ui-35">
                             Awaiting telemetry stream...
                         </div>
                     )}

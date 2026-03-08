@@ -15,10 +15,10 @@ export const Dashboard = () => {
     }, []);
 
     return (
-        <div style={{ padding: '2rem', background: '#050505', minHeight: '100vh', color: '#e2e8f0', fontFamily: 'Inter' }}>
-            <h1 style={{ fontFamily: 'Outfit', color: '#f99f1b', letterSpacing: '0.1em' }}>TALOS MISSION CONTROL</h1>
+        <div className="common-layout-22">
+            <h1 className="common-layout-23">TALOS MISSION CONTROL</h1>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '2rem', maxWidth: '1200px' }}>
+            <div className="common-layout-24">
                 {summary?.recent_missions?.map((mission: any) => {
                     // Replicating your LCARS color logic
                     let statusColor = '#64748b';
@@ -43,8 +43,8 @@ export const Dashboard = () => {
                             }}
                         >
                             <div>
-                                <strong style={{ fontSize: '1.2rem' }}>{mission.pathway_name}</strong>
-                                <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace', marginTop: '4px' }}>
+                                <strong className="common-layout-20">{mission.pathway_name}</strong>
+                                <div className="common-layout-21">
                                     #{mission.id.substring(0,8)}
                                 </div>
                             </div>

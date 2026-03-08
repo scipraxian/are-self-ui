@@ -110,7 +110,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             {/* RTS Disc Telemetry */}
             {isDisc && discData && (
                 <div className="disc-specific-panel">
-                    <h3 className="sheet-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <h3 className="sheet-section-title common-layout-28">
                         <Activity size={14} /> Active Disc Telemetry
                     </h3>
                     <div className="sheet-metrics-grid">
@@ -133,7 +133,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     </div>
 
                     {discData.last_message_to_self && (
-                        <div className="sheet-section" style={{ marginTop: '12px', paddingTop: '12px' }}>
+                        <div className="sheet-section identitysheet-ui-83">
                             <span className="metric-label">Last Internal Monologue</span>
                             <div className="memory-box">"{discData.last_message_to_self}"</div>
                         </div>
@@ -159,7 +159,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             </div>
 
             <div className="sheet-section">
-                <h3 className="sheet-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 className="sheet-section-title common-layout-15">
                     <Wrench size={14} /> Enabled Tools
                 </h3>
                 <div className="badge-container">
@@ -174,7 +174,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             </div>
 
             <div className="sheet-section">
-                <h3 className="sheet-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 className="sheet-section-title common-layout-15">
                     <Zap size={14} /> Neural Addons
                 </h3>
                 <div className="badge-container">
@@ -189,7 +189,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             </div>
 
             <div className="sheet-section">
-                <h3 className="sheet-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 className="sheet-section-title common-layout-15">
                     <Database size={14} /> Taxonomy Tags
                 </h3>
                 <div className="badge-container">

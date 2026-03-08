@@ -1,3 +1,4 @@
+import "./BrainSplash.css";
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, useCursor, Sphere } from '@react-three/drei';
@@ -42,7 +43,7 @@ const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, 
                 />
             </Sphere>
             {isHovered && (
-                <Html position={[0, -2.5, 0]} center style={{ pointerEvents: 'none' }}>
+                <Html className="brainsplash-ui-13" position={[0, -2.5, 0]} center>
                     <div className="font-display heading-tracking" style={{ color, textShadow: '0 2px 10px rgba(0,0,0,0.9)', fontSize: '0.85rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
                         {name.toUpperCase()}
                     </div>

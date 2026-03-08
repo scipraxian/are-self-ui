@@ -1,3 +1,4 @@
+import "./ReasoningGraph3D.css";
 import { useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
@@ -223,7 +224,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
     }, []);
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, zIndex: 0 }}>
+        <div className="reasoninggraph3d-ui-153">
             <ForceGraph3D
                 ref={fgRef}
                 graphData={graphData}

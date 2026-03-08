@@ -1,3 +1,4 @@
+import "./Swimlane.css";
 import {useNavigate} from 'react-router-dom';
 import {SpikeCard} from './SpikeCard';
 import {Eye, Edit, RotateCw} from 'lucide-react';
@@ -44,15 +45,8 @@ export const Swimlane = ({mission}: SwimlaneProps) => {
             marginBottom: '8px'
         }}>
 
-            <div style={{flex: '0 0 180px', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
-                <div style={{
-                    fontWeight: 800,
-                    fontSize: '0.9rem',
-                    color: '#f1f5f9',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                }}>
+            <div className="swimlane-ui-206">
+                <div className="swimlane-ui-205">
                     {mission.pathway_name}
                 </div>
                 <div style={{
@@ -62,7 +56,7 @@ export const Swimlane = ({mission}: SwimlaneProps) => {
                     textTransform: 'uppercase',
                     marginTop: '4px'
                 }}>
-                    <span style={{color: '#94a3b8', marginRight: '8px'}}>#{mission.id.substring(0, 8)}</span>
+                    <span className="swimlane-ui-204">#{mission.id.substring(0, 8)}</span>
                     {mission.status?.name || 'UNKNOWN'}
                 </div>
             </div>
@@ -78,60 +72,20 @@ export const Swimlane = ({mission}: SwimlaneProps) => {
                 justifyContent: 'center',
                 gap: '8px'
             }}>
-                <button onClick={() => navigate(`/monitor/${mission.id}`)} style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#94a3b8',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
+                <button className="swimlane-ui-203" onClick={() => navigate(`/monitor/${mission.id}`)}>
                     <Eye size={16}/>
                 </button>
-                <button style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#94a3b8',
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
+                <button className="swimlane-ui-202">
                     <Edit size={16}/>
                 </button>
                 {!mission.is_alive && (
-                    <button style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: '#38bdf8',
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
+                    <button className="swimlane-ui-201">
                         <RotateCw size={16}/>
                     </button>
                 )}
             </div>
 
-            <div style={{
-                flex: 1,
-                display: 'flex',
-                gap: '8px',
-                overflowX: 'auto',
-                paddingBottom: '4px',
-                scrollbarWidth: 'none'
-            }}>
+            <div className="swimlane-ui-200">
                 {allSpikes.map((spike) => (
                     <SpikeCard key={spike.id} spike={spike}/>
                 ))}

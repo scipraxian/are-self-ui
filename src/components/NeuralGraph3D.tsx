@@ -1,3 +1,4 @@
+import "./NeuralGraph3D.css";
 import { useRef, useCallback } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import type { ForceGraphMethods } from 'react-force-graph-3d';
@@ -64,7 +65,7 @@ export const NeuralGraph3D = ({ graphData, onNodeSelect }: NeuralGraphProps) => 
     }, []);
 
     return (
-        <div style={{ width: '100%', height: '100%' }}>
+        <div className="neuralgraph3d-ui-84">
             <ForceGraph3D
                 // 3. The single required bypass for the library's recursive generic bug
                 ref={fgRef}

@@ -166,3 +166,75 @@
     cursor: pointer;
     color: var(--accent-orange);
 }
+.bloodbrainbarrier-ui-1 {
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bloodbrainbarrier-ui-2 {
+  color: #4ade80;
+  font-weight: 800;
+}
+
+.bloodbrainbarrier-ui-3 {
+  color: #a855f7;
+  font-weight: 800;
+}
+
+.bloodbrainbarrier-ui-4 {
+  color: #facc15;
+  font-weight: 800;
+}
+
+.bloodbrainbarrier-ui-5 {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  align-items: center;
+}
+
+.bloodbrainbarrier-ui-6 {
+  flex-shrink: 0;
+  color: var(--accent-purple);
+}
+
+.bloodbrainbarrier-ui-7 {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.bloodbrainbarrier-ui-8 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.bloodbrainbarrier-ui-9 {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px;
+}
+
+.bloodbrainbarrier-ui-10 {
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.bloodbrainbarrier-ui-11 {
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.bloodbrainbarrier-ui-12 {
+  width: 100%;
+}
+

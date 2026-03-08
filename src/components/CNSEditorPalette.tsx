@@ -1,3 +1,4 @@
+import "./CNSEditorPalette.css";
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 
@@ -36,34 +37,32 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
                 e.dataTransfer.setData('application/reactflow-type', isSubGraph ? 'subgraph' : 'effector');
                 e.dataTransfer.effectAllowed = 'move';
             }}
-            className="cns-effector-drag-item" style={{
-                padding: '10px', backgroundColor: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(71, 85, 105, 0.5)', borderRadius: '6px', cursor: 'grab', color: '#cbd5e1', fontSize: '0.8rem', transition: 'background-color 0.2s'
-            }}>
+            className="cns-effector-drag-item cnseditorpalette-ui-18">
             {item.name}
         </div>
     );
 
     return (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 className="glass-panel-title" style={{ margin: 0 }}>ACTION PALETTE</h2>
+        <div className="cnseditorpalette-ui-17">
+            <div className="common-layout-3">
+                <h2 className="glass-panel-title common-layout-4">ACTION PALETTE</h2>
                 {onBack && (
-                    <button onClick={onBack} className="bbb-close-btn" style={{ position: 'relative', top: 0, right: 0 }}>
+                    <button onClick={onBack} className="bbb-close-btn common-layout-5">
                         ✕
                     </button>
                 )}
             </div>
-            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '8px' }}>
+            <div className="cnseditorpalette-ui-16">
                 <div>
-                    <h3 className="glass-panel-title" style={{ letterSpacing: '1px', color: '#a855f7', fontSize: '0.8rem', marginBottom: '8px' }}>SPELLS</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <h3 className="glass-panel-title cnseditorpalette-ui-15">SPELLS</h3>
+                    <div className="common-layout-6">
                         {spells.map(renderItem)}
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="glass-panel-title" style={{ letterSpacing: '1px', color: '#3b82f6', fontSize: '0.8rem', marginBottom: '8px' }}>SUB-GRAPHS</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <h3 className="glass-panel-title cnseditorpalette-ui-14">SUB-GRAPHS</h3>
+                    <div className="common-layout-6">
                         {subGraphs.map(renderItem)}
                     </div>
                 </div>

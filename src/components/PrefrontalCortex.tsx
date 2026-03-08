@@ -207,18 +207,17 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
         <div className="pfc-container">
             {/* Create Modal Overlay */}
             {createModalType && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                <div className="prefrontalcortex-ui-152">
                     <div style={{ background: '#0f172a', border: `1px solid ${getItemColor(createModalType)}50`, padding: '24px', borderRadius: '12px', width: '400px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: `0 10px 30px rgba(0,0,0,0.5), 0 0 20px ${getItemColor(createModalType)}20` }}>
                         <h3 style={{ margin: 0, color: getItemColor(createModalType), display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit, sans-serif' }}>
                             <Plus size={18} /> CREATE {createModalType}
                         </h3>
 
-                        <input
+                        <input className="prefrontalcortex-ui-151"
                             autoFocus
                             placeholder={`Enter ${createModalType} Name...`}
                             value={newItemName}
                             onChange={(e) => setNewItemName(e.target.value)}
-                            style={{ background: '#020617', border: '1px solid #334155', color: '#f8fafc', padding: '12px', borderRadius: '6px', outline: 'none', fontFamily: 'Inter, sans-serif' }}
                         />
 
                         {createModalType === 'STORY' && (
@@ -247,8 +246,8 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
                             </select>
                         )}
 
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                            <button onClick={() => { setCreateModalType(null); setNewItemName(""); setNewItemParent(""); }} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+                        <div className="prefrontalcortex-ui-150">
+                            <button className="prefrontalcortex-ui-149" onClick={() => { setCreateModalType(null); setNewItemName(""); setNewItemParent(""); }}>Cancel</button>
                             <button
                                 onClick={handleCreateSubmit}
                                 disabled={!newItemName.trim() || (createModalType !== 'EPIC' && !newItemParent)}
@@ -262,22 +261,22 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
             )}
 
             <div className="pfc-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <h3 className="font-display heading-tracking text-base m-0 text-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="prefrontalcortex-ui-148">
+                    <h3 className="font-display heading-tracking text-base m-0 text-primary common-layout-15">
                         <BrainCircuit size={18} color="#ef4444" />
                         PREFRONTAL CORTEX (AGILE BOARD)
                     </h3>
 
-                    <div style={{ display: 'flex', gap: '8px', marginLeft: '12px', borderLeft: '1px solid var(--border-glass)', paddingLeft: '16px' }}>
-                        <button onClick={() => setCreateModalType('EPIC')} className="btn-ghost" style={{ borderColor: '#a855f720', color: '#a855f7', background: '#a855f710', padding: '4px 10px', fontSize: '0.75rem' }}><Plus size={12}/> EPIC</button>
-                        <button onClick={() => setCreateModalType('STORY')} className="btn-ghost" style={{ borderColor: '#3b82f620', color: '#3b82f6', background: '#3b82f610', padding: '4px 10px', fontSize: '0.75rem' }}><Plus size={12}/> STORY</button>
-                        <button onClick={() => setCreateModalType('TASK')} className="btn-ghost" style={{ borderColor: '#4ade8020', color: '#4ade80', background: '#4ade8010', padding: '4px 10px', fontSize: '0.75rem' }}><Plus size={12}/> TASK</button>
+                    <div className="prefrontalcortex-ui-147">
+                        <button onClick={() => setCreateModalType('EPIC')} className="btn-ghost prefrontalcortex-ui-146"><Plus size={12}/> EPIC</button>
+                        <button onClick={() => setCreateModalType('STORY')} className="btn-ghost prefrontalcortex-ui-145"><Plus size={12}/> STORY</button>
+                        <button onClick={() => setCreateModalType('TASK')} className="btn-ghost prefrontalcortex-ui-144"><Plus size={12}/> TASK</button>
                     </div>
                 </div>
             </div>
 
             <div className="pfc-board-wrapper">
-                {canScrollLeft ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('left')}><ChevronLeft size={24} /></button> : <div style={{ width: '36px', flexShrink: 0 }} />}
+                {canScrollLeft ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('left')}><ChevronLeft size={24} /></button> : <div className="common-layout-31" />}
 
                 <div className="pfc-board" ref={boardRef} onScroll={checkScroll}>
                     {statuses.map(status => {
@@ -317,7 +316,7 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
                                             >
                                                 <div className="pfc-card-header">
                                                     <div>
-                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                                                        <div className="prefrontalcortex-ui-143">
                                                             <span className="font-mono text-xs" style={{ color: itemColor, fontWeight: 800 }}>[{item.item_type}]</span>
                                                             {item.parent_name && <span className="font-mono text-xs text-muted">of {item.parent_name.substring(0, 15)}...</span>}
                                                         </div>
@@ -326,42 +325,42 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
                                                 </div>
 
                                                 {item.description && (
-                                                    <div className="font-mono text-xs text-muted" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    <div className="font-mono text-xs text-muted prefrontalcortex-ui-142">
                                                         {item.description}
                                                     </div>
                                                 )}
 
                                                 <div className="pfc-card-meta">
                                                     {item.priority !== undefined && (
-                                                        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '2px', borderRadius: '4px' }}>
+                                                        <div className="prefrontalcortex-ui-141">
                                                             {getPriorityIcon(item.priority)}
                                                         </div>
                                                     )}
 
                                                     {item.item_type === 'EPIC' && item.environment && (
-                                                        <span className="pfc-tag font-mono" title={`Scoped to Environment: ${item.environment.name}`} style={{ color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '4px', borderColor: 'rgba(56, 189, 248, 0.2)', background: 'rgba(56, 189, 248, 0.05)' }}>
+                                                        <span className="pfc-tag font-mono prefrontalcortex-ui-140" title={`Scoped to Environment: ${item.environment.name}`}>
                                                             <Globe size={10} /> {item.environment.name}
                                                         </span>
                                                     )}
 
                                                     {item.owning_disc ? (
-                                                        <span className="pfc-tag font-mono" style={{ color: 'var(--bg-obsidian)', background: 'var(--accent-gold)', borderColor: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <span className="pfc-tag font-mono prefrontalcortex-ui-139">
                                                             <Cpu size={10} /> {item.owning_disc.name}
                                                         </span>
                                                     ) : (
-                                                        <span className="pfc-tag font-mono" style={{ color: 'var(--text-muted)', borderStyle: 'dashed', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <span className="pfc-tag font-mono prefrontalcortex-ui-138">
                                                             <Cpu size={10} /> Unassigned
                                                         </span>
                                                     )}
 
                                                     {item.previous_owners && item.previous_owners.length > 0 && (
-                                                        <span className="pfc-tag font-mono" title={`Previously touched by: ${item.previous_owners.map(p => p.name).join(', ')}`} style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <span className="pfc-tag font-mono prefrontalcortex-ui-137" title={`Previously touched by: ${item.previous_owners.map(p => p.name).join(', ')}`}>
                                                             <History size={10} /> {item.previous_owners.length}
                                                         </span>
                                                     )}
 
                                                     {item.complexity !== undefined && item.complexity > 0 && (
-                                                        <span className="pfc-tag font-mono" style={{ color: 'var(--accent-green)' }}>CX: {item.complexity}</span>
+                                                        <span className="pfc-tag font-mono prefrontalcortex-ui-136">CX: {item.complexity}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -373,7 +372,7 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
                         );
                     })}
                 </div>
-                {canScrollRight ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('right')}><ChevronRight size={24} /></button> : <div style={{ width: '36px', flexShrink: 0 }} />}
+                {canScrollRight ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('right')}><ChevronRight size={24} /></button> : <div className="common-layout-31" />}
             </div>
         </div>
     );

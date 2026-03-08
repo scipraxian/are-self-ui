@@ -1,3 +1,4 @@
+import "./FrontalLobeDetail.css";
 import { useState, useEffect, useRef } from 'react';
 import { Loader2, ArrowLeft, Brain, Terminal, Database, Target, AlertTriangle } from 'lucide-react';
 
@@ -41,7 +42,7 @@ export const FrontalLobeDetail = ({ sessionId, onBack }: FrontalLobeDetailProps)
 
     if (isLoading || !cortexData) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div className="common-layout-25">
                 <Loader2 className="animate-spin text-muted" size={32} />
             </div>
         );
@@ -50,64 +51,64 @@ export const FrontalLobeDetail = ({ sessionId, onBack }: FrontalLobeDetailProps)
     const isActive = ['Active', 'Pending'].includes(cortexData.status_name);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 10px' }}>
+        <div className="common-layout-26">
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-glass)', paddingBottom: '16px' }}>
-                <button className="btn-ghost" onClick={onBack} style={{ padding: '4px', border: 'none' }}>
+            <div className="frontallobedetail-ui-73">
+                <button className="btn-ghost frontallobedetail-ui-72" onClick={onBack}>
                     <ArrowLeft size={18} />
                 </button>
                 <Brain size={24} color="#a855f7" />
                 <div>
                     <h3 className="font-display heading-tracking text-base m-0 text-primary">COGNITIVE STREAM</h3>
-                    <div className="font-mono text-xs text-muted" style={{ marginTop: '4px' }}>
+                    <div className="font-mono text-xs text-muted common-layout-27">
                         ID: {sessionId.split('-')[0].toUpperCase()} | STATUS: <span style={{ color: isActive ? '#facc15' : '#4ade80' }}>{cortexData.status_name}</span>
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: 0 }}>
+            <div className="frontallobedetail-ui-71">
                 {/* LEFT: Tactics (The Stream) */}
-                <div className="scroll-hidden" style={{ flex: '2', display: 'flex', flexDirection: 'column', gap: '24px', paddingRight: '10px' }}>
+                <div className="scroll-hidden frontallobedetail-ui-70">
                     {cortexData.turns?.map((turn: any) => (
-                        <div key={turn.id} style={{ borderLeft: '2px solid var(--border-glass)', paddingLeft: '16px', position: 'relative' }}>
+                        <div className="frontallobedetail-ui-69" key={turn.id}>
 
-                            <div style={{ position: 'absolute', left: '-6px', top: '0', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-purple)' }}></div>
+                            <div className="frontallobedetail-ui-68"></div>
 
-                            <div className="font-mono text-xs text-muted" style={{ marginBottom: '8px', color: 'var(--accent-purple)', fontWeight: 800 }}>
+                            <div className="font-mono text-xs text-muted frontallobedetail-ui-67">
                                 TURN {turn.turn_number}
                             </div>
 
                             {/* Thought Process */}
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-glass)', marginBottom: '12px' }}>
-                                <div className="font-mono text-xs" style={{ color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Internal Monologue</div>
-                                <div style={{ color: '#e2e8f0', whiteSpace: 'pre-wrap', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                            <div className="frontallobedetail-ui-66">
+                                <div className="font-mono text-xs frontallobedetail-ui-65">Internal Monologue</div>
+                                <div className="frontallobedetail-ui-64">
                                     {turn.thought_process || "Processing..."}
                                 </div>
                             </div>
 
                             {/* Tools Executed */}
                             {turn.tool_calls?.map((call: any, idx: number) => (
-                                <div key={idx} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '8px', borderLeft: '3px solid var(--accent-blue)', marginBottom: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <div className="frontallobedetail-ui-63" key={idx}>
+                                    <div className="frontallobedetail-ui-62">
                                         <Terminal size={14} color="var(--accent-blue)" />
-                                        <span className="font-mono text-sm" style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>{call.tool_name}</span>
+                                        <span className="font-mono text-sm frontallobedetail-ui-61">{call.tool_name}</span>
                                     </div>
 
-                                    <div className="font-mono text-xs" style={{ color: '#94a3b8', padding: '8px', background: '#000', borderRadius: '4px', overflowX: 'auto', marginBottom: '8px' }}>
+                                    <div className="font-mono text-xs frontallobedetail-ui-60">
                                         {call.arguments}
                                     </div>
 
                                     {call.result_payload && (
                                         <details>
-                                            <summary className="font-mono text-xs text-muted" style={{ cursor: 'pointer', outline: 'none' }}>View Result</summary>
-                                            <div className="font-mono text-xs" style={{ color: '#4ade80', padding: '8px', background: '#000', borderRadius: '4px', marginTop: '4px', overflowX: 'auto', maxHeight: '150px', overflowY: 'auto' }}>
+                                            <summary className="font-mono text-xs text-muted frontallobedetail-ui-59">View Result</summary>
+                                            <div className="font-mono text-xs frontallobedetail-ui-58">
                                                 {call.result_payload}
                                             </div>
                                         </details>
                                     )}
                                     {call.traceback && (
-                                        <div className="font-mono text-xs" style={{ color: '#ef4444', padding: '8px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '4px', marginTop: '4px', overflowX: 'auto' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', fontWeight: 800 }}><AlertTriangle size={12}/> Traceback</div>
+                                        <div className="font-mono text-xs frontallobedetail-ui-57">
+                                            <div className="frontallobedetail-ui-56"><AlertTriangle size={12}/> Traceback</div>
                                             {call.traceback}
                                         </div>
                                     )}
@@ -119,15 +120,15 @@ export const FrontalLobeDetail = ({ sessionId, onBack }: FrontalLobeDetailProps)
                 </div>
 
                 {/* RIGHT: Memory & Strategy */}
-                <div className="scroll-hidden" style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="scroll-hidden frontallobedetail-ui-55">
 
                     {/* Strategy */}
-                    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-glass)', borderRadius: '8px', padding: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <div className="frontallobedetail-ui-54">
+                        <div className="common-layout-28">
                             <Target size={16} color="var(--accent-gold)" />
-                            <span className="font-display text-sm" style={{ color: 'var(--text-primary)', fontWeight: 700, letterSpacing: '0.1em' }}>ACTIVE DIRECTIVES</span>
+                            <span className="font-display text-sm frontallobedetail-ui-53">ACTIVE DIRECTIVES</span>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div className="common-layout-6">
                             {cortexData.goals?.map((goal: any) => (
                                 <div key={goal.id} style={{ fontSize: '0.85rem', color: '#cbd5e1', paddingLeft: '8px', borderLeft: `2px solid ${goal.achieved ? '#4ade80' : '#facc15'}` }}>
                                     {goal.rendered_goal}
@@ -138,16 +139,16 @@ export const FrontalLobeDetail = ({ sessionId, onBack }: FrontalLobeDetailProps)
                     </div>
 
                     {/* Engrams */}
-                    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-glass)', borderRadius: '8px', padding: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <div className="frontallobedetail-ui-52">
+                        <div className="common-layout-28">
                             <Database size={16} color="var(--accent-green)" />
-                            <span className="font-display text-sm" style={{ color: 'var(--text-primary)', fontWeight: 700, letterSpacing: '0.1em' }}>ENGRAMS (MEMORY)</span>
+                            <span className="font-display text-sm frontallobedetail-ui-51">ENGRAMS (MEMORY)</span>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div className="common-layout-6">
                             {cortexData.engrams?.map((engram: any) => (
-                                <div key={engram.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '8px', borderRadius: '4px', border: '1px solid var(--border-glass)' }}>
-                                    <div className="font-mono text-xs" style={{ color: 'var(--accent-green)', fontWeight: 700, marginBottom: '4px' }}>{engram.name}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{engram.description}</div>
+                                <div className="frontallobedetail-ui-50" key={engram.id}>
+                                    <div className="font-mono text-xs frontallobedetail-ui-49">{engram.name}</div>
+                                    <div className="common-layout-29">{engram.description}</div>
                                 </div>
                             ))}
                             {cortexData.engrams?.length === 0 && <div className="text-xs text-muted font-mono">Memory banks empty.</div>}

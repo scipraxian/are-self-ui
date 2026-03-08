@@ -195,7 +195,7 @@ export const TemporalMatrix = () => {
     if (!iteration) {
         return (
             <div className="temporal-matrix-container gestation-chamber">
-                <Network size={48} className="text-muted" style={{ opacity: 0.2 }} />
+                <Network size={48} className="text-muted temporalmatrix-ui-210" />
                 <h2 className="font-display heading-tracking text-lg m-0 text-primary">Gestation Chamber</h2>
                 <p className="text-muted font-mono text-sm m-0">No active timelines. Select a structural blueprint to incept.</p>
 
@@ -223,7 +223,7 @@ export const TemporalMatrix = () => {
                     <h3 className="font-display heading-tracking text-base m-0 text-primary">
                         {iteration.definition_name || 'Standard Iteration'}
                     </h3>
-                    <div className="font-mono text-xs text-muted" style={{ marginTop: '4px' }}>
+                    <div className="font-mono text-xs text-muted common-layout-27">
                         Iteration ID: {iteration.id} | Status: {iteration.status_name}
                     </div>
                 </div>
@@ -238,7 +238,7 @@ export const TemporalMatrix = () => {
                     <button className="matrix-scroll-btn" onClick={() => scrollBoard('left')}>
                         <ChevronLeft size={24} />
                     </button>
-                ) : <div style={{ width: '36px', flexShrink: 0 }} />}
+                ) : <div className="common-layout-31" />}
 
                 <div className="matrix-board" ref={boardRef} onScroll={checkScroll}>
 
@@ -264,25 +264,24 @@ export const TemporalMatrix = () => {
                                     {shift.participants?.map((participant: ParticipantData) => (
                                         <div key={participant.id} className="slotted-card">
                                             <div className="slotted-card-header">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div className="common-layout-15">
                                                     <span className="slotted-card-title">{participant.disc.name}</span>
                                                     {isActive && <span className="status-dot status-active-pulse"></span>}
                                                 </div>
-                                                <button
-                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                                                <button className="temporalmatrix-ui-209"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleRemoveWorker(shift.id, participant.disc.id);
                                                     }}
                                                     title="Remove from Shift"
                                                 >
-                                                    <MoreVertical size={14} className="text-muted" style={{ transition: 'color 0.2s' }}
+                                                    <MoreVertical size={14} className="text-muted temporalmatrix-ui-208"
                                                                   onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-red)'}
                                                                   onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                                                     />
                                                 </button>
                                             </div>
-                                            <div className="font-mono text-xs text-secondary" style={{ display: 'flex', gap: '12px' }}>
+                                            <div className="font-mono text-xs text-secondary temporalmatrix-ui-207">
                                                 <span>Lvl {participant.disc.level}</span>
                                                 <span>XP: {participant.disc.xp}</span>
                                             </div>
@@ -301,7 +300,7 @@ export const TemporalMatrix = () => {
                     <button className="matrix-scroll-btn" onClick={() => scrollBoard('right')}>
                         <ChevronRight size={24} />
                     </button>
-                ) : <div style={{ width: '36px', flexShrink: 0 }} />}
+                ) : <div className="common-layout-31" />}
             </div>
         </div>
     );

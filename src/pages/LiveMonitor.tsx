@@ -1,3 +1,4 @@
+import "./LiveMonitor.css";
 import { useParams, useNavigate } from 'react-router-dom';
 import { CommandCenterLayout } from '../components/CommandCenterLayout';
 import { CNSView } from '../components/CNSView';
@@ -9,21 +10,20 @@ export const LiveMonitor = () => {
     return (
         <CommandCenterLayout
             leftPanel={
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <button
+                <div className="common-layout-32">
+                    <button className="livemonitor-ui-214"
                         onClick={() => navigate('/')}
-                        style={{ background: 'transparent', border: '1px solid #333', color: '#94a3b8', padding: '8px', cursor: 'pointer', borderRadius: '4px' }}
                     >
                         ← Back to Mission Control
                     </button>
-                    <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>
+                    <div className="livemonitor-ui-213">
                         Monitoring SpikeTrain:<br />
-                        <strong style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{spikeTrainId}</strong>
+                        <strong className="livemonitor-ui-212">{spikeTrainId}</strong>
                     </div>
                 </div>
             }
             rightPanel={
-                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                <div className="livemonitor-ui-211">
                     Real-time telemetry stream for this specific execution will attach here.
                 </div>
             }

@@ -198,3 +198,138 @@
     gap: 16px;
     height: 100%;
 }
+.prefrontalcortex-ui-136 {
+  color: var(--accent-green);
+}
+
+.prefrontalcortex-ui-137 {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.prefrontalcortex-ui-138 {
+  color: var(--text-muted);
+  border-style: dashed;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.prefrontalcortex-ui-139 {
+  color: var(--bg-obsidian);
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.prefrontalcortex-ui-140 {
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-color: rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.prefrontalcortex-ui-141 {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.prefrontalcortex-ui-142 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2px;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.prefrontalcortex-ui-143 {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.prefrontalcortex-ui-144 {
+  border-color: #4ade8020;
+  color: #4ade80;
+  background: #4ade8010;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.prefrontalcortex-ui-145 {
+  border-color: #3b82f620;
+  color: #3b82f6;
+  background: #3b82f610;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.prefrontalcortex-ui-146 {
+  border-color: #a855f720;
+  color: #a855f7;
+  background: #a855f710;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.prefrontalcortex-ui-147 {
+  display: flex;
+  gap: 8px;
+  margin-left: 12px;
+  border-left: 1px solid var(--border-glass);
+  padding-left: 16px;
+}
+
+.prefrontalcortex-ui-148 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.prefrontalcortex-ui-149 {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.prefrontalcortex-ui-150 {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.prefrontalcortex-ui-151 {
+  background: #020617;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 12px;
+  border-radius: 6px;
+  outline: none;
+  font-family: Inter, sans-serif;
+}
+
+.prefrontalcortex-ui-152 {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+

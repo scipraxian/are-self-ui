@@ -1,3 +1,4 @@
+import "./NeuronNode.css";
 import { Handle, Position } from 'reactflow';
 import { Eye, Play, Square } from 'lucide-react';
 
@@ -36,12 +37,7 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
             : 'var(--border-glass)';
 
     return (
-        <div className="glass-panel" style={{
-            width: '260px',
-            position: 'relative',
-            color: 'var(--text-primary)',
-            padding: 0
-        }}>
+        <div className="glass-panel neuronnode-ui-106">
             {/* CARD HEADER */}
             <div className="glass-panel-header" style={{
                 margin: 0,
@@ -52,23 +48,18 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                 justifyContent: 'space-between',
                 borderBottom: `1px solid ${headerBorder}`
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="font-display" style={{ fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)' }}>
+                <div className="common-layout-15">
+                    <span className="font-display neuronnode-ui-105">
                         {isSubgraph && '🌀 '}{displayName}
                     </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="neuronnode-ui-104">
                     {/* Replace the existing Subgraph, Play, and Stop buttons in NeuronNode.tsx with this: */}
 
                     {isSubgraph && data.onDrillDown && (
                         <button
-                            className="nodrag"
-                            style={{
-                                background: '#38bdf8', border: 'none', color: '#0f172a',
-                                borderRadius: '4px', padding: '2px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
+                            className="nodrag neuronnode-ui-103"
                             title="Drill down to Sub-Graph"
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -82,8 +73,7 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                     {isRoot && (
                         <>
                             <button
-                                className="nodrag"
-                                style={{ background: '#38bdf8', border: 'none', color: '#0f172a', borderRadius: '4px', padding: '2px', cursor: 'pointer' }}
+                                className="nodrag neuronnode-ui-102"
                                 title="Start Execution (Root Node)"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -93,8 +83,7 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                                 <Play size={10} fill="#0f172a" />
                             </button>
                             <button
-                                className="nodrag"
-                                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#e2e8f0', borderRadius: '4px', padding: '2px', cursor: 'pointer' }}
+                                className="nodrag neuronnode-ui-101"
                                 title="Stop Execution (Root Node)"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -105,44 +94,29 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                             </button>
                         </>
                     )}
-                    <span className="font-mono text-xs text-muted" style={{ marginLeft: '4px' }}>#{id}</span>
+                    <span className="font-mono text-xs text-muted neuronnode-ui-100">#{id}</span>
                 </div>
             </div>
 
             {/* CARD BODY */}
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ marginBottom: '4px' }}>
-                    <span className="font-mono text-xs" style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        border: '1px solid var(--border-glass)',
-                        color: 'var(--text-secondary)'
-                    }}>
+            <div className="neuronnode-ui-99">
+                <div className="common-layout-30">
+                    <span className="font-mono text-xs neuronnode-ui-98">
                         ENV: {data.effectorName || 'N/A'}
                     </span>
                 </div>
 
                 {/* Ports container */}
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div className="neuronnode-ui-97">
 
                     {/* INPUTS (Left) - Only show if NOT root */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="common-layout-10">
                         {!isRoot && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
-                                <Handle
+                            <div className="neuronnode-ui-96">
+                                <Handle className="neuronnode-ui-95"
                                     type="target"
                                     position={Position.Left}
                                     id="in"
-                                    style={{
-                                        background: '#94a3b8',
-                                        width: '12px',
-                                        height: '12px',
-                                        borderRadius: '50%',
-                                        border: '2px solid var(--bg-obsidian)',
-                                        left: '-23px',
-                                        zIndex: 10
-                                    }}
                                 />
                                 <span className="font-mono text-xs text-muted">INPUT</span>
                             </div>
@@ -150,61 +124,34 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                     </div>
 
                     {/* OUTPUTS (Right) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+                    <div className="neuronnode-ui-94">
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative', height: '16px' }}>
-                            <span className="font-mono text-xs" style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>{isRoot ? '' : 'FLOW'}</span>
-                            <Handle
+                        <div className="neuronnode-ui-93">
+                            <span className="font-mono text-xs neuronnode-ui-92">{isRoot ? '' : 'FLOW'}</span>
+                            <Handle className="neuronnode-ui-91"
                                 type="source"
                                 position={Position.Right}
                                 id="always"
-                                style={{
-                                    background: 'var(--accent-blue)',
-                                    width: '12px',
-                                    height: '12px',
-                                    borderRadius: '50%',
-                                    border: '2px solid var(--bg-obsidian)',
-                                    right: '-23px',
-                                    zIndex: 10
-                                }}
                             />
                         </div>
 
                         {!isRoot && (
                             <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative', height: '16px' }}>
-                                    <span className="font-mono text-xs" style={{ color: 'var(--accent-green)', fontWeight: 600 }}>SUCCESS</span>
-                                    <Handle
+                                <div className="neuronnode-ui-90">
+                                    <span className="font-mono text-xs neuronnode-ui-89">SUCCESS</span>
+                                    <Handle className="neuronnode-ui-88"
                                         type="source"
                                         position={Position.Right}
                                         id="success"
-                                        style={{
-                                            background: 'var(--accent-green)',
-                                            width: '12px',
-                                            height: '12px',
-                                            borderRadius: '50%',
-                                            border: '2px solid var(--bg-obsidian)',
-                                            right: '-23px',
-                                            zIndex: 10
-                                        }}
                                     />
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative', height: '16px' }}>
-                                    <span className="font-mono text-xs" style={{ color: 'var(--accent-red)', fontWeight: 600 }}>FAIL</span>
-                                    <Handle
+                                <div className="neuronnode-ui-87">
+                                    <span className="font-mono text-xs neuronnode-ui-86">FAIL</span>
+                                    <Handle className="neuronnode-ui-85"
                                         type="source"
                                         position={Position.Right}
                                         id="failure"
-                                        style={{
-                                            background: 'var(--accent-red)',
-                                            width: '12px',
-                                            height: '12px',
-                                            borderRadius: '50%',
-                                            border: '2px solid var(--bg-obsidian)',
-                                            right: '-23px',
-                                            zIndex: 10
-                                        }}
                                     />
                                 </div>
                             </>

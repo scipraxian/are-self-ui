@@ -1,0 +1,231 @@
+.reasoningpanels-ui-154 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #38bdf8;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.reasoningpanels-ui-155 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a855f7;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.reasoningpanels-ui-156 {
+  color: white;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.reasoningpanels-ui-157 {
+  color: #f99f1b;
+  font-weight: bold;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.reasoningpanels-ui-158 {
+  flex: 1;
+  padding: 10px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #f99f1b;
+  border-radius: 5px;
+}
+
+.reasoningpanels-ui-159 {
+  color: white;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.reasoningpanels-ui-160 {
+  color: #38bdf8;
+  font-weight: bold;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.reasoningpanels-ui-161 {
+  flex: 1;
+  padding: 10px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #38bdf8;
+  border-radius: 5px;
+}
+
+.reasoningpanels-ui-162 {
+  display: flex;
+  gap: 10px;
+}
+
+.reasoningpanels-ui-163 {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.reasoningpanels-ui-164 {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.reasoningpanels-ui-165 {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.reasoningpanels-ui-166 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ef4444;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.reasoningpanels-ui-167 {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  font-size: 0.8rem;
+  color: #99ccff;
+}
+
+.reasoningpanels-ui-168 {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.reasoningpanels-ui-169 {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+  background: #4ade80;
+  color: black;
+  font-weight: 800;
+  border-radius: 20px;
+}
+
+.reasoningpanels-ui-170 {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+  background: #38bdf8;
+  color: black;
+  font-weight: 800;
+  border-radius: 20px;
+}
+
+.reasoningpanels-ui-171 {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+  background: #f99f1b;
+  color: black;
+  font-weight: 800;
+  border-radius: 20px;
+}
+
+.reasoningpanels-ui-172 {
+  margin-bottom: 16px;
+  color: #f8fafc;
+}
+
+.reasoningpanels-ui-173 {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.reasoningpanels-ui-174 {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.reasoningpanels-ui-175 {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: JetBrains Mono;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.reasoningpanels-ui-176 {
+  justify-content: flex-start;
+}
+
+.reasoningpanels-ui-177 {
+  color: #38bdf8;
+  border-color: rgba(56,189,248,0.3);
+  justify-content: flex-start;
+}
+
+.reasoningpanels-ui-178 {
+  color: #facc15;
+  border-color: rgba(250,204,21,0.3);
+  justify-content: flex-start;
+}
+
+.reasoningpanels-ui-179 {
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.3);
+  justify-content: flex-start;
+}
+
+.reasoningpanels-ui-180 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-glass);
+}
+
+.reasoningpanels-ui-181 {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.reasoningpanels-ui-182 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reasoningpanels-ui-183 {
+  margin-bottom: 16px;
+}
+
+.reasoningpanels-ui-184 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+

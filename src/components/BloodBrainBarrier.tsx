@@ -116,7 +116,7 @@ export const BloodBrainBarrier = () => {
                     {/* NORMAL CENTER STAGE */}
                     <main className={activeViewport && !isReasoningGraphActive && !isCNSEditorActive ? "bbb-panel-center-active" : "bbb-panel-center-wrapper"}>
                         {activeViewport && !isReasoningGraphActive && !isCNSEditorActive && activeViewport !== 'reasoning' && activeViewport !== 'cns' && (
-                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%' }}>
+                            <div className="glass-panel bbb-panel-center-active bloodbrainbarrier-ui-12">
                                 <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
                                 {activeViewport === 'iteration' && <TemporalMatrix />}
                                 {activeViewport === 'pfc' && (
@@ -134,15 +134,15 @@ export const BloodBrainBarrier = () => {
                         )}
 
                         {activeViewport === 'reasoning' && !activeSessionId && (
-                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="glass-panel bbb-panel-center-active bloodbrainbarrier-ui-11">
                                 <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
                                 <div className="bbb-placeholder font-mono text-sm">Select a Cognitive Thread from the left panel to engage the Cortex.</div>
                             </div>
                         )}
 
                         {activeViewport === 'cns' && !activePathwayId && (
-                            <div className="glass-panel bbb-panel-center-active" style={{ width: '100%', flexDirection: 'column', alignItems: 'stretch' }}>
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px' }}>
+                            <div className="glass-panel bbb-panel-center-active bloodbrainbarrier-ui-10">
+                                <div className="bloodbrainbarrier-ui-9">
                                     <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
                                 </div>
                                 <CNSView onOpenPathway={(pathwayId) => {
@@ -207,9 +207,9 @@ export const BloodBrainBarrier = () => {
                                     onDelete={() => setSelectedPfcItem(null)}
                                 />
                             ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
+                                <div className="bloodbrainbarrier-ui-8">
                                     <h2 className="glass-panel-title">TICKET INSPECTOR</h2>
-                                    <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontStyle: 'italic', marginTop: '10px' }}>Select an Agile Ticket to view or edit its details.</div>
+                                    <div className="common-layout-1">Select an Agile Ticket to view or edit its details.</div>
                                 </div>
                             )
                         ) : (
@@ -222,14 +222,14 @@ export const BloodBrainBarrier = () => {
                 </div>
 
                 <footer className="glass-panel bbb-footer">
-                    <div className="font-mono text-xs bbb-footer-ticker" style={{ flex: 1, display: 'flex', gap: '16px', overflow: 'hidden' }}>
-                        <Terminal size={14} style={{ flexShrink: 0, color: 'var(--accent-purple)' }} />
+                    <div className="font-mono text-xs bbb-footer-ticker bloodbrainbarrier-ui-7">
+                        <Terminal className="bloodbrainbarrier-ui-6" size={14} />
                         {isReasoningGraphActive && cortexStats ? (
-                            <div style={{ display: 'flex', gap: '24px', width: '100%', alignItems: 'center' }}>
-                                <span style={{ color: '#facc15', fontWeight: 800 }}>LVL {cortexStats.level}</span>
-                                <span style={{ color: '#a855f7', fontWeight: 800 }}>FOCUS {cortexStats.focus}</span>
-                                <span style={{ color: '#4ade80', fontWeight: 800 }}>{cortexStats.xp} XP</span>
-                                <span style={{ color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div className="bloodbrainbarrier-ui-5">
+                                <span className="bloodbrainbarrier-ui-4">LVL {cortexStats.level}</span>
+                                <span className="bloodbrainbarrier-ui-3">FOCUS {cortexStats.focus}</span>
+                                <span className="bloodbrainbarrier-ui-2">{cortexStats.xp} XP</span>
+                                <span className="bloodbrainbarrier-ui-1">
                                     "{cortexStats.latestThought}"
                                 </span>
                             </div>

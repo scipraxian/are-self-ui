@@ -191,3 +191,24 @@
     margin-top: 24px;
 }
 
+
+.temporalmatrix-ui-207 {
+  display: flex;
+  gap: 12px;
+}
+
+.temporalmatrix-ui-208 {
+  transition: color 0.2s;
+}
+
+.temporalmatrix-ui-209 {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.temporalmatrix-ui-210 {
+  opacity: 0.2;
+}
+

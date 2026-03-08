@@ -1,3 +1,4 @@
+import "./CNSInspector.css";
 import { type ReactNode, useEffect, useState } from 'react';
 import { Trash2, Plus } from 'lucide-react';
 import { apiFetch } from '../api';
@@ -33,7 +34,7 @@ const Accordion = ({ title, color, open = false, children, rightElement }: Accor
                 <span>► {title}</span>
                 {rightElement && <span>{rightElement}</span>}
             </summary>
-            <div style={{ padding: '12px' }}>
+            <div className="cnsinspector-ui-22">
                 {children}
             </div>
         </details>
@@ -64,13 +65,13 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
         return (
             <div className="flex flex-col items-center justify-center p-8 text-center h-full">
                 <h2 className="glass-panel-title">TELEMETRY OVERRIDE</h2>
-                <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontStyle: 'italic', marginTop: '10px' }}>Select a neuron to inspect its properties.</div>
+                <div className="cnsinspector-ui-21">Select a neuron to inspect its properties.</div>
             </div>
         );
     }
 
     if (!details) {
-        return <div className="flex flex-col items-center justify-center p-8 text-center h-full" style={{ color: '#cbd5e1', fontSize: '0.8rem', fontStyle: 'italic' }}>Loading details...</div>;
+        return <div className="flex flex-col items-center justify-center p-8 text-center h-full cnsinspector-ui-20">Loading details...</div>;
     }
 
     const handleAddVariable = (e: React.MouseEvent) => {
@@ -94,25 +95,25 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
     };
 
     return (
-        <div className="scroll-hidden" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-            <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 className="glass-panel-title" style={{ margin: 0, color: '#f8fafc' }}>
+        <div className="scroll-hidden cnsinspector-ui-19">
+            <div className="cnsinspector-ui-18">
+                <div className="cnsinspector-ui-17">
+                    <h2 className="glass-panel-title cnsinspector-ui-16">
                         TELEMETRY OVERRIDE
                     </h2>
-                    <button onClick={() => onDelete(node.id)} className="btn-ghost" style={{ padding: '4px 8px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)', minWidth: 'auto', minHeight: 'auto' }} title="Delete Node">
+                    <button onClick={() => onDelete(node.id)} className="btn-ghost cnsinspector-ui-15" title="Delete Node">
                         <Trash2 size={16} />
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="cnsinspector-ui-14">
 
-                    <div style={{ display: 'flex', gap: '10px', fontFamily: 'Outfit', textTransform: 'uppercase' }}>
-                        <div style={{ flex: 1, padding: '8px', textAlign: 'center', background: '#cc99cc', color: 'black', fontWeight: 800, borderRadius: '20px' }}>ID: {details.neuron_id}</div>
-                        <div style={{ flex: 2, padding: '8px', textAlign: 'center', background: '#38bdf8', color: 'black', fontWeight: 800, borderRadius: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{details.name}</div>
+                    <div className="cnsinspector-ui-13">
+                        <div className="cnsinspector-ui-12">ID: {details.neuron_id}</div>
+                        <div className="cnsinspector-ui-11">{details.name}</div>
                     </div>
 
-                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                    <div className="cnsinspector-ui-10">
                         {details.description || 'No specialized purpose defined for this neuron.'}
                     </div>
 
@@ -121,13 +122,13 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                         color="#4ade80"
                         open
                         rightElement={
-                            <button onClick={handleAddVariable} style={{ background: 'transparent', border: 'none', color: '#4ade80', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                            <button className="cnsinspector-ui-9" onClick={handleAddVariable}>
                                 <Plus size={14} /> ADD
                             </button>
                         }
                     >
                         {details.context_matrix.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <div className="cnsinspector-ui-8">
                                 {details.context_matrix.map((item) => {
                                     const isGlobal = item.source === 'global';
                                     const isOverride = item.source === 'override';
@@ -146,18 +147,17 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
 
                                     return (
                                         <div key={item.key} style={{ border: `1px solid ${borderColor}`, borderRadius: '4px', padding: '10px', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                            <div className="cnsinspector-ui-7">
                                                 <div style={{ color: labelColor, fontWeight: 'bold', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>
                                                     &gt; {item.key}
                                                 </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div className="cnsinspector-ui-6">
                                                     <span style={{ fontSize: '0.7rem', color: isGlobal ? '#94a3b8' : labelColor, textTransform: 'uppercase', border: `1px solid ${isGlobal ? '#475569' : labelColor}`, padding: '2px 6px', borderRadius: '4px' }}>
                                                         {item.source}
                                                     </span>
                                                     {isOverride && (
-                                                        <button
+                                                        <button className="cnsinspector-ui-5"
                                                             onClick={(e) => handleClearOverride(e, item.key)}
-                                                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0 }}
                                                             title="Clear Override"
                                                         >
                                                             ✕
@@ -165,7 +165,7 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                                                     )}
                                                 </div>
                                             </div>
-                                            <div style={{ position: 'relative' }}>
+                                            <div className="cnsinspector-ui-4">
                                                 {isLong ? (
                                                     <textarea
                                                         style={{
@@ -218,7 +218,7 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                                 })}
                             </div>
                         ) : (
-                            <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                            <div className="cnsinspector-ui-3">
                                 No variables detected.
                             </div>
                         )}
@@ -226,26 +226,11 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                 </div>
             </div>
 
-            <div style={{ marginTop: '20px', textAlign: 'center', paddingBottom: '20px' }}>
-                <a
+            <div className="cnsinspector-ui-2">
+                <a className="cnsinspector-ui-1"
                     href={`http://localhost:8000/admin/central_nervous_system/neuron/${node.id}/change/`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                        display: 'inline-block',
-                        padding: '10px 20px',
-                        backgroundColor: '#cc3333',
-                        color: 'black',
-                        fontFamily: 'Outfit, sans-serif',
-                        fontWeight: 800,
-                        fontSize: '1.2rem',
-                        textDecoration: 'none',
-                        borderRadius: '20px',
-                        border: '2px solid #ef4444',
-                        width: '80%',
-                        textTransform: 'uppercase',
-                        transition: 'transform 0.1s'
-                    }}
                     onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                     onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >

@@ -1,3 +1,4 @@
+import "./PFCInspector.css";
 import { useState, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
@@ -24,7 +25,7 @@ const Accordion = ({ title, color, icon, open = false, children }: AccordionProp
                 {icon}
                 <span>{title}</span>
             </summary>
-            <div style={{ padding: '0' }}>
+            <div className="pfcinspector-ui-135">
                 {children}
             </div>
         </details>
@@ -177,12 +178,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
     };
 
     const renderTextarea = (field: keyof PFCAgileItem, placeholder: string) => (
-        <textarea
-            style={{
-                width: '100%', background: 'transparent', border: 'none', color: '#e2e8f0',
-                padding: '12px 15px', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem',
-                minHeight: '80px', resize: 'vertical', outline: 'none'
-            }}
+        <textarea className="pfcinspector-ui-134"
             value={localData[field] as string || ''}
             placeholder={placeholder}
             onChange={(e) => setLocalData({ ...localData, [field]: e.target.value })}
@@ -191,20 +187,20 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
     );
 
     return (
-        <div className="scroll-hidden" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-            <div style={{ flex: 1 }}>
+        <div className="scroll-hidden common-layout-8">
+            <div className="common-layout-9">
 
                 {/* Header */}
-                <div style={{ marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="pfcinspector-ui-133">
+                    <div className="pfcinspector-ui-132">
+                        <div className="common-layout-15">
                             <span className="font-mono text-xs" style={{ background: `${color}20`, color: color, padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
                                 {item.item_type}
                             </span>
                             <span className="font-mono text-xs text-muted">ID: {item.id.split('-')[0]}</span>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', padding: '2px 6px', borderRadius: '6px' }}>
+                        <div className="pfcinspector-ui-131">
                             <button
                                 onClick={() => handlePriorityChange('up')}
                                 disabled={localData.priority === 1}
@@ -225,31 +221,21 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
                         </div>
                     </div>
 
-                    <input
+                    <input className="pfcinspector-ui-130"
                         value={localData.name}
                         onChange={(e) => setLocalData({ ...localData, name: e.target.value })}
                         onBlur={(e) => handleSave('name', e.target.value)}
-                        style={{
-                            width: '100%', background: 'transparent', border: '1px solid transparent', color: '#f8fafc',
-                            fontFamily: 'Outfit, sans-serif', fontSize: '1.2rem', fontWeight: 800, padding: '4px 8px',
-                            marginLeft: '-8px', borderRadius: '4px', outline: 'none', transition: 'border-color 0.2s'
-                        }}
                         onFocus={(e) => e.target.style.borderColor = 'var(--border-glass-strong)'}
                     />
                 </div>
 
                 {item.item_type === 'EPIC' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                    <div className="pfcinspector-ui-129">
                         <Globe size={16} color="#38bdf8" />
-                        <span className="font-mono text-xs" style={{ color: '#94a3b8', width: '90px' }}>ENVIRONMENT:</span>
-                        <select
+                        <span className="font-mono text-xs pfcinspector-ui-128">ENVIRONMENT:</span>
+                        <select className="pfcinspector-ui-127"
                             value={localData.environment?.id || ''}
                             onChange={(e) => handleEnvironmentChange(e.target.value || null)}
-                            style={{
-                                flex: 1, background: 'var(--bg-obsidian)', border: '1px solid var(--border-glass)',
-                                color: '#f8fafc', padding: '4px 8px', borderRadius: '4px', outline: 'none',
-                                fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem', cursor: 'pointer'
-                            }}
                         >
                             <option value="">Global (Unscoped)</option>
                             {environments.map(env => (
@@ -259,38 +245,38 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
                     </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="common-layout-6">
 
                     {/* Core Description */}
-                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid var(--border-glass)', overflow: 'hidden' }}>
-                        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-glass)', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Description</div>
+                    <div className="pfcinspector-ui-126">
+                        <div className="pfcinspector-ui-125">Description</div>
                         {renderTextarea('description', 'Enter general description...')}
                     </div>
 
                     {/* ASSIGNMENT & HISTORY - Re-added with 'open' prop so it's visible by default */}
                     <Accordion title="Assignment & Chain of Custody" color="#facc15" icon={<Cpu size={14}/>} open>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px 15px', color: '#e2e8f0', fontFamily: 'JetBrains Mono, monospace', fontSize: '0.8rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ color: '#94a3b8', width: '120px' }}>ACTIVE OWNER:</span>
+                        <div className="pfcinspector-ui-124">
+                            <div className="common-layout-15">
+                                <span className="pfcinspector-ui-123">ACTIVE OWNER:</span>
                                 {item.owning_disc ? (
-                                    <span style={{ background: 'var(--accent-gold)', color: 'var(--bg-obsidian)', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                                    <span className="pfcinspector-ui-122">
                                         {item.owning_disc.name}
                                     </span>
                                 ) : (
-                                    <span style={{ color: '#64748b', fontStyle: 'italic' }}>Unassigned / Backlog</span>
+                                    <span className="pfcinspector-ui-121">Unassigned / Backlog</span>
                                 )}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                <span style={{ color: '#94a3b8', width: '120px' }}>PREVIOUS:</span>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1 }}>
+                            <div className="pfcinspector-ui-120">
+                                <span className="pfcinspector-ui-119">PREVIOUS:</span>
+                                <div className="pfcinspector-ui-118">
                                     {item.previous_owners && item.previous_owners.length > 0 ? (
                                         item.previous_owners.map(prev => (
-                                            <span key={prev.id} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', padding: '2px 8px', borderRadius: '4px', color: '#cbd5e1' }}>
+                                            <span className="pfcinspector-ui-117" key={prev.id}>
                                                 {prev.name}
                                             </span>
                                         ))
                                     ) : (
-                                        <span style={{ color: '#64748b', fontStyle: 'italic' }}>No prior chain of custody</span>
+                                        <span className="pfcinspector-ui-116">No prior chain of custody</span>
                                     )}
                                 </div>
                             </div>
@@ -324,29 +310,28 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
 
                     {/* COMMENTS BLOCK */}
                     <Accordion title={`Communication Log (${item.comments?.length || 0})`} color="#e2e8f0" icon={<MessageSquare size={14}/>} open>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px 15px' }}>
-                            <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                        <div className="pfcinspector-ui-115">
+                            <div className="pfcinspector-ui-114">
                                 {item.comments && item.comments.length > 0 ? item.comments.map(c => (
                                     <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px', borderLeft: `2px solid ${c.user ? '#38bdf8' : '#f99f1b'}` }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>
+                                        <div className="pfcinspector-ui-113">
                                             <span style={{ fontWeight: 'bold', color: c.user ? '#38bdf8' : '#f99f1b' }}>{c.user ? c.user.username : 'Are-Self (System)'}</span>
                                             <span>{new Date(c.created).toLocaleString()}</span>
                                         </div>
-                                        <div style={{ fontSize: '0.85rem', color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+                                        <div className="pfcinspector-ui-112">
                                             {c.text}
                                         </div>
                                     </div>
                                 )) : (
-                                    <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', padding: '10px' }}>No communication logged.</div>
+                                    <div className="pfcinspector-ui-111">No communication logged.</div>
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', borderTop: '1px solid var(--border-glass)', paddingTop: '12px' }}>
-                                <textarea
+                            <div className="pfcinspector-ui-110">
+                                <textarea className="pfcinspector-ui-109"
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
                                     placeholder="Add a directive or comment..."
-                                    style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', color: '#f8fafc', padding: '10px 12px', borderRadius: '6px', fontSize: '0.8rem', minHeight: '60px', resize: 'vertical', outline: 'none', fontFamily: 'Inter, sans-serif' }}
                                     onFocus={(e) => e.target.style.borderColor = '#e2e8f0'}
                                     onBlur={(e) => e.target.style.borderColor = 'var(--border-glass)'}
                                 />
@@ -364,7 +349,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
                 </div>
             </div>
 
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px', paddingBottom: '20px' }}>
+            <div className="pfcinspector-ui-108">
                 <a
                     href={`http://localhost:8000/admin/prefrontal_cortex/pfc${item.item_type.toLowerCase()}/${item.id}/change/`}
                     target="_blank"
@@ -380,14 +365,9 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
                 >
                     ADVANCED DB RECORD ↗
                 </a>
-                <button
+                <button className="pfcinspector-ui-107"
                     onClick={handleDeleteTicket}
                     title="Permanently Delete Ticket"
-                    style={{
-                        background: 'transparent', border: '1px solid rgba(239,68,68,0.5)', color: '#ef4444',
-                        padding: '10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.2s'
-                    }}
                     onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; e.currentTarget.style.borderColor = '#ef4444'; }}
                     onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'; }}
                 >

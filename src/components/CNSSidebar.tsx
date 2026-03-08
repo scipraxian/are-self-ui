@@ -1,3 +1,4 @@
+import "./CNSSidebar.css";
 import React, { useEffect, useState } from 'react';
 import type { NeuralPathway } from "../types.ts";
 import { apiFetch } from '../api';
@@ -30,16 +31,16 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({ activePathwayId, onSelec
     }, []);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className="glass-panel-title" style={{ margin: 0 }}>NEURAL PATHWAYS</h2>
-                <button onClick={onExit} className="bbb-close-btn" style={{ position: 'relative', top: 0, right: 0 }}>✕</button>
+        <div className="cnssidebar-ui-32">
+            <div className="common-layout-18">
+                <h2 className="glass-panel-title common-layout-4">NEURAL PATHWAYS</h2>
+                <button onClick={onExit} className="bbb-close-btn common-layout-5">✕</button>
             </div>
 
             {isLoading ? (
                 <div className="bbb-placeholder font-mono text-sm">Loading networks...</div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
+                <div className="cnssidebar-ui-31">
                     {pathways.map(pw => (
                         <div
                             key={pw.id}
@@ -53,12 +54,12 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({ activePathwayId, onSelec
                                 transition: 'all 0.2s'
                             }}
                         >
-                            <div style={{ color: '#e2e8f0', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
+                            <div className="cnssidebar-ui-30">
                                 <span>{pw.name}</span>
-                                {pw.is_favorite && <span style={{ color: '#facc15' }}>★</span>}
+                                {pw.is_favorite && <span className="cnssidebar-ui-29">★</span>}
                             </div>
                             {pw.description && (
-                                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div className="cnssidebar-ui-28">
                                     {pw.description}
                                 </div>
                             )}

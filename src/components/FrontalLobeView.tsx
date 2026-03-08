@@ -1,3 +1,4 @@
+import "./FrontalLobeView.css";
 import { useState, useEffect } from 'react';
 import { Loader2, Activity, Brain } from 'lucide-react';
 import { FrontalLobeDetail } from './FrontalLobeDetail';
@@ -48,23 +49,23 @@ export const FrontalLobeView = () => {
 
     if (isLoading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div className="common-layout-25">
                 <Loader2 className="animate-spin text-muted" size={32} />
             </div>
         );
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingRight: '20px' }}>
+        <div className="common-layout-26">
+            <div className="frontallobeview-ui-82">
                 <Brain size={24} color="#a855f7" />
                 <div>
                     <h3 className="font-display heading-tracking text-base m-0 text-primary">FRONTAL LOBE</h3>
-                    <div className="font-mono text-xs text-muted" style={{ marginTop: '4px' }}>Active Cognitive Threads</div>
+                    <div className="font-mono text-xs text-muted common-layout-27">Active Cognitive Threads</div>
                 </div>
             </div>
 
-            <div className="scroll-hidden" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="scroll-hidden frontallobeview-ui-81">
                 {sessions.length === 0 ? (
                     <div className="bbb-placeholder font-mono text-sm">No cognitive threads active. Discs are dormant.</div>
                 ) : (
@@ -86,12 +87,12 @@ export const FrontalLobeView = () => {
                                  onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent-purple)'}
                                  onMouseOut={(e) => e.currentTarget.style.borderColor = isActive ? 'rgba(168, 85, 247, 0.4)' : 'var(--border-glass)'}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div className="common-layout-18">
                                     <span className="font-display text-sm" style={{ color: isActive ? '#a855f7' : '#94a3b8', fontWeight: 800, letterSpacing: '0.05em' }}>
                                         {/* Nomenclature fix */}
                                         COGNITIVE THREAD // {session.id.split('-')[0].toUpperCase()}
                                     </span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div className="common-layout-15">
                                         {isActive && <Activity size={14} color="#a855f7" className="pulse" />}
                                         <span className="font-mono text-xs" style={{ textTransform: 'uppercase', color: isActive ? '#f8fafc' : '#64748b' }}>
                                             {session.status_name}
@@ -99,18 +100,18 @@ export const FrontalLobeView = () => {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                                    <div style={{ background: 'var(--bg-obsidian)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-glass)' }}>
-                                        <div className="font-mono text-xs text-muted" style={{ marginBottom: '4px' }}>FOCUS POOL</div>
-                                        <div className="font-display" style={{ fontSize: '1.2rem', color: '#38bdf8' }}>{session.current_focus}</div>
+                                <div className="frontallobeview-ui-80">
+                                    <div className="frontallobeview-ui-79">
+                                        <div className="font-mono text-xs text-muted common-layout-30">FOCUS POOL</div>
+                                        <div className="font-display frontallobeview-ui-78">{session.current_focus}</div>
                                     </div>
-                                    <div style={{ background: 'var(--bg-obsidian)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-glass)' }}>
-                                        <div className="font-mono text-xs text-muted" style={{ marginBottom: '4px' }}>LEVEL</div>
-                                        <div className="font-display" style={{ fontSize: '1.2rem', color: '#4ade80' }}>{session.current_level}</div>
+                                    <div className="frontallobeview-ui-77">
+                                        <div className="font-mono text-xs text-muted common-layout-30">LEVEL</div>
+                                        <div className="font-display frontallobeview-ui-76">{session.current_level}</div>
                                     </div>
-                                    <div style={{ background: 'var(--bg-obsidian)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-glass)' }}>
-                                        <div className="font-mono text-xs text-muted" style={{ marginBottom: '4px' }}>EXPERIENCE</div>
-                                        <div className="font-display" style={{ fontSize: '1.2rem', color: '#facc15' }}>{session.total_xp} XP</div>
+                                    <div className="frontallobeview-ui-75">
+                                        <div className="font-mono text-xs text-muted common-layout-30">EXPERIENCE</div>
+                                        <div className="font-display frontallobeview-ui-74">{session.total_xp} XP</div>
                                     </div>
                                 </div>
                             </div>

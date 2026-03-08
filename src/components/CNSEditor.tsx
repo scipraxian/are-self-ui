@@ -224,7 +224,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
     }, [selectedNode, onNodeSelect]);
 
     return (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }} ref={reactFlowWrapper}>
+        <div className="common-layout-2" ref={reactFlowWrapper}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
