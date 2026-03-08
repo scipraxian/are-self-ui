@@ -46,17 +46,19 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
     useEffect(() => {
         if (!node?.id) return;
         let isMounted = true;
-        apiFetch(`/central_nervous_system/graph/${pathwayId}/neuron_details?neuron_id=${node.id}`)
+
+        apiFetch(`/api/v1/neurons/${node.id}/inspector_details/`)
             .then(res => res.json())
             .then(data => {
                 if (isMounted) setDetails(data);
             })
             .catch(console.error);
+
         return () => {
             isMounted = false;
         };
 
-    }, [node?.id, pathwayId]);
+    }, [node?.id]);
 
     if (!node) {
         return (

@@ -212,3 +212,24 @@ export interface Axon {
     type: number;
     type_name: string;
 }
+
+export interface PFCAgileItem {
+    id: string;
+    item_type: 'EPIC' | 'STORY' | 'TASK';
+    name: string;
+    description: string;
+    status: { id: number; name: string };
+    complexity?: number;
+    priority?: number;
+    tags: { id: number; name: string }[];
+    owning_disc: { id: number; name: string } | null;
+    parent_name?: string;
+
+    // PFCTicketMixin Deep Fields
+    perspective?: string;
+    assertions?: string;
+    outside?: string;
+    dod_exceptions?: string;
+    dependencies?: string;
+    demo_specifics?: string;
+}

@@ -14,6 +14,8 @@ import { CNSInspector } from './CNSInspector';
 import { apiFetch } from '../api';
 import './BloodBrainBarrier.css';
 import { CNSView } from "./CNSView.tsx";
+import { PFCInspector } from './PFCInspector';
+import type { PFCAgileItem } from '../types';
 
 export const BloodBrainBarrier = () => {
     // Add 'cns' to the viewport state
@@ -25,14 +27,22 @@ export const BloodBrainBarrier = () => {
     const [selectedNode, setSelectedNode] = useState<any>(null);
     const [cortexStats, setCortexStats] = useState<any>(null);
 
+    // PFC State
+    const [selectedPfcItem, setSelectedPfcItem] = useState<PFCAgileItem | null>(null);
+
     // CNS State
     const [activePathwayId, setActivePathwayId] = useState<string | null>(null);
 
     const handleLobeClick = (path: string) => {
+        // Clear all inspectors when changing views
+        setSelectedNode(null);
+        setSelectedEntity(null);
+        setSelectedPfcItem(null);
+
         if (path === 'temporal') setActiveViewport('iteration');
         else if (path === 'pfc') setActiveViewport('pfc');
         else if (path === 'frontal') setActiveViewport('reasoning');
-        else if (path === 'cns') setActiveViewport('cns'); // <-- ADD ROUTING
+        else if (path === 'cns') setActiveViewport('cns');
         else setActiveViewport(null);
     };
 
@@ -109,7 +119,12 @@ export const BloodBrainBarrier = () => {
                             <div className="glass-panel bbb-panel-center-active" style={{ width: '100%' }}>
                                 <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
                                 {activeViewport === 'iteration' && <TemporalMatrix />}
-                                {activeViewport === 'pfc' && <PrefrontalCortex />}
+                                {activeViewport === 'pfc' && (
+                                    <PrefrontalCortex
+                                        onItemSelect={setSelectedPfcItem}
+                                        selectedItemId={selectedPfcItem?.id}
+                                    />
+                                )}
                                 {activeViewport === 'identity' && selectedEntity ? (
                                     <IdentitySheet id={selectedEntity.id} type={selectedEntity.type} />
                                 ) : activeViewport === 'identity' && !selectedEntity ? (
@@ -133,7 +148,6 @@ export const BloodBrainBarrier = () => {
                                 <CNSView onOpenPathway={(pathwayId) => {
                                     setActivePathwayId(pathwayId);
                                 }} />
-
                             </div>
                         )}
                     </main>
@@ -153,17 +167,50 @@ export const BloodBrainBarrier = () => {
                                             window.dispatchEvent(event);
                                         }).catch(console.error);
                                 }}
-                                onContextChange={(nodeId, key, value) => {
-                                    apiFetch(`/central_nervous_system/graph/${activePathwayId}/save_neuron_context/`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            neuron_id: nodeId,
-                                            updates: [{ key, value }]
-                                        })
-                                    }).catch(console.error);
+                                onContextChange={async (nodeId, key, value) => {
+                                    try {
+                                        const searchRes = await apiFetch(`/api/v1/node-contexts/?neuron=${nodeId}&key=${key}`);
+                                        const searchData = await searchRes.json();
+                                        const existing = searchData.results && searchData.results.length > 0 ? searchData.results[0] : null;
+
+                                        if (!value) {
+                                            if (existing) {
+                                                await apiFetch(`/api/v1/node-contexts/${existing.id}/`, { method: 'DELETE' });
+                                            }
+                                        } else {
+                                            if (existing) {
+                                                await apiFetch(`/api/v1/node-contexts/${existing.id}/`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ value })
+                                                });
+                                            } else {
+                                                await apiFetch(`/api/v1/node-contexts/`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ neuron: nodeId, key: key, value: value })
+                                                });
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.error("Failed to sync context override via REST:", err);
+                                    }
                                 }}
                             />
+                        ) : activeViewport === 'pfc' ? (
+                            selectedPfcItem ? (
+                                <PFCInspector
+                                    item={selectedPfcItem}
+                                    onUpdate={() => {
+                                        // The board auto-polls, but we can leave this here
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
+                                    <h2 className="glass-panel-title">TICKET INSPECTOR</h2>
+                                    <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontStyle: 'italic', marginTop: '10px' }}>Select an Agile Ticket to view or edit its details.</div>
+                                </div>
+                            )
                         ) : (
                             <>
                                 <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
