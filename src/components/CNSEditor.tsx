@@ -41,7 +41,6 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
         []
     );
 
-    // CRUD: Node Drag Stop
     const onNodeDragStop = useCallback((_event: React.MouseEvent, node: any) => {
         // Optimistic UI updates happen via onNodesChange. Here we just post telemetry to DB.
         apiFetch(`/api/v2/neurons/${node.id}/`, {
@@ -108,6 +107,25 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
         apiFetch(`/api/v2/axons/${edge.id}/`, { method: 'DELETE' }).catch(console.error);
     }, []);
 
+    const handleRunNode = useCallback((_nodeId: string) => {
+        apiFetch(`/api/v2/neuralpathways/${pathwayId}/launch/`, { method: 'POST' })
+            .then(async (res) => {
+                if (res.ok) {
+                    // The backend successfully created the SpikeTrain!
+                    alert("Pathway Launched Successfully! Switch to the CNS View to monitor execution.");
+                } else {
+                    const err = await res.json();
+                    alert("Launch Failed: " + (err.error || JSON.stringify(err)));
+                }
+            })
+            .catch(err => console.error("Failed to run pathway", err));
+    }, [pathwayId]);
+
+    const handleStopNode = useCallback((_nodeId: string) => {
+        // Pathways are blueprints, so we must stop the specific SpikeTrain instance
+        alert("To stop execution, switch to the CNS View and halt the active SpikeTrain.");
+    }, []);
+
     useEffect(() => {
         setSelectedNode(null); // Clear selection on pathway change
         if (onNodeSelect) onNodeSelect(null);
@@ -142,7 +160,9 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
                                 is_root: neuron.is_root,
                                 invoked_pathway_name: neuron.invoked_pathway_name,
                                 invoked_pathway_id: neuron.invoked_pathway,
-                                onDrillDown: onDrillDown
+                                onDrillDown: onDrillDown,
+                                onPlay: handleRunNode,
+                                onStop: handleStopNode
                             },
                             sourceData: neuron // Store raw DB data for the Right Panel Inspector
                         };
@@ -272,7 +292,9 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
                                 effectorName: newNeuron.effector_name,
                                 invokedPathwayId: newNeuron.invoked_pathway,
                                 is_root: newNeuron.is_root,
-                                onDrillDown: onDrillDown
+                                onDrillDown: onDrillDown,
+                                onPlay: handleRunNode,
+                                onStop: handleStopNode
                             },
                             sourceData: newNeuron
                         };

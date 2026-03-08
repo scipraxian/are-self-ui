@@ -10,6 +10,8 @@ interface NeuronNodeData {
     invoked_pathway_name?: string | null;
     invoked_pathway_id?: number | string | null;
     onDrillDown?: (id: string | number) => void;
+    onPlay?: (id: string) => void;
+    onStop?: (id: string) => void;
 }
 
 export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) => {
@@ -57,21 +59,20 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {/* Replace the existing Subgraph, Play, and Stop buttons in NeuronNode.tsx with this: */}
+
                     {isSubgraph && data.onDrillDown && (
                         <button
+                            className="nodrag"
                             style={{
-                                background: '#38bdf8',
-                                border: 'none',
-                                color: '#0f172a',
-                                borderRadius: '4px',
-                                padding: '2px',
-                                cursor: 'pointer',
+                                background: '#38bdf8', border: 'none', color: '#0f172a',
+                                borderRadius: '4px', padding: '2px', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}
                             title="Drill down to Sub-Graph"
-                            onMouseDown={(e) => {
+                            onClick={(e) => {
                                 e.stopPropagation();
-                                data.onDrillDown && data.invoked_pathway_id && data.onDrillDown(data.invoked_pathway_id);
+                                data.onDrillDown && data.invoked_pathway_id && data.onDrillDown(data.invoked_pathway_id.toString());
                             }}
                         >
                             <Eye size={12} />
@@ -81,14 +82,24 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
                     {isRoot && (
                         <>
                             <button
+                                className="nodrag"
                                 style={{ background: '#38bdf8', border: 'none', color: '#0f172a', borderRadius: '4px', padding: '2px', cursor: 'pointer' }}
-                                title="Start Execution"
+                                title="Start Execution (Root Node)"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    data.onPlay && data.onPlay(id);
+                                }}
                             >
                                 <Play size={10} fill="#0f172a" />
                             </button>
                             <button
+                                className="nodrag"
                                 style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#e2e8f0', borderRadius: '4px', padding: '2px', cursor: 'pointer' }}
-                                title="Stop Execution"
+                                title="Stop Execution (Root Node)"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    data.onStop && data.onStop(id);
+                                }}
                             >
                                 <Square size={10} fill="#e2e8f0" />
                             </button>
