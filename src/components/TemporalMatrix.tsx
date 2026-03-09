@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network } from 'lucide-react';
+import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus } from 'lucide-react';
 import './TemporalMatrix.css';
 
 // --- STRICT TYPESCRIPT INTERFACES ---
@@ -60,11 +60,15 @@ export const TemporalMatrix = () => {
     const [canScrollRight, setCanScrollRight] = useState(false);
 
     // API State using Strict Types
-    const [iteration, setIteration] = useState<IterationData | null>(null);
+    const [iterations, setIterations] = useState<IterationData[]>([]);
+    const [selectedIterationId, setSelectedIterationId] = useState<number | null>(null);
     const [blueprints, setBlueprints] = useState<BlueprintData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isGestating, setIsGestating] = useState(false);
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
+
+    const iteration = iterations.find(it => it.id === selectedIterationId) || null;
+
 
     const checkScroll = () => {
         if (boardRef.current) {
@@ -82,23 +86,22 @@ export const TemporalMatrix = () => {
     };
 
     useEffect(() => {
-        fetch('/api/v2/iterations/')
-            .then(res => res.json())
-            .then(data => {
-                const results: IterationData[] = data.results || data;
-                if (results.length > 0) {
-                    setIteration(results[0]);
-                } else {
-                    fetch('/api/v2/iteration-definitions/')
-                        .then(res => res.json())
-                        .then(defData => setBlueprints(defData.results || defData));
-                }
-                setIsLoading(false);
-            })
-            .catch(err => {
-                console.error("Temporal fetch failed:", err);
-                setIsLoading(false);
-            });
+        setIsLoading(true);
+        Promise.all([
+            fetch('/api/v2/iterations/').then(res => res.json()),
+            fetch('/api/v2/iteration-definitions/').then(res => res.json())
+        ]).then(([iterData, defData]) => {
+            const results: IterationData[] = iterData.results || iterData;
+            setIterations(results);
+            if (results.length > 0) {
+                setSelectedIterationId(results[0].id);
+            }
+            setBlueprints(defData.results || defData);
+            setIsLoading(false);
+        }).catch(err => {
+            console.error("Temporal fetch failed:", err);
+            setIsLoading(false);
+        });
     }, []);
 
     useEffect(() => {
@@ -120,7 +123,8 @@ export const TemporalMatrix = () => {
 
             if (res.ok) {
                 const newIteration: IterationData = await res.json();
-                setIteration(newIteration);
+                setIterations(prev => [newIteration, ...prev]);
+                setSelectedIterationId(newIteration.id);
             } else {
                 console.error("Failed to incept.");
             }
@@ -129,6 +133,10 @@ export const TemporalMatrix = () => {
         } finally {
             setIsGestating(false);
         }
+    };
+
+    const updateIterationState = (updatedIteration: IterationData) => {
+        setIterations(prev => prev.map(it => it.id === updatedIteration.id ? updatedIteration : it));
     };
 
     const handleRemoveWorker = async (shiftId: number, discId: number) => {
@@ -143,7 +151,7 @@ export const TemporalMatrix = () => {
             });
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
-                setIteration(updatedIteration);
+                updateIterationState(updatedIteration);
                 window.dispatchEvent(new Event('sync-roster'));
             }
         } catch (err) {
@@ -152,6 +160,7 @@ export const TemporalMatrix = () => {
     };
     const handleInitiate = async () => {
         if (!iteration) return;
+        if (iteration.status_name !== 'Waiting') return;
         const csrfToken = getCookie('csrftoken');
         try {
             const res = await fetch(`/api/v2/iterations/${iteration.id}/initiate/`, {
@@ -160,7 +169,7 @@ export const TemporalMatrix = () => {
             });
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
-                setIteration(updatedIteration);
+                updateIterationState(updatedIteration);
             } else {
                 console.error("Failed to initiate.");
             }
@@ -193,7 +202,7 @@ export const TemporalMatrix = () => {
 
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
-                setIteration(updatedIteration);
+                updateIterationState(updatedIteration);
                 window.dispatchEvent(new Event('sync-roster'));
             }
         } catch (err) {
@@ -203,126 +212,154 @@ export const TemporalMatrix = () => {
 
     if (isLoading) {
         return (
-            <div className="temporal-matrix-container gestation-chamber">
-                <Loader2 className="animate-spin text-muted" size={32} />
-            </div>
-        );
-    }
-
-    if (!iteration) {
-        return (
-            <div className="temporal-matrix-container gestation-chamber">
-                <Network size={48} className="text-muted temporalmatrix-ui-210" />
-                <h2 className="font-display heading-tracking text-lg m-0 text-primary">Gestation Chamber</h2>
-                <p className="text-muted font-mono text-sm m-0">No active timelines. Select a structural blueprint to incept.</p>
-
-                <div className="gestation-blueprints">
-                    {blueprints.map(bp => (
-                        <button
-                            key={bp.id}
-                            className="btn-ghost"
-                            onClick={() => handleIncept(bp.id)}
-                            disabled={isGestating}
-                        >
-                            {isGestating ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />}
-                            INCEPT: {bp.name}
-                        </button>
-                    ))}
+            <div className="temporal-matrix-layout">
+                <div className="temporal-matrix-container gestation-chamber">
+                    <Loader2 className="animate-spin text-muted" size={32} />
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="temporal-matrix-container">
-            <div className="matrix-header">
-                <div>
-                    <h3 className="font-display heading-tracking text-base m-0 text-primary">
-                        {iteration.definition_name || 'Standard Iteration'}
-                    </h3>
-                    <div className="font-mono text-xs text-muted common-layout-27">
-                        Iteration ID: {iteration.id} | Status: {iteration.status_name}
-                    </div>
-                </div>
+        <div className="temporal-matrix-layout">
+            <div className="iteration-roster-sidebar">
                 <button
-                    className="btn-action"
-                    onClick={handleInitiate}
-                    disabled={iteration.status_name !== 'Waiting'}
-                    style={{ opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1, cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer' }}
+                    className="btn-new-iteration"
+                    onClick={() => setSelectedIterationId(null)}
                 >
-                    <Play size={14} fill="currentColor" />
-                    INITIATE
+                    <Plus size={16} /> New Iteration
                 </button>
+                <div className="roster-list">
+                    {iterations.map(it => (
+                        <div
+                            key={it.id}
+                            className={`roster-item ${it.id === selectedIterationId ? 'active' : ''}`}
+                            onClick={() => setSelectedIterationId(it.id)}
+                        >
+                            <div className="roster-item-title">{it.name || `Iteration ${it.id}`}</div>
+                            <div className="roster-item-status">{it.status_name}</div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            <div className="matrix-board-wrapper">
-                {canScrollLeft ? (
-                    <button className="matrix-scroll-btn" onClick={() => scrollBoard('left')}>
-                        <ChevronLeft size={24} />
-                    </button>
-                ) : <div className="common-layout-31" />}
+            <div className="temporal-matrix-main">
+                {!iteration ? (
+                    <div className="temporal-matrix-container gestation-chamber">
+                        <Network size={48} className="text-muted temporalmatrix-ui-210" />
+                        <h2 className="font-display heading-tracking text-lg m-0 text-primary">Gestation Chamber</h2>
+                        <p className="text-muted font-mono text-sm m-0">No active timelines. Select a structural blueprint to incept.</p>
 
-                <div className="matrix-board" ref={boardRef} onScroll={checkScroll}>
-
-                    {iteration.shifts?.map((shift: ShiftData, index: number) => {
-                        const isActive = iteration.current_shift === shift.id;
-
-                        return (
-                            <div key={shift.id} className={`matrix-column ${isActive ? 'active' : ''}`}>
-                                <div className="matrix-column-header">
-                                    <span className={`matrix-column-title ${isActive ? 'active-text' : ''}`}>
-                                        {index + 1}. {shift.name}
-                                    </span>
-                                    <span className="matrix-column-stats" title="Turn Limit">0 / {shift.turn_limit}</span>
-                                </div>
-
-                                <div
-                                    className={`matrix-column-body ${dragOverShift === shift.id ? 'drag-over' : ''}`}
-                                    onDragOver={(e) => { e.preventDefault(); setDragOverShift(shift.id); }}
-                                    onDragLeave={() => setDragOverShift(null)}
-                                    onDrop={(e) => handleDrop(e, shift.id)}
+                        <div className="gestation-blueprints">
+                            {blueprints.map(bp => (
+                                <button
+                                    key={bp.id}
+                                    className="btn-ghost blueprint-card"
+                                    onClick={() => handleIncept(bp.id)}
+                                    disabled={isGestating}
                                 >
-
-                                    {shift.participants?.map((participant: ParticipantData) => (
-                                        <div key={participant.id} className="slotted-card">
-                                            <div className="slotted-card-header">
-                                                <div className="common-layout-15">
-                                                    <span className="slotted-card-title">{participant.disc.name}</span>
-                                                    {isActive && <span className="status-dot status-active-pulse"></span>}
-                                                </div>
-                                                <button className="temporalmatrix-ui-209"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleRemoveWorker(shift.id, participant.disc.id);
-                                                    }}
-                                                    title="Remove from Shift"
-                                                >
-                                                    <MoreVertical size={14} className="text-muted temporalmatrix-ui-208"
-                                                                  onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-red)'}
-                                                                  onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                                                    />
-                                                </button>
-                                            </div>
-                                            <div className="font-mono text-xs text-secondary temporalmatrix-ui-207">
-                                                <span>Lvl {participant.disc.level}</span>
-                                                <span>XP: {participant.disc.xp}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    <div className="matrix-drop-zone"></div>
+                                    {isGestating ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />}
+                                    <div className="blueprint-name">{bp.name}</div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="temporal-matrix-container active-matrix">
+                        <div className="matrix-header">
+                            <div>
+                                <h3 className="font-display heading-tracking text-base m-0 text-primary">
+                                    {iteration.name || iteration.definition_name || 'Standard Iteration'}
+                                </h3>
+                                <div className="font-mono text-xs text-muted common-layout-27">
+                                    Iteration ID: {iteration.id} | Status: {iteration.status_name}
                                 </div>
                             </div>
-                        );
-                    })}
+                            <button
+                                className="btn-action initiate-btn"
+                                onClick={handleInitiate}
+                                disabled={iteration.status_name !== 'Waiting'}
+                                style={{
+                                    opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
+                                    cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                <Play size={14} fill="currentColor" />
+                                INITIATE
+                            </button>
+                        </div>
 
-                </div>
+                        <div className="matrix-board-wrapper">
+                            {canScrollLeft ? (
+                                <button className="matrix-scroll-btn" onClick={() => scrollBoard('left')}>
+                                    <ChevronLeft size={24} />
+                                </button>
+                            ) : <div className="common-layout-31" />}
 
-                {canScrollRight ? (
-                    <button className="matrix-scroll-btn" onClick={() => scrollBoard('right')}>
-                        <ChevronRight size={24} />
-                    </button>
-                ) : <div className="common-layout-31" />}
+                            <div className="matrix-board" ref={boardRef} onScroll={checkScroll}>
+
+                                {iteration.shifts?.map((shift: ShiftData, index: number) => {
+                                    const isActive = iteration.current_shift === shift.id;
+
+                                    return (
+                                        <div key={shift.id} className={`matrix-column ${isActive ? 'active' : ''}`}>
+                                            <div className="matrix-column-header">
+                                                <span className={`matrix-column-title ${isActive ? 'active-text' : ''}`}>
+                                                    {index + 1}. {shift.name}
+                                                </span>
+                                                <span className="matrix-column-stats" title="Turn Limit">0 / {shift.turn_limit}</span>
+                                            </div>
+
+                                            <div
+                                                className={`matrix-column-body ${dragOverShift === shift.id ? 'drag-over' : ''}`}
+                                                onDragOver={(e) => { e.preventDefault(); setDragOverShift(shift.id); }}
+                                                onDragLeave={() => setDragOverShift(null)}
+                                                onDrop={(e) => handleDrop(e, shift.id)}
+                                            >
+
+                                                {shift.participants?.map((participant: ParticipantData) => (
+                                                    <div key={participant.id} className="slotted-card">
+                                                        <div className="slotted-card-header">
+                                                            <div className="common-layout-15">
+                                                                <span className="slotted-card-title">{participant.disc.name}</span>
+                                                                {isActive && <span className="status-dot status-active-pulse"></span>}
+                                                            </div>
+                                                            <button className="temporalmatrix-ui-209"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleRemoveWorker(shift.id, participant.disc.id);
+                                                                }}
+                                                                title="Remove from Shift"
+                                                            >
+                                                                <MoreVertical size={14} className="text-muted temporalmatrix-ui-208"
+                                                                    onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-red)'}
+                                                                    onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                                                                />
+                                                            </button>
+                                                        </div>
+                                                        <div className="font-mono text-xs text-secondary temporalmatrix-ui-207">
+                                                            <span>Lvl {participant.disc.level}</span>
+                                                            <span>XP: {participant.disc.xp}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                <div className="matrix-drop-zone"></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                            </div>
+
+                            {canScrollRight ? (
+                                <button className="matrix-scroll-btn" onClick={() => scrollBoard('right')}>
+                                    <ChevronRight size={24} />
+                                </button>
+                            ) : <div className="common-layout-31" />}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -41,7 +41,7 @@ const Accordion = ({ title, color, open = false, children, rightElement }: Accor
     );
 };
 
-export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNSInspectorProps) => {
+export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorProps) => {
     const [details, setDetails] = useState<NodeDetails | null>(null);
 
     useEffect(() => {
