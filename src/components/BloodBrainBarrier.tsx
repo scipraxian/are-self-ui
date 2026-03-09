@@ -15,7 +15,7 @@ import { apiFetch } from '../api';
 import './BloodBrainBarrier.css';
 import { CNSView } from "./CNSView.tsx";
 import { PFCInspector } from './PFCInspector';
-import type {GraphNode, PFCAgileItem} from '../types';
+import type { GraphNode, PFCAgileItem } from '../types';
 
 export const BloodBrainBarrier = () => {
     // Add 'cns' to the viewport state
@@ -32,6 +32,9 @@ export const BloodBrainBarrier = () => {
 
     // CNS State
     const [activePathwayId, setActivePathwayId] = useState<string | null>(null);
+
+    // Matrix View State
+    const [matrixHasSelection, setMatrixHasSelection] = useState<boolean>(false);
 
     const handleLobeClick = (path: string) => {
         // Clear all inspectors when changing views
@@ -107,8 +110,13 @@ export const BloodBrainBarrier = () => {
                             )
                         ) : (
                             <>
-                                <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
-                                <IdentityRoster onSelectIdentity={handleIdentitySelect} />
+                                {!(activeViewport === 'iteration' && !matrixHasSelection) && (
+                                    <>
+                                        <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
+                                        <IdentityRoster onSelectIdentity={handleIdentitySelect} />
+                                    </>
+                                )}
+                                <div id="bbb-iteration-roster-portal" style={{ display: activeViewport === 'iteration' && !matrixHasSelection ? 'flex' : 'none', flexDirection: 'column', height: '100%', overflow: 'hidden', width: '100%' }} />
                             </>
                         )}
                     </aside>
@@ -118,7 +126,7 @@ export const BloodBrainBarrier = () => {
                         {activeViewport && !isReasoningGraphActive && !isCNSEditorActive && activeViewport !== 'reasoning' && activeViewport !== 'cns' && (
                             <div className="glass-panel bbb-panel-center-active bloodbrainbarrier-ui-12">
                                 <button className="bbb-close-btn" onClick={() => setActiveViewport(null)}>✕</button>
-                                {activeViewport === 'iteration' && <TemporalMatrix />}
+                                {activeViewport === 'iteration' && <TemporalMatrix onSelectionChange={setMatrixHasSelection} />}
                                 {activeViewport === 'pfc' && (
                                     <PrefrontalCortex
                                         onItemSelect={setSelectedPfcItem}

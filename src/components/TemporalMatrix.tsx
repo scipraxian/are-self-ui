@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus } from 'lucide-react';
 import './TemporalMatrix.css';
 
@@ -30,6 +31,7 @@ interface IterationData {
     status_name: string;
     current_shift: number | null;
     turns_consumed_in_shift: number;
+    environment: string | null;
     shifts: ShiftData[];
 }
 
@@ -54,7 +56,11 @@ function getCookie(name: string): string | null {
     return cookieValue;
 }
 
-export const TemporalMatrix = () => {
+interface TemporalMatrixProps {
+    onSelectionChange?: (hasSelection: boolean) => void;
+}
+
+export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) => {
     const boardRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -63,11 +69,24 @@ export const TemporalMatrix = () => {
     const [iterations, setIterations] = useState<IterationData[]>([]);
     const [selectedIterationId, setSelectedIterationId] = useState<number | null>(null);
     const [blueprints, setBlueprints] = useState<BlueprintData[]>([]);
+    const [environments, setEnvironments] = useState<{ id: string, name: string }[]>([]);
+    const [selectedGestationEnvironmentId, setSelectedGestationEnvironmentId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [isGestating, setIsGestating] = useState(false);
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
 
     const iteration = iterations.find(it => it.id === selectedIterationId) || null;
+
+    useEffect(() => {
+        if (onSelectionChange) {
+            onSelectionChange(selectedIterationId !== null);
+        }
+    }, [selectedIterationId, onSelectionChange]);
+
+    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+    useEffect(() => {
+        setPortalTarget(document.getElementById('bbb-iteration-roster-portal'));
+    }, [selectedIterationId]);
 
 
     const checkScroll = () => {
@@ -89,14 +108,16 @@ export const TemporalMatrix = () => {
         setIsLoading(true);
         Promise.all([
             fetch('/api/v2/iterations/').then(res => res.json()),
-            fetch('/api/v2/iteration-definitions/').then(res => res.json())
-        ]).then(([iterData, defData]) => {
+            fetch('/api/v2/iteration-definitions/').then(res => res.json()),
+            fetch('/api/v1/environments/').then(res => res.json())
+        ]).then(([iterData, defData, envData]) => {
             const results: IterationData[] = iterData.results || iterData;
             setIterations(results);
             if (results.length > 0) {
                 setSelectedIterationId(results[0].id);
             }
             setBlueprints(defData.results || defData);
+            setEnvironments(envData.results || envData);
             setIsLoading(false);
         }).catch(err => {
             console.error("Temporal fetch failed:", err);
@@ -118,7 +139,10 @@ export const TemporalMatrix = () => {
             const res = await fetch('/api/v2/iterations/incept/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
-                body: JSON.stringify({ definition_id: definitionId })
+                body: JSON.stringify({
+                    definition_id: definitionId,
+                    environment_id: selectedGestationEnvironmentId
+                })
             });
 
             if (res.ok) {
@@ -220,35 +244,63 @@ export const TemporalMatrix = () => {
         );
     }
 
+    const iterationRosterSidebar = (
+        <div className="iteration-roster-sidebar" style={{ borderRight: 'none', background: 'transparent', width: '100%', padding: '0 0 16px 0' }}>
+            <button
+                className="btn-new-iteration"
+                onClick={() => setSelectedIterationId(null)}
+                style={{ marginBottom: '16px' }}
+            >
+                <Plus size={16} /> New Iteration
+            </button>
+            <div className="roster-list">
+                {iterations.map(it => (
+                    <div
+                        key={it.id}
+                        className={`roster-item ${it.id === selectedIterationId ? 'active' : ''}`}
+                        onClick={() => setSelectedIterationId(it.id)}
+                    >
+                        <div className="roster-item-title">{it.name || `Iteration ${it.id}`}</div>
+                        <div className="roster-item-status">{it.status_name}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
     return (
         <div className="temporal-matrix-layout">
-            <div className="iteration-roster-sidebar">
-                <button
-                    className="btn-new-iteration"
-                    onClick={() => setSelectedIterationId(null)}
-                >
-                    <Plus size={16} /> New Iteration
-                </button>
-                <div className="roster-list">
-                    {iterations.map(it => (
-                        <div
-                            key={it.id}
-                            className={`roster-item ${it.id === selectedIterationId ? 'active' : ''}`}
-                            onClick={() => setSelectedIterationId(it.id)}
-                        >
-                            <div className="roster-item-title">{it.name || `Iteration ${it.id}`}</div>
-                            <div className="roster-item-status">{it.status_name}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {portalTarget && !selectedIterationId && createPortal(iterationRosterSidebar, portalTarget)}
 
-            <div className="temporal-matrix-main">
+            <div className="temporal-matrix-main" style={{ padding: selectedIterationId ? '24px' : '0' }}>
                 {!iteration ? (
                     <div className="temporal-matrix-container gestation-chamber">
                         <Network size={48} className="text-muted temporalmatrix-ui-210" />
                         <h2 className="font-display heading-tracking text-lg m-0 text-primary">Gestation Chamber</h2>
-                        <p className="text-muted font-mono text-sm m-0">No active timelines. Select a structural blueprint to incept.</p>
+                        <p className="text-muted font-mono text-sm m-0">No active timelines. Select an environment and blueprint to incept.</p>
+
+                        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                            <label className="font-mono text-xs text-muted">TARGET ENVIRONMENT</label>
+                            <select
+                                value={selectedGestationEnvironmentId}
+                                onChange={(e) => setSelectedGestationEnvironmentId(e.target.value)}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    color: 'var(--text-primary)',
+                                    padding: '10px 16px',
+                                    borderRadius: '8px',
+                                    fontFamily: 'var(--font-mono)',
+                                    minWidth: '250px',
+                                    outline: 'none'
+                                }}
+                            >
+                                <option value="" disabled>-- Select Environment --</option>
+                                {environments.map(env => (
+                                    <option key={env.id} value={env.id}>{env.name}</option>
+                                ))}
+                            </select>
+                        </div>
 
                         <div className="gestation-blueprints">
                             {blueprints.map(bp => (
@@ -256,7 +308,8 @@ export const TemporalMatrix = () => {
                                     key={bp.id}
                                     className="btn-ghost blueprint-card"
                                     onClick={() => handleIncept(bp.id)}
-                                    disabled={isGestating}
+                                    disabled={isGestating || !selectedGestationEnvironmentId}
+                                    style={{ opacity: !selectedGestationEnvironmentId ? 0.5 : 1 }}
                                 >
                                     {isGestating ? <Loader2 className="animate-spin" size={16} /> : <Play size={16} />}
                                     <div className="blueprint-name">{bp.name}</div>
@@ -271,22 +324,41 @@ export const TemporalMatrix = () => {
                                 <h3 className="font-display heading-tracking text-base m-0 text-primary">
                                     {iteration.name || iteration.definition_name || 'Standard Iteration'}
                                 </h3>
-                                <div className="font-mono text-xs text-muted common-layout-27">
-                                    Iteration ID: {iteration.id} | Status: {iteration.status_name}
+                                <div className="font-mono text-xs text-muted common-layout-27" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>Iteration ID: {iteration.id}</span>
+                                    <span>|</span>
+                                    <span>Status: {iteration.status_name}</span>
+                                    {iteration.environment && environments.find(e => e.id === iteration.environment) && (
+                                        <>
+                                            <span>|</span>
+                                            <span style={{ color: 'var(--accent-gold)' }}>
+                                                Env: {environments.find(e => e.id === iteration.environment)?.name}
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
-                            <button
-                                className="btn-action initiate-btn"
-                                onClick={handleInitiate}
-                                disabled={iteration.status_name !== 'Waiting'}
-                                style={{
-                                    opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
-                                    cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                <Play size={14} fill="currentColor" />
-                                INITIATE
-                            </button>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    className="btn-ghost"
+                                    onClick={() => setSelectedIterationId(null)}
+                                    style={{ fontSize: '0.85rem' }}
+                                >
+                                    ✕ Close Iteration
+                                </button>
+                                <button
+                                    className="btn-action initiate-btn"
+                                    onClick={handleInitiate}
+                                    disabled={iteration.status_name !== 'Waiting'}
+                                    style={{
+                                        opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
+                                        cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    <Play size={14} fill="currentColor" />
+                                    INITIATE
+                                </button>
+                            </div>
                         </div>
 
                         <div className="matrix-board-wrapper">
