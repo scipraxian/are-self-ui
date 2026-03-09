@@ -150,7 +150,24 @@ export const TemporalMatrix = () => {
             console.error("Failed to remove worker:", err);
         }
     };
-
+    const handleInitiate = async () => {
+        if (!iteration) return;
+        const csrfToken = getCookie('csrftoken');
+        try {
+            const res = await fetch(`/api/v2/iterations/${iteration.id}/initiate/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' }
+            });
+            if (res.ok) {
+                const updatedIteration: IterationData = await res.json();
+                setIteration(updatedIteration);
+            } else {
+                console.error("Failed to initiate.");
+            }
+        } catch (err) {
+            console.error("Network error:", err);
+        }
+    };
     const handleDrop = async (e: React.DragEvent, shiftId: number) => {
         e.preventDefault();
         setDragOverShift(null);
@@ -227,7 +244,12 @@ export const TemporalMatrix = () => {
                         Iteration ID: {iteration.id} | Status: {iteration.status_name}
                     </div>
                 </div>
-                <button className="btn-action">
+                <button
+                    className="btn-action"
+                    onClick={handleInitiate}
+                    disabled={iteration.status_name !== 'Waiting'}
+                    style={{ opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1, cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer' }}
+                >
                     <Play size={14} fill="currentColor" />
                     INITIATE
                 </button>
