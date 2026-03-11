@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus } from 'lucide-react';
+import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2 } from 'lucide-react';
+import { apiFetch } from '../api';
+import { IdentityRoster } from './IdentityRoster';
 import './TemporalMatrix.css';
 
 // --- STRICT TYPESCRIPT INTERFACES ---
@@ -40,7 +42,42 @@ interface BlueprintData {
     name: string;
 }
 
-// CSRF Helper
+// Iteration definition detail (from IterationDefinitionSerializer)
+interface DefinitionParticipantDetail {
+    id: number;
+    shift_definition: number;
+    identity_disc: string;
+    participant_detail: {
+        id: string;
+        name: string;
+        available: boolean;
+        level: number;
+        xp: number;
+    };
+}
+
+interface ShiftLite {
+    id: number;
+    name: string;
+    default_turn_limit: number;
+}
+
+interface ShiftDefinitionData {
+    id: number;
+    definition: number;
+    shift: ShiftLite;
+    order: number;
+    turn_limit: number;
+    participants: DefinitionParticipantDetail[];
+}
+
+interface IterationDefinitionDetail {
+    id: number;
+    name: string;
+    shift_definitions: ShiftDefinitionData[];
+}
+
+// CSRF Helper (used only where apiFetch is not used for legacy fetch calls)
 function getCookie(name: string): string | null {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -56,6 +93,172 @@ function getCookie(name: string): string | null {
     return cookieValue;
 }
 
+function DefinitionEditor({
+    definition,
+    environments,
+    selectedEnvironmentId,
+    onEnvironmentChange,
+    onNameSave,
+    onDelete,
+    onRemoveDisc,
+    onSlotDisc,
+    onIncept,
+    onClose,
+    isGestating
+}: {
+    definition: IterationDefinitionDetail;
+    environments: { id: string; name: string }[];
+    selectedEnvironmentId: string;
+    onEnvironmentChange: (id: string) => void;
+    onNameSave: (name: string) => void;
+    onDelete: () => void;
+    onRemoveDisc: (shiftDefinitionId: number, participantId: number | string) => void;
+    onSlotDisc: (shiftDefinitionId: number, payload: { disc_id?: string | number; base_id?: number }) => void;
+    onIncept: (environmentId: string, customName?: string) => void;
+    onClose: () => void;
+    isGestating: boolean;
+}) {
+    const [editingName, setEditingName] = useState(definition.name);
+    const [dragOverShiftId, setDragOverShiftId] = useState<number | null>(null);
+    const boardRef = useRef<HTMLDivElement | null>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    useEffect(() => {
+        setEditingName(definition.name);
+    }, [definition.id, definition.name]);
+
+    const handleDropOnDefinitionShift = (e: React.DragEvent, shiftDefinitionId: number) => {
+        e.preventDefault();
+        setDragOverShiftId(null);
+        const payload = e.dataTransfer.getData('application/json');
+        if (!payload) return;
+        try {
+            const { type, id } = JSON.parse(payload);
+            const body: { disc_id?: string | number; base_id?: number } = {};
+            if (type === 'disc') body.disc_id = id;
+            if (type === 'base') body.base_id = id;
+            if (!body.disc_id && !body.base_id) return;
+            onSlotDisc(shiftDefinitionId, body);
+        } catch (err) {
+            console.error('Invalid drag payload for definition shift:', err);
+        }
+    };
+
+    const checkScroll = () => {
+        if (!boardRef.current) return;
+        const { scrollLeft, scrollWidth, clientWidth } = boardRef.current;
+        setCanScrollLeft(scrollLeft > 0);
+        setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 1);
+    };
+
+    const scrollBoard = (direction: 'left' | 'right') => {
+        if (!boardRef.current) return;
+        const scrollAmount = 336;
+        boardRef.current.scrollBy({
+            left: direction === 'left' ? -scrollAmount : scrollAmount,
+            behavior: 'smooth'
+        });
+    };
+
+    useEffect(() => {
+        checkScroll();
+        window.addEventListener('resize', checkScroll);
+        return () => window.removeEventListener('resize', checkScroll);
+    }, [definition.id, definition.shift_definitions]);
+
+    const sortedShifts = [...(definition.shift_definitions || [])].sort((a, b) => a.order - b.order);
+
+    return (
+        <div className="temporal-matrix-container active-matrix definition-editor">
+            <div className="matrix-header definition-header">
+                <div className="definition-header-left">
+                    <input
+                        className="font-display heading-tracking text-base definition-name-input"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => { if (editingName.trim() !== definition.name) onNameSave(editingName.trim() || definition.name); }}
+                    />
+                    <div className="definition-id-label font-mono text-xs text-muted">Definition ID: {definition.id}</div>
+                </div>
+                <div className="definition-header-right">
+                    <button className="btn-ghost definition-close-btn" onClick={onClose}>✕ Close</button>
+                    <button className="btn-ghost definition-delete-btn" onClick={onDelete} title="Delete definition">
+                        <Trash2 size={14} />
+                    </button>
+                    <label className="definition-env-label font-mono text-xs text-muted">
+                        <span>Environment</span>
+                        <select
+                            className="definition-env-select"
+                            value={selectedEnvironmentId}
+                            onChange={(e) => onEnvironmentChange(e.target.value)}
+                        >
+                            <option value="">-- Select --</option>
+                            {environments.map(env => <option key={env.id} value={env.id}>{env.name}</option>)}
+                        </select>
+                    </label>
+                    <button
+                        className="btn-action initiate-btn definition-incept-btn"
+                        onClick={() => onIncept(selectedEnvironmentId)}
+                        disabled={isGestating || !selectedEnvironmentId}
+                    >
+                        {isGestating ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} fill="currentColor" />}
+                        INCEPT
+                    </button>
+                </div>
+            </div>
+            <div className="matrix-board-wrapper">
+                {canScrollLeft ? (
+                    <button className="matrix-scroll-btn" onClick={() => scrollBoard('left')}>
+                        <ChevronLeft size={24} />
+                    </button>
+                ) : (
+                    <div className="scroll-placeholder" />
+                )}
+                <div className="matrix-board" ref={boardRef} onScroll={checkScroll}>
+                    {sortedShifts.map((shiftDef, index) => (
+                        <div key={shiftDef.id} className="matrix-column">
+                            <div className="matrix-column-header">
+                                <span className="matrix-column-title">{shiftDef.shift?.name || `Shift ${index + 1}`}</span>
+                                <span className="matrix-column-stats">0 / {shiftDef.turn_limit}</span>
+                            </div>
+                            <div
+                                className={`matrix-column-body ${dragOverShiftId === shiftDef.id ? 'drag-over' : ''}`}
+                                onDragOver={(e) => { e.preventDefault(); setDragOverShiftId(shiftDef.id); }}
+                                onDragLeave={() => setDragOverShiftId(null)}
+                                onDrop={(e) => handleDropOnDefinitionShift(e, shiftDef.id)}
+                            >
+                                {shiftDef.participants?.map((p) => (
+                                    <div key={p.id} className="slotted-card">
+                                        <div className="slotted-card-header">
+                                            <span className="slotted-card-title">{p.participant_detail?.name ?? `Disc ${p.identity_disc}`}</span>
+                                            <button
+                                                type="button"
+                                                className="temporalmatrix-ui-209"
+                                                onClick={() => onRemoveDisc(shiftDef.id, p.identity_disc)}
+                                                title="Remove from shift"
+                                            >
+                                                <MoreVertical size={14} className="text-muted" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {canScrollRight ? (
+                    <button className="matrix-scroll-btn" onClick={() => scrollBoard('right')}>
+                        <ChevronRight size={24} />
+                    </button>
+                ) : (
+                    <div className="scroll-placeholder" />
+                )}
+            </div>
+        </div>
+    );
+}
+
 interface TemporalMatrixProps {
     onSelectionChange?: (hasSelection: boolean) => void;
 }
@@ -68,6 +271,9 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     // API State using Strict Types
     const [iterations, setIterations] = useState<IterationData[]>([]);
     const [selectedIterationId, setSelectedIterationId] = useState<number | null>(null);
+    const [selectedDefinitionId, setSelectedDefinitionId] = useState<number | null>(null);
+    const [definitionDetail, setDefinitionDetail] = useState<IterationDefinitionDetail | null>(null);
+    const [definitionDetailLoading, setDefinitionDetailLoading] = useState(false);
     const [blueprints, setBlueprints] = useState<BlueprintData[]>([]);
     const [environments, setEnvironments] = useState<{ id: string, name: string }[]>([]);
     const [selectedGestationEnvironmentId, setSelectedGestationEnvironmentId] = useState<string>('');
@@ -86,7 +292,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
     useEffect(() => {
         setPortalTarget(document.getElementById('bbb-iteration-roster-portal'));
-    }, [selectedIterationId]);
+    }, [selectedIterationId, selectedDefinitionId]);
 
 
     const checkScroll = () => {
@@ -125,11 +331,72 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         });
     }, []);
 
+    const refetchDefinitions = () => {
+        fetch('/api/v2/iteration-definitions/').then(res => res.json()).then(data => {
+            setBlueprints(data.results || data);
+        }).catch(err => console.error('Failed to refetch definitions', err));
+    };
+
+    useEffect(() => {
+        if (selectedDefinitionId == null) {
+            setDefinitionDetail(null);
+            return;
+        }
+        setDefinitionDetailLoading(true);
+        fetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`)
+            .then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to load definition')))
+            .then((data: IterationDefinitionDetail) => {
+                setDefinitionDetail(data);
+            })
+            .catch(err => {
+                console.error('Definition fetch failed:', err);
+                setDefinitionDetail(null);
+            })
+            .finally(() => setDefinitionDetailLoading(false));
+    }, [selectedDefinitionId]);
+
     useEffect(() => {
         checkScroll();
         window.addEventListener('resize', checkScroll);
         return () => window.removeEventListener('resize', checkScroll);
     }, [iteration]);
+
+    // Poll selected iteration so status/board update while running
+    useEffect(() => {
+        if (!selectedIterationId) return;
+        let cancelled = false;
+        let intervalId: number | null = null;
+
+        const poll = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/iterations/${selectedIterationId}/`);
+                if (!res.ok) return;
+                const data: IterationData = await res.json();
+                if (cancelled) return;
+                updateIterationState(data);
+                // Stop polling when status is Finished (3), Cancelled (4), or Error (6)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const statusId = (data as any).status as number | undefined;
+                if (statusId === 3 || statusId === 4 || statusId === 6) {
+                    if (intervalId !== null) {
+                        window.clearInterval(intervalId);
+                    }
+                    cancelled = true;
+                }
+            } catch {
+                // ignore transient errors
+            }
+        };
+
+        poll();
+        intervalId = window.setInterval(poll, 5000);
+        return () => {
+            cancelled = true;
+            if (intervalId !== null) {
+                window.clearInterval(intervalId);
+            }
+        };
+    }, [selectedIterationId]);
 
     const handleIncept = async (definitionId: number) => {
         setIsGestating(true);
@@ -234,6 +501,118 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         }
     };
 
+    const createDefinition = async () => {
+        try {
+            const res = await apiFetch('/api/v2/iteration-definitions/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'New Definition' })
+            });
+            if (res.ok) {
+                const created = await res.json();
+                refetchDefinitions();
+                setSelectedDefinitionId(created.id);
+                setSelectedIterationId(null);
+            } else {
+                console.error('Failed to create definition');
+            }
+        } catch (err) {
+            console.error('Create definition failed:', err);
+        }
+    };
+
+    const patchDefinitionName = async (id: number, name: string) => {
+        try {
+            const res = await apiFetch(`/api/v2/iteration-definitions/${id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                setDefinitionDetail(prev => prev && prev.id === id ? { ...prev, name: updated.name } : prev);
+                refetchDefinitions();
+            }
+        } catch (err) {
+            console.error('Patch definition failed:', err);
+        }
+    };
+
+    const deleteDefinition = async (id: number) => {
+        try {
+            const res = await apiFetch(`/api/v2/iteration-definitions/${id}/`, { method: 'DELETE' });
+            if (res.ok) {
+                setSelectedDefinitionId(null);
+                setDefinitionDetail(null);
+                refetchDefinitions();
+            } else {
+                console.error('Failed to delete definition');
+            }
+        } catch (err) {
+            console.error('Delete definition failed:', err);
+        }
+    };
+
+    const definitionSlotDisc = async (definitionId: number, shiftDefinitionId: number, payload: { disc_id?: string | number; base_id?: number }) => {
+        try {
+            const res = await apiFetch(`/api/v2/iteration-definitions/${definitionId}/slot_disc/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shift_definition_id: shiftDefinitionId, ...payload })
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                setDefinitionDetail(updated);
+            } else {
+                console.error('Definition slot_disc failed');
+            }
+        } catch (err) {
+            console.error('Definition slot_disc failed:', err);
+        }
+    };
+
+    const definitionRemoveDisc = async (definitionId: number, shiftDefinitionId: number, participantId: number | string) => {
+        try {
+            const res = await apiFetch(`/api/v2/iteration-definitions/${definitionId}/remove_disc/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shift_definition_id: shiftDefinitionId, disc_id: participantId })
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                setDefinitionDetail(updated);
+            } else {
+                console.error('Definition remove_disc failed');
+            }
+        } catch (err) {
+            console.error('Definition remove_disc failed:', err);
+        }
+    };
+
+    const definitionIncept = async (definitionId: number, environmentId: string, customName?: string) => {
+        setIsGestating(true);
+        try {
+            const res = await apiFetch(`/api/v2/iteration-definitions/${definitionId}/incept/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ environment_id: environmentId || undefined, custom_name: customName || undefined })
+            });
+            if (res.ok) {
+                const newIteration: IterationData = await res.json();
+                setIterations(prev => [newIteration, ...prev]);
+                setSelectedIterationId(newIteration.id);
+                setSelectedDefinitionId(null);
+                setDefinitionDetail(null);
+            } else {
+                console.error('Incept failed');
+            }
+        } catch (err) {
+            console.error('Incept failed:', err);
+        } finally {
+            setIsGestating(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="temporal-matrix-layout">
@@ -246,34 +625,82 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
 
     const iterationRosterSidebar = (
         <div className="iteration-roster-sidebar" style={{ borderRight: 'none', background: 'transparent', width: '100%', padding: '0 0 16px 0' }}>
-            <button
-                className="btn-new-iteration"
-                onClick={() => setSelectedIterationId(null)}
-                style={{ marginBottom: '16px' }}
-            >
-                <Plus size={16} /> New Iteration
-            </button>
-            <div className="roster-list">
-                {iterations.map(it => (
-                    <div
-                        key={it.id}
-                        className={`roster-item ${it.id === selectedIterationId ? 'active' : ''}`}
-                        onClick={() => setSelectedIterationId(it.id)}
-                    >
-                        <div className="roster-item-title">{it.name || `Iteration ${it.id}`}</div>
-                        <div className="roster-item-status">{it.status_name}</div>
-                    </div>
-                ))}
+            <div className="roster-section">
+                <h3 className="roster-section-title">Definitions</h3>
+                <button
+                    className="btn-new-iteration"
+                    onClick={createDefinition}
+                    style={{ marginBottom: '8px' }}
+                >
+                    <Plus size={16} /> New Definition
+                </button>
+                <div className="roster-list">
+                    {blueprints.map(bp => (
+                        <div
+                            key={bp.id}
+                            className={`roster-item ${bp.id === selectedDefinitionId ? 'active' : ''}`}
+                            onClick={() => { setSelectedDefinitionId(bp.id); setSelectedIterationId(null); }}
+                        >
+                            <div className="roster-item-title">{bp.name || `Definition ${bp.id}`}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="roster-section">
+                <h3 className="roster-section-title">Iterations</h3>
+                <button
+                    className="btn-new-iteration btn-ghost-secondary"
+                    onClick={() => { setSelectedIterationId(null); setSelectedDefinitionId(null); }}
+                    style={{ marginBottom: '8px' }}
+                >
+                    Gestation Chamber
+                </button>
+                <div className="roster-list">
+                    {iterations.map(it => (
+                        <div
+                            key={it.id}
+                            className={`roster-item ${it.id === selectedIterationId ? 'active' : ''}`}
+                            onClick={() => { setSelectedIterationId(it.id); setSelectedDefinitionId(null); }}
+                        >
+                            <div className="roster-item-title">{it.name || `Iteration ${it.id}`}</div>
+                            <div className="roster-item-status">{it.status_name}</div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
 
+    const sidebarContent = selectedDefinitionId && definitionDetail
+        ? (
+            <IdentityRoster onSelectIdentity={() => { }} />
+        )
+        : iterationRosterSidebar;
+
     return (
         <div className="temporal-matrix-layout">
-            {portalTarget && !selectedIterationId && createPortal(iterationRosterSidebar, portalTarget)}
+            {portalTarget && createPortal(sidebarContent, portalTarget)}
 
-            <div className="temporal-matrix-main" style={{ padding: selectedIterationId ? '24px' : '0' }}>
-                {!iteration ? (
+            <div className="temporal-matrix-main" style={{ padding: (selectedIterationId || selectedDefinitionId) ? '24px' : '0' }}>
+                {definitionDetailLoading && selectedDefinitionId ? (
+                    <div className="temporal-matrix-container gestation-chamber">
+                        <Loader2 className="animate-spin text-muted" size={32} />
+                    </div>
+                ) : definitionDetail && selectedDefinitionId ? (
+                    <DefinitionEditor
+                        definition={definitionDetail}
+                        environments={environments}
+                        selectedEnvironmentId={selectedGestationEnvironmentId}
+                        onEnvironmentChange={setSelectedGestationEnvironmentId}
+                        onNameSave={(name) => patchDefinitionName(definitionDetail.id, name)}
+                        onDelete={() => deleteDefinition(definitionDetail.id)}
+                        onRemoveDisc={(shiftDefId, participantId) => definitionRemoveDisc(definitionDetail.id, shiftDefId, participantId)}
+                        onSlotDisc={(shiftDefId, payload) => definitionSlotDisc(definitionDetail.id, shiftDefId, payload)}
+                        onIncept={(envId, customName) => definitionIncept(definitionDetail.id, envId, customName)}
+                        onClose={() => { setSelectedDefinitionId(null); setDefinitionDetail(null); }}
+                        isGestating={isGestating}
+                    />
+                ) : !iteration ? (
                     <div className="temporal-matrix-container gestation-chamber">
                         <Network size={48} className="text-muted temporalmatrix-ui-210" />
                         <h2 className="font-display heading-tracking text-lg m-0 text-primary">Gestation Chamber</h2>

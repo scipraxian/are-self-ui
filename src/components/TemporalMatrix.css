@@ -130,6 +130,12 @@
     gap: 8px;
 }
 
+.matrix-column-body.drag-over {
+    border: 1px dashed var(--accent-blue);
+    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.05);
+}
+
 .matrix-drop-zone {
     flex: 1;
     border: 1px dashed transparent;
@@ -297,6 +303,104 @@
 
 .roster-item.active .roster-item-title {
     color: var(--accent-blue);
+}
+
+.roster-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.roster-section-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 4px 0;
+}
+
+.btn-ghost-secondary {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    border-color: var(--border-glass);
+}
+
+.btn-ghost-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.definition-editor .definition-name-input {
+    font-family: var(--font-display);
+}
+
+.definition-add-participant {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.definition-add-btn {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.definition-add-btn:hover {
+    color: var(--accent-blue);
+}
+
+.definition-header {
+    padding-right: 32px;
+}
+
+.definition-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.definition-id-label {
+    margin-top: 4px;
+}
+
+.definition-header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.definition-close-btn {
+    font-size: 0.85rem;
+}
+
+.definition-delete-btn {
+    font-size: 0.85rem;
+    color: var(--accent-red);
+}
+
+.definition-env-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.definition-env-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+}
+
+.definition-incept-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 /* Main Area */

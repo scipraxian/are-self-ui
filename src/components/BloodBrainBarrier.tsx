@@ -110,13 +110,13 @@ export const BloodBrainBarrier = () => {
                             )
                         ) : (
                             <>
-                                {!(activeViewport === 'iteration' && !matrixHasSelection) && (
+                                {activeViewport !== 'iteration' && (
                                     <>
                                         <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
                                         <IdentityRoster onSelectIdentity={handleIdentitySelect} />
                                     </>
                                 )}
-                                <div id="bbb-iteration-roster-portal" style={{ display: activeViewport === 'iteration' && !matrixHasSelection ? 'flex' : 'none', flexDirection: 'column', height: '100%', overflow: 'hidden', width: '100%' }} />
+                                <div id="bbb-iteration-roster-portal" style={{ display: activeViewport === 'iteration' ? 'flex' : 'none', flexDirection: 'column', height: '100%', overflow: 'hidden', width: '100%' }} />
                             </>
                         )}
                     </aside>
