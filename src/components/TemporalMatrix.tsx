@@ -103,6 +103,7 @@ function DefinitionEditor({
     onRemoveDisc,
     onSlotDisc,
     onIncept,
+    onTurnLimitChange,
     onClose,
     isGestating
 }: {
@@ -117,6 +118,7 @@ function DefinitionEditor({
     onIncept: (environmentId: string, customName?: string) => void;
     onClose: () => void;
     isGestating: boolean;
+    onTurnLimitChange: (shiftDefinitionId: number, turnLimit: number) => void;
 }) {
     const [editingName, setEditingName] = useState(definition.name);
     const [dragOverShiftId, setDragOverShiftId] = useState<number | null>(null);
@@ -220,7 +222,23 @@ function DefinitionEditor({
                         <div key={shiftDef.id} className="matrix-column">
                             <div className="matrix-column-header">
                                 <span className="matrix-column-title">{shiftDef.shift?.name || `Shift ${index + 1}`}</span>
-                                <span className="matrix-column-stats">0 / {shiftDef.turn_limit}</span>
+                                <div className="matrix-column-stats definition-turn-editor">
+                                    <span className="definition-turn-label">Turns</span>
+                                    <input
+                                        key={shiftDef.turn_limit}
+                                        className="definition-turn-input"
+                                        type="number"
+                                        min={1}
+                                        defaultValue={shiftDef.turn_limit}
+                                        onBlur={(e) => {
+                                            const raw = e.target.value;
+                                            const parsed = parseInt(raw, 10);
+                                            if (!Number.isNaN(parsed) && parsed !== shiftDef.turn_limit) {
+                                                onTurnLimitChange(shiftDef.id, parsed);
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </div>
                             <div
                                 className={`matrix-column-body ${dragOverShiftId === shiftDef.id ? 'drag-over' : ''}`}
@@ -553,6 +571,34 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         }
     };
 
+    const updateShiftDefinitionTurnLimit = async (shiftDefinitionId: number, turnLimit: number) => {
+        try {
+            const res = await apiFetch(`/api/v2/iteration-shift-definitions/${shiftDefinitionId}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ turn_limit: turnLimit })
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                // Some backends return the updated shift-definition, not the full definition.
+                // Only set definition detail if the payload looks like a definition; otherwise refetch the active definition.
+                if (updated && typeof updated === 'object' && 'shift_definitions' in updated) {
+                    setDefinitionDetail(updated as IterationDefinitionDetail);
+                } else if (selectedDefinitionId) {
+                    const defRes = await apiFetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`);
+                    if (defRes.ok) {
+                        const defData: IterationDefinitionDetail = await defRes.json();
+                        setDefinitionDetail(defData);
+                    }
+                }
+            } else {
+                console.error('Failed to update shift definition turn_limit');
+            }
+        } catch (err) {
+            console.error('Update shift definition turn_limit failed:', err);
+        }
+    };
+
     const definitionSlotDisc = async (definitionId: number, shiftDefinitionId: number, payload: { disc_id?: string | number; base_id?: number }) => {
         try {
             const res = await apiFetch(`/api/v2/iteration-definitions/${definitionId}/slot_disc/`, {
@@ -697,6 +743,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                         onRemoveDisc={(shiftDefId, participantId) => definitionRemoveDisc(definitionDetail.id, shiftDefId, participantId)}
                         onSlotDisc={(shiftDefId, payload) => definitionSlotDisc(definitionDetail.id, shiftDefId, payload)}
                         onIncept={(envId, customName) => definitionIncept(definitionDetail.id, envId, customName)}
+                        onTurnLimitChange={(shiftDefId, turnLimit) => updateShiftDefinitionTurnLimit(shiftDefId, turnLimit)}
                         onClose={() => { setSelectedDefinitionId(null); setDefinitionDetail(null); }}
                         isGestating={isGestating}
                     />

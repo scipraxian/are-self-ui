@@ -121,6 +121,34 @@
     color: var(--text-primary);
 }
 
+.definition-turn-editor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.definition-turn-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.65rem;
+}
+
+.definition-turn-input {
+    width: 56px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    outline: none;
+}
+
+.definition-turn-input:focus {
+    border-color: var(--accent-blue);
+}
+
 .matrix-column-body {
     padding: 12px;
     flex: 1;
