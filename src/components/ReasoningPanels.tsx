@@ -2,6 +2,7 @@ import "./ReasoningPanels.css";
 import {type ReactNode, useEffect, useState} from 'react';
 import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download } from 'lucide-react';
 import type {GraphNode, ReasoningSessionData, ToolCallData} from "../types.ts";
+import { getCookie } from '../api';
 
 // --- HELPER COMPONENT: Reusable Accordion ---
 interface AccordionProps {
@@ -42,7 +43,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit }: R
 
     const handleAction = async (action: string) => {
         if (!confirm(`Are you sure you want to ${action} this session?`)) return;
-        const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
+        const csrfToken = getCookie('csrftoken') || '';
         await fetch(`/api/v1/reasoning_sessions/${activeSessionId}/${action}/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }

@@ -210,7 +210,7 @@ export const BloodBrainBarrier = () => {
                                 <PFCInspector
                                     item={selectedPfcItem}
                                     onUpdate={() => {
-                                        // The board auto-polls, but we can leave this here
+                                        window.dispatchEvent(new Event('pfc-refresh'));
                                     }}
                                     onDelete={() => setSelectedPfcItem(null)}
                                 />

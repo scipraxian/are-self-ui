@@ -95,8 +95,17 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId }: PrefrontalCor
 
     useEffect(() => {
         fetchData();
-        const intervalId = setInterval(fetchData, 3000);
-        return () => clearInterval(intervalId);
+    }, [selectedItemId]);
+
+    useEffect(() => {
+        const handlePfcRefresh = () => {
+            fetchData();
+        };
+
+        window.addEventListener('pfc-refresh', handlePfcRefresh);
+        return () => {
+            window.removeEventListener('pfc-refresh', handlePfcRefresh);
+        };
     }, [selectedItemId]);
 
     useEffect(() => {

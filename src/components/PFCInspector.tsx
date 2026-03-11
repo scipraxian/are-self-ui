@@ -64,7 +64,8 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
     const color = getItemColor(item.item_type);
 
     const handleSave = async (field: keyof PFCAgileItem, value: string | number | undefined) => {
-        if (localData[field] === value) return;
+        // Only skip if the value truly matches the original item, not the local draft
+        if (item[field] === value) return;
 
         try {
             const endpoint = endpointMap[item.item_type];

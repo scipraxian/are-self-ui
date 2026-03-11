@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2 } from 'lucide-react';
-import { apiFetch } from '../api';
+import { apiFetch, getCookie } from '../api';
 import { IdentityRoster } from './IdentityRoster';
 import './TemporalMatrix.css';
 
@@ -75,22 +75,6 @@ interface IterationDefinitionDetail {
     id: number;
     name: string;
     shift_definitions: ShiftDefinitionData[];
-}
-
-// CSRF Helper (used only where apiFetch is not used for legacy fetch calls)
-function getCookie(name: string): string | null {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
 }
 
 function DefinitionEditor({
