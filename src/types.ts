@@ -40,16 +40,39 @@ export interface ToolCallData {
     arguments: string | Record<string, unknown>;
     result_payload: string;
     traceback: string;
-    status_name: string;
+    // Older payloads may include a human-readable status name, newer ones often use a numeric `status` instead.
+    status_name?: string;
     is_async: boolean;
+}
+
+export interface ReasoningMessageRole {
+    id?: number;
+    name: string;
+    // Some backends also send a created timestamp on the role object; we ignore it in the UI.
+    created?: string;
+}
+
+export interface ReasoningMessageData {
+    id: string;
+    role: string | ReasoningMessageRole;
+    content: string;
+    created: string;
+    is_volatile?: boolean;
+    [key: string]: unknown;
 }
 
 export interface ReasoningTurnData {
     id: number;
     turn_number: number;
     status_name: string;
+    // Older sessions populated `thought_process` directly; newer ones often leave this empty
+    // and instead embed the THOUGHT content in the `messages` array. The UI code derives a
+    // displayable thought from either source.
     thought_process: string;
-    request_payload: { messages?: { role: string; content: string }[] } | string;
+    // Legacy payloads used `request_payload.messages`; newer ones primarily rely on `messages` below.
+    request_payload: { messages?: { role: string; content: string }[] } | string | Record<string, unknown>;
+    // Newer schema: full message timeline for the turn.
+    messages?: ReasoningMessageData[];
     tokens_input: number;
     tokens_output: number;
     inference_time: string;
@@ -92,7 +115,8 @@ export interface ReasoningSessionData {
     max_focus: number;
     total_xp: number;
     created: string;
-    goals: ReasoningGoalData[];
+    // Goals may be absent on some sessions in the new schema.
+    goals?: ReasoningGoalData[];
     turns: ReasoningTurnData[];
     engrams: TalosEngramData[];
     conclusion?: SessionConclusionData;

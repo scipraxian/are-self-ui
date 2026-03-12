@@ -1,7 +1,13 @@
 import "./ReasoningPanels.css";
-import {type ReactNode, useEffect, useState} from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download } from 'lucide-react';
-import type {GraphNode, ReasoningSessionData, ToolCallData} from "../types.ts";
+import type {
+    GraphNode,
+    ReasoningMessageData,
+    ReasoningSessionData,
+    ReasoningTurnData,
+    ToolCallData
+} from "../types.ts";
 import { getCookie } from '../api';
 
 // --- HELPER COMPONENT: Reusable Accordion ---
@@ -150,17 +156,25 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
         }
     };
 
-    // FIX 2: Strictly type the payload based on our Turn payload structure
-    const renderPayload = (payload: { messages?: { role: string; content: string }[] } | string) => {
-        if (!payload || typeof payload === 'string' || !payload.messages) return null;
+    const renderMessages = (messages?: ReasoningMessageData[]) => {
+        if (!messages || !Array.isArray(messages)) return null;
 
-        return payload.messages.map((msg, i: number) => {
-            const roleStr = String(msg.role).toUpperCase();
-            const roleColor = msg.role === 'system' ? '#cc99cc' : (msg.role === 'user' ? '#99ccff' : '#4ade80');
+        return messages.map((msg, i: number) => {
+            const roleName = typeof msg.role === 'string' ? msg.role : (msg.role?.name || '');
+            const roleStr = String(roleName).toUpperCase();
+            let roleColor =
+                roleName === 'system' ? '#cc99cc' :
+                    roleName === 'user' ? '#99ccff' :
+                        '#4ade80';
+
+            // Visually distinguish volatile/system-injected messages from durable ones.
+            if (msg.is_volatile) {
+                roleColor = '#64748b'; // slate-500: softer, secondary tone
+            }
 
             return (
                 <Accordion key={i} title={`[${roleStr}] PROMPT`} color={roleColor}>
-                    {msg.role === 'user' ? (
+                    {roleName === 'user' ? (
                         msg.content.split(/^(?=\[[A-Z0-9\s:()-]+\])/m).map((sec: string, idx: number) => {
                             if (!sec.trim()) return null;
                             const match = sec.trim().match(/^\[([^\]]+)\](.*[\s\S]*)/);
@@ -192,6 +206,25 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
         });
     };
 
+    const deriveTurnThought = (turn: ReasoningTurnData): string | null => {
+        let thought = (turn.thought_process || '').trim();
+
+        if (!thought && Array.isArray(turn.messages)) {
+            const assistantMsg = turn.messages.find((m: ReasoningMessageData) => {
+                const roleName = typeof m.role === 'string' ? m.role : m.role?.name;
+                return String(roleName).toLowerCase() === 'assistant' &&
+                    typeof m.content === 'string' &&
+                    m.content.toUpperCase().startsWith('THOUGHT:');
+            });
+            if (assistantMsg && assistantMsg.content) {
+                thought = assistantMsg.content;
+            }
+        }
+
+        if (!thought) return null;
+        return thought.replace(/^(THOUGHT:\s*)+/i, '').trim();
+    };
+
     return (
         <div className="scroll-hidden common-layout-8">
             <div className="common-layout-9">
@@ -201,34 +234,44 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
 
                 {n.type === 'turn' && (
                     <div className="common-layout-10">
+                        {/*
+                          Narrow the generic graph node to the richer turn shape for
+                          downstream helpers that expect full turn/message data.
+                        */}
+                        {(() => {
+                            const turn = n as ReasoningTurnData;
+                            const turnThought = deriveTurnThought(turn);
+                            const hasMessages = Array.isArray(turn.messages) && turn.messages.length > 0;
+                            return (
+                                <>
                         <div className="common-layout-11">
-                            <div className="reasoningpanels-ui-171">TURN {n.turn_number}</div>
-                            <div className="common-layout-12">IN {n.tokens_input}</div>
-                            <div className="reasoningpanels-ui-170">OUT {n.tokens_output}</div>
-                            <div className="reasoningpanels-ui-169">{n.inference_time || n.delta || '--'}</div>
+                            <div className="reasoningpanels-ui-171">TURN {turn.turn_number}</div>
+                            <div className="common-layout-12">IN {turn.tokens_input}</div>
+                            <div className="reasoningpanels-ui-170">OUT {turn.tokens_output}</div>
+                            <div className="reasoningpanels-ui-169">{turn.inference_time || turn.delta || '--'}</div>
                         </div>
 
                         <div style={{ color: n.status_name === 'Error' ? '#ef4444' : '#4ade80', fontWeight: 700, marginTop: '8px', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>Status: {n.status_name}</div>
 
-                        {n.thought_process && (
+                        {turnThought && (
                             <Accordion title="THOUGHT PROCESS" color="#cc99cc" open>
                                 <div className="reasoningpanels-ui-168">
-                                    {String(n.thought_process).replace(/^(THOUGHT:\s*)+/i, '').trim()}
+                                    {turnThought}
                                 </div>
                             </Accordion>
                         )}
 
-                        {n.request_payload && (
-                            <Accordion title="VIEW REQUEST PAYLOAD" color="#f99f1b">
-                                {renderPayload(n.request_payload)}
+                        {hasMessages && (
+                            <Accordion title="CONVERSATION LOG" color="#f99f1b">
+                                {renderMessages(turn.messages)}
                             </Accordion>
                         )}
 
-                        {n.tool_calls && Array.isArray(n.tool_calls) && n.tool_calls.length > 0 && (
+                        {turn.tool_calls && Array.isArray(turn.tool_calls) && turn.tool_calls.length > 0 && (
                             <Accordion title={`TOOL CALLS (${n.tool_calls.length})`} color="#4ade80" open>
                                 <div className="common-layout-14">
                                     {/* FIX 3: Strictly type the call parameter using ToolCallData */}
-                                    {n.tool_calls.map((call: ToolCallData, idx: number) => {
+                                    {turn.tool_calls.map((call: ToolCallData, idx: number) => {
                                         const isError = call.traceback || (call.result_payload && String(call.result_payload).includes('FIZZLE'));
                                         const callColor = isError ? '#ef4444' : '#4ade80';
                                         const argsStr = typeof call.arguments === 'object' ? JSON.stringify(call.arguments, null, 2) : String(call.arguments || '');
@@ -254,6 +297,9 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                                 </div>
                             </Accordion>
                         )}
+                                </>
+                            );
+                        })()}
                     </div>
                 )}
 

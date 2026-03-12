@@ -6,8 +6,10 @@ import type {
     GraphLink,
     GraphNode,
     ReasoningGoalData,
+    ReasoningMessageData,
     ReasoningSessionData,
-    ReasoningTurnData, TalosEngramData,
+    ReasoningTurnData,
+    TalosEngramData,
     ToolCallData
 } from "../types.ts";
 
@@ -46,8 +48,26 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
 
             if (data.turns && data.turns.length > 0) {
                 for (let i = data.turns.length - 1; i >= 0; i--) {
-                    if (data.turns[i].thought_process) {
-                        latestThought = data.turns[i].thought_process.replace(/^(THOUGHT:\s*)+/i, '').trim();
+                    const t = data.turns[i];
+
+                    // Prefer an explicit thought_process if present.
+                    let thought = (t.thought_process || '').trim();
+
+                    // Fallback: derive THOUGHT from the assistant messages in the new schema.
+                    if (!thought && Array.isArray(t.messages)) {
+                        const assistantMsg = t.messages.find((m: ReasoningMessageData) => {
+                            const roleName = typeof m.role === 'string' ? m.role : m.role?.name;
+                            return String(roleName).toLowerCase() === 'assistant' &&
+                                typeof m.content === 'string' &&
+                                m.content.toUpperCase().startsWith('THOUGHT:');
+                        });
+                        if (assistantMsg && assistantMsg.content) {
+                            thought = assistantMsg.content;
+                        }
+                    }
+
+                    if (thought) {
+                        latestThought = thought.replace(/^(THOUGHT:\s*)+/i, '').trim();
                         break;
                     }
                 }
@@ -72,7 +92,6 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
 
             const newNodes: GraphNode[] = [];
             const newLinks: GraphLink[] = [];
-            let firstTurnId: string | null = null;
 
             if (data.goals) {
                 data.goals.forEach((g: ReasoningGoalData) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
@@ -81,7 +100,6 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             if (data.turns) {
                 data.turns.forEach((t: ReasoningTurnData, index: number) => {
                     const tId = `turn-${t.id}`;
-                    if (index === 0) firstTurnId = tId;
 
                     const sec = parseDuration(t.inference_time || t.delta);
                     let ratio = sec / avgDelta;
@@ -102,10 +120,6 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                         });
                     }
                 });
-            }
-
-            if (firstTurnId && data.goals) {
-                data.goals.forEach((g: ReasoningGoalData) => newLinks.push({ source: firstTurnId as string, target: `goal-${g.id}`, type: 'anchor' }));
             }
 
             if (data.engrams) {
