@@ -6,3 +6,43 @@
   z-index: 0;
 }
 
+.reasoninggraph3d-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.reasoninggraph3d-bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  max-width: 260px;
+  pointer-events: none;
+}
+
+.reasoninggraph3d-bubble-inner {
+  position: relative;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.6);
+}
+
+.reasoninggraph3d-bubble-inner::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0 6px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.92) transparent transparent transparent;
+}
+

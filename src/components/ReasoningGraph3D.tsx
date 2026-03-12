@@ -13,6 +13,43 @@ import type {
     ToolCallData
 } from "../types.ts";
 
+const MAX_THOUGHT_LENGTH = 140;
+
+const extractNodeThought = (node: GraphNode): string => {
+    if (node.type !== 'turn') return '';
+
+    let thought = (node.thought_process as string || '').trim();
+
+    if (!thought && Array.isArray(node.messages)) {
+        const assistantMsg = (node.messages as ReasoningMessageData[]).find((m: ReasoningMessageData) => {
+            const roleName = typeof m.role === 'string' ? m.role : m.role?.name;
+            return String(roleName).toLowerCase() === 'assistant' &&
+                typeof m.content === 'string' &&
+                m.content.toUpperCase().startsWith('THOUGHT:');
+        });
+        if (assistantMsg && assistantMsg.content) {
+            thought = assistantMsg.content;
+        }
+    }
+
+    if (!thought) return '';
+
+    const cleaned = thought.replace(/^(THOUGHT:\s*)+/i, '').trim();
+    if (!cleaned) return '';
+
+    if (cleaned.length > MAX_THOUGHT_LENGTH) {
+        return `${cleaned.slice(0, MAX_THOUGHT_LENGTH - 1)}…`;
+    }
+
+    return cleaned;
+};
+
+interface BubblePosition {
+    x: number;
+    y: number;
+    text: string;
+}
+
 interface ReasoningGraphProps {
     sessionId: string;
     onNodeSelect: (node: GraphNode) => void;
@@ -26,6 +63,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
     const prevDataRef = useRef<string>("");
 
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
+    const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
 
     const parseDuration = (str: string) => {
         if (!str) return 0;
@@ -187,6 +225,59 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
         return () => cancelAnimationFrame(frameId);
     }, []);
 
+    useEffect(() => {
+        const fg = fgRef.current;
+        if (!fg) return;
+
+        let frameId: number;
+
+        const updateBubbles = () => {
+            const camera = fg.camera();
+            const renderer = fg.renderer();
+
+            if (!camera || !renderer) {
+                frameId = requestAnimationFrame(updateBubbles);
+                return;
+            }
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            const { width, height } = rect;
+
+            const nextPositions: Record<string, BubblePosition> = {};
+
+            graphData.nodes.forEach((node) => {
+                if (node.type !== 'turn') return;
+
+                const text = extractNodeThought(node);
+                if (!text) return;
+
+                const vector = new THREE.Vector3(
+                    (node.x as number) || 0,
+                    (node.y as number) || 0,
+                    (node.z as number) || 0
+                );
+
+                vector.project(camera);
+
+                const x = (vector.x * 0.5 + 0.5) * width;
+                const y = (-vector.y * 0.5 + 0.5) * height - 24;
+
+                nextPositions[node.id] = {
+                    x,
+                    y,
+                    text
+                };
+            });
+
+            setBubblePositions(nextPositions);
+            frameId = requestAnimationFrame(updateBubbles);
+        };
+
+        updateBubbles();
+
+        return () => cancelAnimationFrame(frameId);
+    }, [graphData]);
+
     const renderNode = useCallback((nodeObj: object) => {
         const node = nodeObj as GraphNode;
         let geometry;
@@ -282,6 +373,23 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                 }}
                 backgroundColor="rgba(0,0,0,0)"
             />
+            <div className="reasoninggraph3d-bubbles">
+                {graphData.nodes.filter(n => n.type === 'turn').map(node => {
+                    const bubble = bubblePositions[node.id];
+                    if (!bubble) return null;
+                    return (
+                        <div
+                            key={node.id}
+                            className="reasoninggraph3d-bubble"
+                            style={{ left: `${bubble.x}px`, top: `${bubble.y}px` }}
+                        >
+                            <div className="reasoninggraph3d-bubble-inner">
+                                {bubble.text}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };
