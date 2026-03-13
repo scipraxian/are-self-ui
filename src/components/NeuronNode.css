@@ -1,0 +1,167 @@
+.neuronnode-ui-85 {
+  background: var(--accent-red);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-obsidian);
+  right: -23px;
+  z-index: 10;
+}
+
+.neuronnode-ui-86 {
+  color: var(--accent-red);
+  font-weight: 600;
+}
+
+.neuronnode-ui-87 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  height: 16px;
+}
+
+.neuronnode-ui-88 {
+  background: var(--accent-green);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-obsidian);
+  right: -23px;
+  z-index: 10;
+}
+
+.neuronnode-ui-89 {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
+.neuronnode-ui-90 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  height: 16px;
+}
+
+.neuronnode-ui-91 {
+  background: var(--accent-blue);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-obsidian);
+  right: -23px;
+  z-index: 10;
+}
+
+.neuronnode-ui-92 {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.neuronnode-ui-93 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  height: 16px;
+}
+
+.neuronnode-ui-94 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.neuronnode-ui-95 {
+  background: #94a3b8;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-obsidian);
+  left: -23px;
+  z-index: 10;
+}
+
+.neuronnode-ui-96 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.neuronnode-ui-97 {
+  display: flex;
+  justify-content: space-between;
+}
+
+.neuronnode-ui-98 {
+  background: rgba(255,255,255,0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+}
+
+.neuronnode-ui-99 {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.neuronnode-ui-100 {
+  margin-left: 4px;
+}
+
+.neuronnode-ui-101 {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #e2e8f0;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.neuronnode-ui-102 {
+  background: #38bdf8;
+  border: none;
+  color: #0f172a;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.neuronnode-ui-103 {
+  background: #38bdf8;
+  border: none;
+  color: #0f172a;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neuronnode-ui-104 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.neuronnode-ui-105 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.neuronnode-ui-106 {
+  width: 260px;
+  position: relative;
+  color: var(--text-primary);
+  padding: 0;
+}
+
