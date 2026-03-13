@@ -201,25 +201,10 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     };
 
     const handleSpawnDisc = async () => {
-        if (!baseData) return;
         setError(null);
         try {
-            const payload: any = {
-                name: `${baseData.name} [Active]`,
-                identity_type: baseData.identity_type?.id ?? null,
-                ai_model: baseData.ai_model?.id ?? null,
-                system_prompt_template: baseData.system_prompt_template,
-                enabled_tools: (baseData.enabled_tools ?? []).map(t => t.id),
-                addons: (baseData.addons ?? []).map(a => a.id),
-                tags: (baseData.tags ?? []).map(t => t.id),
-            };
-
-            const res = await apiFetch('/api/v2/identity-discs/', {
+            const res = await apiFetch(`/api/v2/identities/${id}/forge/`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
@@ -346,9 +331,9 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                     </span>
                                 </div>
                                 <div className="metric-card">
-                                    <span className="metric-label">Combat Record</span>
+                                    <span className="metric-label">Experience Record</span>
                                     <span className="metric-value font-mono text-sm">
-                                        <span className="stat-positive">{discData.successes}W</span> - <span className="stat-negative">{discData.failures}L</span> - <span className="stat-warning">{discData.timeouts}T</span>
+                                        <span className="stat-positive">{discData.successes} Succ</span> - <span className="stat-negative">{discData.failures} Fail</span> - <span className="stat-warning">{discData.timeouts} Time</span>
                                     </span>
                                 </div>
                             </div>
