@@ -15,11 +15,12 @@ import { apiFetch } from '../api';
 import './BloodBrainBarrier.css';
 import { CNSView } from "./CNSView.tsx";
 import { PFCInspector } from './PFCInspector';
+import { HeartbeatControlPanel } from './HeartbeatControlPanel';
 import type { GraphNode, PFCAgileItem } from '../types';
 
 export const BloodBrainBarrier = () => {
     // Add 'cns' to the viewport state
-    const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | 'pfc' | 'reasoning' | 'cns' | null>(null);
+    const [activeViewport, setActiveViewport] = useState<'iteration' | 'identity' | 'pfc' | 'reasoning' | 'cns' | 'pns' | null>(null);
     const [selectedEntity, setSelectedEntity] = useState<{ id: number | string, type: 'base' | 'disc' } | null>(null);
 
     // Frontal Lobe State
@@ -46,6 +47,7 @@ export const BloodBrainBarrier = () => {
         else if (path === 'pfc') setActiveViewport('pfc');
         else if (path === 'frontal') setActiveViewport('reasoning');
         else if (path === 'cns') setActiveViewport('cns');
+        else if (path === 'pns') setActiveViewport('pns');
         else setActiveViewport(null);
     };
 
@@ -138,6 +140,7 @@ export const BloodBrainBarrier = () => {
                                 ) : activeViewport === 'identity' && !selectedEntity ? (
                                     <div className="bbb-placeholder font-mono text-sm">Select an identity from the roster to view synaptic data.</div>
                                 ) : null}
+                                {activeViewport === 'pns' && <HeartbeatControlPanel />}
                             </div>
                         )}
 

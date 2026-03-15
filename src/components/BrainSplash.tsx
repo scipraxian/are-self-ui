@@ -73,6 +73,7 @@ export const BrainPlaceholder = ({ onLobeClick, hoveredLobe, setHoveredLobe }: B
             {/* Prefrontal Cortex (Replaced Parietal) -> Agile Board */}
             <LobeSphere position={[0, 3, -2.5]} color="#ef4444" name="Prefrontal Cortex" path="pfc" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
             <LobeSphere position={[2.5, 0, 1.5]} color="#38bdf8" name="Central Nervous System" path="cns" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
+            <LobeSphere position={[-2, 0.5, 2]} color="#14b8a6" name="Peripheral Nervous System" path="pns" hoveredLobe={hoveredLobe} setHoveredLobe={setHoveredLobe} onLobeClick={onLobeClick} />
 
             <Sphere args={[1.2, 16, 16]} position={[0, 1, 0]}>
                 <meshStandardMaterial color="#333333" roughness={0.9} metalness={0.1} wireframe />
