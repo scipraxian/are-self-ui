@@ -4,12 +4,14 @@ import { SpikeTrainCard } from './SpikeTrainCard';
 import type { SpikeTrain } from "../types.ts";
 import { apiFetch } from '../api';
 
-// Add a prop to talk to your BloodBrainBarrier
 interface CNSViewProps {
-    onOpenPathway: (pathwayId: string) => void;
+    /** Open pathway in read-only monitor mode (view graph). */
+    onViewPathway: (pathwayId: string) => void;
+    /** Open pathway in edit mode (edit neural pathway). */
+    onEditPathway: (pathwayId: string) => void;
 }
 
-export const CNSView: React.FC<CNSViewProps> = ({ onOpenPathway }) => {
+export const CNSView: React.FC<CNSViewProps> = ({ onViewPathway, onEditPathway }) => {
     const [spikeTrains, setSpikeTrains] = useState<SpikeTrain[]>([]);
 
     useEffect(() => {
@@ -42,9 +44,8 @@ export const CNSView: React.FC<CNSViewProps> = ({ onOpenPathway }) => {
                     <SpikeTrainCard
                         key={st.id}
                         spikeTrain={st}
-                        // Route BOTH buttons to your BBB state for now to stop the crash
-                        onViewGraph={() => onOpenPathway(st.pathway.toString())}
-                        onEditGraph={() => onOpenPathway(st.pathway.toString())}
+                        onViewGraph={() => onViewPathway(st.pathway.toString())}
+                        onEditGraph={() => onEditPathway(st.pathway.toString())}
                         onStop={handleStop}
                     />
                 ))

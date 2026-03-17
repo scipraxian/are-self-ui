@@ -66,6 +66,7 @@
     overflow: hidden;
     padding: 20px;
     gap: 20px;
+    pointer-events: auto;
 }
 
 /* FIX: flex: 0 0 320px makes it rigidly 320px. It will never shrink or grow. */
@@ -94,7 +95,19 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    pointer-events: none;
+    pointer-events: auto;
+}
+
+/* Center panel when it contains the CNS graph: fill available space so ReactFlow receives events */
+.bbb-panel-center-cns-graph {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Center panel when it contains the Reasoning 3D graph */
+.bbb-panel-center-reasoning-graph {
+    min-height: 0;
+    overflow: hidden;
 }
 
 .bbb-panel-center-active {
@@ -236,5 +249,14 @@
 
 .bloodbrainbarrier-ui-12 {
   width: 100%;
+}
+
+.bbb-main-viewport {
+  width: 300vw;
+  height: 300vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 

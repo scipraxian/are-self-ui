@@ -15,6 +15,13 @@ interface CNSEditorProps {
     pathwayId: string;
     onDrillDown?: (pathwayId: string) => void;
     onNodeSelect?: (node: any) => void;
+    /**
+     * When true, the editor runs in "monitor" mode:
+     * - nodes and edges are read-only
+     * - drag-and-drop and new connections are disabled
+     * - destructive mutations (delete, create) are blocked
+     */
+    isMonitorMode?: boolean;
 }
 
 const nodeTypes = {
@@ -23,7 +30,12 @@ const nodeTypes = {
 
 import { apiFetch } from '../api';
 
-export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, onNodeSelect }) => {
+export const CNSEditor: React.FC<CNSEditorProps> = ({
+    pathwayId,
+    onDrillDown,
+    onNodeSelect,
+    isMonitorMode = false,
+}) => {
     const [selectedNode, setSelectedNode] = useState<Neuron | null>(null);
     const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -33,25 +45,44 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
     const [edges, setEdges] = useState<any[]>([]);
 
     const onNodesChange = useCallback(
-        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
-        []
+        (changes: NodeChange[]) => {
+            if (isMonitorMode) {
+                // Allow selection/highlight changes but ignore position/mutation ops
+                const filtered = changes.filter((change: NodeChange) => change.type === 'select');
+                if (filtered.length === 0) return;
+                setNodes((nds) => applyNodeChanges(filtered, nds));
+                return;
+            }
+            setNodes((nds) => applyNodeChanges(changes, nds));
+        },
+        [isMonitorMode]
     );
     const onEdgesChange = useCallback(
-        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-        []
+        (changes: EdgeChange[]) => {
+            if (isMonitorMode) {
+                const filtered = changes.filter((change: EdgeChange) => change.type === 'select');
+                if (filtered.length === 0) return;
+                setEdges((eds) => applyEdgeChanges(filtered, eds));
+                return;
+            }
+            setEdges((eds) => applyEdgeChanges(changes, eds));
+        },
+        [isMonitorMode]
     );
 
     const onNodeDragStop = useCallback((_event: React.MouseEvent, node: any) => {
+        if (isMonitorMode) return;
         // Optimistic UI updates happen via onNodesChange. Here we just post telemetry to DB.
         apiFetch(`/api/v2/neurons/${node.id}/`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ui_json: JSON.stringify({ x: node.position.x, y: node.position.y }) })
         }).catch(err => console.error("Failed to update node position", err));
-    }, []);
+    }, [isMonitorMode]);
 
     // CRUD: Connect Edges
     const onConnect = useCallback((params: any) => {
+        if (isMonitorMode) return;
         const axonTypeMap: Record<string, number> = { 'always': 1, 'success': 2, 'failure': 3, 'fail': 3 };
         const requestBody = {
             pathway: pathwayId,
@@ -82,23 +113,25 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
                 };
                 setEdges(eds => [...eds, reactFlowEdge]);
             });
-    }, [pathwayId]);
+    }, [pathwayId, isMonitorMode]);
 
     // CRUD: Delete Nodes
     const onNodesDelete = useCallback((nodesToDelete: any[]) => {
+        if (isMonitorMode) return;
         nodesToDelete.forEach(n => {
             apiFetch(`/api/v2/neurons/${n.id}/`, { method: 'DELETE' });
             if (selectedNode?.id?.toString() === n.id.toString()) setSelectedNode(null);
             if (onNodeSelect) onNodeSelect(null);
         });
-    }, [selectedNode, onNodeSelect]);
+    }, [selectedNode, onNodeSelect, isMonitorMode]);
 
     // CRUD: Delete Edges
     const onEdgesDelete = useCallback((edgesToDelete: any[]) => {
+        if (isMonitorMode) return;
         edgesToDelete.forEach(e => {
             apiFetch(`/api/v2/axons/${e.id}/`, { method: 'DELETE' });
         });
-    }, []);
+    }, [isMonitorMode]);
 
     // Helper: Double Click Edges to Delete
     const onEdgeDoubleClick = useCallback((_event: React.MouseEvent, edge: any) => {
@@ -238,11 +271,18 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({ pathwayId, onDrillDown, on
                 onEdgeDoubleClick={onEdgeDoubleClick}
                 onInit={setReactFlowInstance}
                 nodeTypes={nodeTypes}
+                // In monitor mode we still want hovering and selection for inspection,
+                // but no drag, connect, or destructive edits.
+                nodesDraggable={!isMonitorMode}
+                nodesConnectable={!isMonitorMode}
+                elementsSelectable
                 onDragOver={(e) => {
+                    if (isMonitorMode) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
                 }}
                 onDrop={(e) => {
+                    if (isMonitorMode) return;
                     e.preventDefault();
                     const dragId = e.dataTransfer.getData('application/reactflow');
                     const dragType = e.dataTransfer.getData('application/reactflow-type');
