@@ -2,6 +2,7 @@ import "./LiveMonitor.css";
 import { useParams, useNavigate } from 'react-router-dom';
 import { CommandCenterLayout } from '../components/CommandCenterLayout';
 import { CNSView } from '../components/CNSView';
+import { SpikeView } from './SpikeView';
 
 export const LiveMonitor = () => {
     const { spikeTrainId } = useParams();
@@ -24,12 +25,15 @@ export const LiveMonitor = () => {
             }
             rightPanel={
                 <div className="livemonitor-ui-211">
-                    Real-time telemetry stream for this specific execution will attach here.
+                    <SpikeView initialSpikeId={spikeTrainId} />
                 </div>
             }
         >
-            {/* We will update CNSView to accept the spikeTrainId in the next step */}
-            <CNSView onOpenPathway={(pid) => navigate(`/editor/${pid}`)} />
+            {/* Mirror CNS monitor route when opening a pathway from telemetry */}
+            <CNSView
+                onViewPathway={(pid) => navigate(`/cns/monitor/${pid}`)}
+                onEditPathway={(pid) => navigate(`/cns/edit/${pid}`)}
+            />
         </CommandCenterLayout>
     );
 };

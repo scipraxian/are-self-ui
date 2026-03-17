@@ -19,10 +19,12 @@ import { PFCInspector } from './PFCInspector';
 import { HeartbeatControlPanel } from './HeartbeatControlPanel';
 import type { GraphNode, PFCAgileItem } from '../types';
 import { HamburgerMenu } from './HamburgerMenu';
+import { useGABA } from '../context/GABAProvider';
 
 export const BloodBrainBarrier = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { registerEscapeHandler } = useGABA();
 
     // Add 'cns' to the viewport state
     const [activeViewport, setActiveViewport] = useState<
@@ -53,32 +55,46 @@ export const BloodBrainBarrier = () => {
     // Matrix View State
     const [matrixHasSelection, setMatrixHasSelection] = useState<boolean>(false);
 
-    // Keep viewport in sync with URL path (deep-linkable)
+    // Keep viewport (and CNS edit/view mode) in sync with URL path (deep-linkable)
     useEffect(() => {
         const path = location.pathname;
 
         // Clear inspectors when navigating between lobes
         setSelectedNode(null);
         setSelectedPfcItem(null);
-        setActivePathwayId(null);
 
         if (path === '/' || path === '') {
             setActiveViewport(null);
+            setActivePathwayId(null);
             return;
         }
 
         if (path.startsWith('/temporal')) {
             setActiveViewport('iteration');
+            setActivePathwayId(null);
         } else if (path.startsWith('/pfc')) {
             setActiveViewport('pfc');
+            setActivePathwayId(null);
         } else if (path.startsWith('/frontal')) {
             setActiveViewport('reasoning');
+            setActivePathwayId(null);
         } else if (path.startsWith('/cns')) {
             setActiveViewport('cns');
+            // Support explicit CNS edit vs monitor routes:
+            // /cns/edit/:id -> edit mode
+            // /cns/monitor/:id -> monitor/view mode
+            const parts = path.split('/').filter(Boolean); // e.g. ['cns', 'edit', '123']
+            if (parts.length >= 3 && (parts[1] === 'edit' || parts[1] === 'monitor')) {
+                setActivePathwayId(parts[2]);
+            } else {
+                setActivePathwayId(null);
+            }
         } else if (path.startsWith('/pns')) {
             setActiveViewport('pns');
+            setActivePathwayId(null);
         } else {
             setActiveViewport(null);
+            setActivePathwayId(null);
         }
     }, [location.pathname]);
 
@@ -99,25 +115,37 @@ export const BloodBrainBarrier = () => {
     const isReasoningGraphActive = activeViewport === 'reasoning' && activeSessionId !== null;
     const isCNSEditorActive = activeViewport === 'cns' && activePathwayId !== null;
 
+    // CNS view vs edit routes driven from URL
+    const path = location.pathname;
+    const isCNSMonitorRoute = path.startsWith('/cns/monitor/');
+
+    // Global ESC: when in CNS, ESC should collapse panels or return to CNS index
+    useEffect(() => {
+        if (activeViewport !== 'cns') {
+            return;
+        }
+
+        const unregister = registerEscapeHandler(() => {
+            if (activePathwayId) {
+                // From an active pathway (edit or monitor) back to CNS index
+                setActivePathwayId(null);
+                navigate('/cns');
+            } else {
+                // From CNS index back to Mission Control
+                handleCloseToRoot();
+            }
+        });
+
+        return unregister;
+    }, [activeViewport, activePathwayId, navigate, registerEscapeHandler]);
+
     return (
         <div className="bbb-wrapper">
             {/* --- DYNAMIC BACKGROUND LAYER --- */}
             <div className="bbb-layer-3d">
-                {isReasoningGraphActive ? (
-                    <ReasoningGraph3D
-                        sessionId={activeSessionId}
-                        onNodeSelect={setSelectedNode}
-                        onStatsUpdate={setCortexStats}
-                    />
-                ) : isCNSEditorActive ? (
-                    <CNSEditor
-                        pathwayId={activePathwayId as string}
-                        onDrillDown={setActivePathwayId}
-                        onNodeSelect={setSelectedNode}
-                    />
-                ) : (
+                {!isReasoningGraphActive && !isCNSEditorActive ? (
                     <BackgroundCanvas onLobeClick={handleLobeClick} />
-                )}
+                ) : null}
             </div>
 
             <div className="bbb-layer-ui">
@@ -138,12 +166,18 @@ export const BloodBrainBarrier = () => {
                             isCNSEditorActive ? (
                                 <CNSEditorPalette
                                     pathwayId={activePathwayId as string}
-                                    onBack={() => setActivePathwayId(null)}
+                                    onBack={() => {
+                                        setActivePathwayId(null);
+                                        navigate('/cns');
+                                    }}
                                 />
                             ) : (
                                 <CNSSidebar
                                     activePathwayId={activePathwayId}
-                                    onSelectPathway={setActivePathwayId}
+                                    onSelectPathway={(id) => {
+                                        setActivePathwayId(id);
+                                        navigate(`/cns/edit/${id}`);
+                                    }}
                                     onExit={handleCloseToRoot}
                                 />
                             )
@@ -172,11 +206,30 @@ export const BloodBrainBarrier = () => {
                     {/* NORMAL CENTER STAGE */}
                     <main
                         className={
-                            activeViewport && !isReasoningGraphActive && !isCNSEditorActive
-                                ? 'bbb-panel-center-active'
-                                : 'bbb-panel-center-wrapper'
+                            isCNSEditorActive
+                                ? 'bbb-panel-center-wrapper bbb-panel-center-cns-graph'
+                                : isReasoningGraphActive
+                                    ? 'bbb-panel-center-wrapper bbb-panel-center-reasoning-graph'
+                                    : activeViewport && !isReasoningGraphActive && !isCNSEditorActive
+                                    ? 'bbb-panel-center-active'
+                                    : 'bbb-panel-center-wrapper'
                         }
                     >
+                        {isReasoningGraphActive && (
+                            <ReasoningGraph3D
+                                sessionId={activeSessionId as string}
+                                onNodeSelect={setSelectedNode}
+                                onStatsUpdate={setCortexStats}
+                            />
+                        )}
+                        {isCNSEditorActive && (
+                            <CNSEditor
+                                pathwayId={activePathwayId as string}
+                                onDrillDown={setActivePathwayId}
+                                onNodeSelect={setSelectedNode}
+                                isMonitorMode={isCNSMonitorRoute}
+                            />
+                        )}
                         {activeViewport &&
                             !isReasoningGraphActive &&
                             !isCNSEditorActive &&
@@ -229,8 +282,13 @@ export const BloodBrainBarrier = () => {
                                     </button>
                                 </div>
                                 <CNSView
-                                    onOpenPathway={(pathwayId) => {
+                                    onViewPathway={(pathwayId) => {
                                         setActivePathwayId(pathwayId);
+                                        navigate(`/cns/monitor/${pathwayId}`);
+                                    }}
+                                    onEditPathway={(pathwayId) => {
+                                        setActivePathwayId(pathwayId);
+                                        navigate(`/cns/edit/${pathwayId}`);
                                     }}
                                 />
                             </div>
