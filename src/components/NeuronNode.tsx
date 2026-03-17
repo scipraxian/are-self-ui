@@ -24,30 +24,12 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
     // Display names
     const displayName = isSubgraph ? data.invoked_pathway_name || 'Sub-Graph' : data.label;
 
-    const headerBg = isRoot
-        ? 'rgba(239, 68, 68, 0.15)' // Red tint for root
-        : isSubgraph
-            ? 'linear-gradient(135deg, rgba(249, 159, 27, 0.15) 0%, rgba(180, 83, 9, 0.15) 100%)' // Orange/Amber tint for subgraph
-            : 'rgba(56, 189, 248, 0.08)'; // Default blue tint
-
-    const headerBorder = isRoot
-        ? 'rgba(239, 68, 68, 0.3)'
-        : isSubgraph
-            ? 'rgba(249, 159, 27, 0.3)'
-            : 'var(--border-glass)';
+    const headerVariantClass = isRoot ? 'neuronnode-header--root' : isSubgraph ? 'neuronnode-header--subgraph' : 'neuronnode-header--default';
 
     return (
         <div className="glass-panel neuronnode-ui-106">
             {/* CARD HEADER */}
-            <div className="glass-panel-header" style={{
-                margin: 0,
-                padding: '12px 16px',
-                borderTopLeftRadius: '15px',
-                borderTopRightRadius: '15px',
-                background: headerBg,
-                justifyContent: 'space-between',
-                borderBottom: `1px solid ${headerBorder}`
-            }}>
+            <div className={`glass-panel-header neuronnode-header ${headerVariantClass}`}>
                 <div className="common-layout-15">
                     <span className="font-display neuronnode-ui-105">
                         {isSubgraph && '🌀 '}{displayName}

@@ -2,3 +2,18 @@
   pointer-events: none;
 }
 
+.brainsplash-hover-label {
+  font-family: var(--font-display, Outfit, sans-serif);
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  font-size: 0.85rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.brainsplash-hover-label--frontal { color: #a855f7; }
+.brainsplash-hover-label--temporal { color: #f99f1b; }
+.brainsplash-hover-label--pfc { color: #ef4444; }
+.brainsplash-hover-label--cns { color: #38bdf8; }
+.brainsplash-hover-label--pns { color: #14b8a6; }
+

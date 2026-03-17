@@ -120,6 +120,18 @@
     pointer-events: auto;
 }
 
+.bbb-iteration-roster-portal {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+.bbb-iteration-roster-portal--active {
+    display: flex;
+}
+
 .bbb-close-btn {
     position: absolute;
     top: 15px;

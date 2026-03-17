@@ -10,3 +10,19 @@
   overflow-y: auto;
 }
 
+.cnsview-tracklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cnsview-terminal {
+  margin-top: 14px;
+  min-height: 240px;
+  height: 42vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+

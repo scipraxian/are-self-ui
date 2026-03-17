@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Settings, MessageSquare, Terminal } from 'lucide-react';
+import { MessageSquare, Terminal } from 'lucide-react';
 import { BackgroundCanvas } from './BackgroundCanvas';
 import { IdentityRoster } from './IdentityRoster';
 import { TemporalMatrix } from './TemporalMatrix';
@@ -12,6 +12,8 @@ import { CNSSidebar } from './CNSSidebar';
 import { CNSEditor } from './CNSEditor';
 import { CNSEditorPalette } from './CNSEditorPalette';
 import { CNSInspector } from './CNSInspector';
+import { CNSMonitor } from '../pages/CNSMonitor';
+import { SpikeView } from '../pages/SpikeView';
 import { apiFetch } from '../api';
 import './BloodBrainBarrier.css';
 import { CNSView } from './CNSView';
@@ -51,9 +53,11 @@ export const BloodBrainBarrier = () => {
 
     // CNS State
     const [activePathwayId, setActivePathwayId] = useState<string | null>(null);
+    const [selectedSpikeId, setSelectedSpikeId] = useState<string | null>(null);
+    const [selectedCNSEnvironmentId, setSelectedCNSEnvironmentId] = useState<string>('');
 
     // Matrix View State
-    const [matrixHasSelection, setMatrixHasSelection] = useState<boolean>(false);
+    const [, setMatrixHasSelection] = useState<boolean>(false);
 
     // Keep viewport (and CNS edit/view mode) in sync with URL path (deep-linkable)
     useEffect(() => {
@@ -62,6 +66,7 @@ export const BloodBrainBarrier = () => {
         // Clear inspectors when navigating between lobes
         setSelectedNode(null);
         setSelectedPfcItem(null);
+        setSelectedSpikeId(null);
 
         if (path === '/' || path === '') {
             setActiveViewport(null);
@@ -118,6 +123,7 @@ export const BloodBrainBarrier = () => {
     // CNS view vs edit routes driven from URL
     const path = location.pathname;
     const isCNSMonitorRoute = path.startsWith('/cns/monitor/');
+    const isCNSEditRoute = path.startsWith('/cns/edit/');
 
     // Global ESC: when in CNS, ESC should collapse panels or return to CNS index
     useEffect(() => {
@@ -163,7 +169,7 @@ export const BloodBrainBarrier = () => {
                                 onExit={handleCloseToRoot}
                             />
                         ) : activeViewport === 'cns' ? (
-                            isCNSEditorActive ? (
+                            isCNSEditRoute && isCNSEditorActive ? (
                                 <CNSEditorPalette
                                     pathwayId={activePathwayId as string}
                                     onBack={() => {
@@ -176,9 +182,11 @@ export const BloodBrainBarrier = () => {
                                     activePathwayId={activePathwayId}
                                     onSelectPathway={(id) => {
                                         setActivePathwayId(id);
-                                        navigate(`/cns/edit/${id}`);
+                                        navigate(`/cns/monitor/${id}`);
                                     }}
                                     onExit={handleCloseToRoot}
+                                    selectedEnvironmentId={selectedCNSEnvironmentId}
+                                    onEnvironmentChange={setSelectedCNSEnvironmentId}
                                 />
                             )
                         ) : (
@@ -191,13 +199,7 @@ export const BloodBrainBarrier = () => {
                                 )}
                                 <div
                                     id="bbb-iteration-roster-portal"
-                                    style={{
-                                        display: activeViewport === 'iteration' ? 'flex' : 'none',
-                                        flexDirection: 'column',
-                                        height: '100%',
-                                        overflow: 'hidden',
-                                        width: '100%',
-                                    }}
+                                    className={`bbb-iteration-roster-portal ${activeViewport === 'iteration' ? "bbb-iteration-roster-portal--active" : ""}`}
                                 />
                             </>
                         )}
@@ -223,12 +225,19 @@ export const BloodBrainBarrier = () => {
                             />
                         )}
                         {isCNSEditorActive && (
-                            <CNSEditor
-                                pathwayId={activePathwayId as string}
-                                onDrillDown={setActivePathwayId}
-                                onNodeSelect={setSelectedNode}
-                                isMonitorMode={isCNSMonitorRoute}
-                            />
+                            isCNSMonitorRoute ? (
+                                <CNSMonitor
+                                    pathwayId={activePathwayId as string}
+                                    environmentName={selectedCNSEnvironmentId ? `Env ${selectedCNSEnvironmentId}` : "Default Environment"}
+                                />
+                            ) : (
+                                <CNSEditor
+                                    pathwayId={activePathwayId as string}
+                                    onDrillDown={setActivePathwayId}
+                                    onNodeSelect={setSelectedNode}
+                                    isMonitorMode={false}
+                                />
+                            )
                         )}
                         {activeViewport &&
                             !isReasoningGraphActive &&
@@ -290,6 +299,7 @@ export const BloodBrainBarrier = () => {
                                         setActivePathwayId(pathwayId);
                                         navigate(`/cns/edit/${pathwayId}`);
                                     }}
+                                    selectedEnvironmentId={selectedCNSEnvironmentId}
                                 />
                             </div>
                         )}

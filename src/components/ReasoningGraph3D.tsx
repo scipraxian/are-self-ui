@@ -1,5 +1,5 @@
 import "./ReasoningGraph3D.css";
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import type {
@@ -56,7 +56,11 @@ interface ReasoningGraphProps {
     onStatsUpdate: (stats: { level: number, focus: string, xp: number, status: string, latestThought: string }) => void;
 }
 
-export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: ReasoningGraphProps) => {
+export const ReasoningGraph3D = memo(function ReasoningGraph3D({
+    sessionId,
+    onNodeSelect,
+    onStatsUpdate,
+}: ReasoningGraphProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
@@ -392,4 +396,4 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             </div>
         </div>
     );
-};
+});

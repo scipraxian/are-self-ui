@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { BrainPlaceholder } from './BrainSplash';
@@ -8,7 +8,7 @@ interface BackgroundCanvasProps {
     onLobeClick: (path: string) => void;
 }
 
-export const BackgroundCanvas = ({ onLobeClick }: BackgroundCanvasProps) => {
+export const BackgroundCanvas = memo(function BackgroundCanvas({ onLobeClick }: BackgroundCanvasProps) {
     const [hoveredLobe, setHoveredLobe] = useState<string | null>(null);
 
     return (
@@ -34,4 +34,4 @@ export const BackgroundCanvas = ({ onLobeClick }: BackgroundCanvasProps) => {
             />
         </Canvas>
     );
-};
+});

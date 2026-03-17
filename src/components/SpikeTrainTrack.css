@@ -1,0 +1,141 @@
+.cns-spike_train-wrapper {
+  display: flex;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 8px;
+  min-height: 92px;
+}
+
+.cns-spike_train-wrapper--depth-0 { margin-left: 0; }
+.cns-spike_train-wrapper--depth-1 { margin-left: 22px; }
+.cns-spike_train-wrapper--depth-2 { margin-left: 44px; }
+.cns-spike_train-wrapper--depth-3 { margin-left: 66px; }
+.cns-spike_train-wrapper--depth-4 { margin-left: 88px; }
+.cns-spike_train-wrapper--depth-5 { margin-left: 110px; }
+.cns-spike_train-wrapper--depth-6 { margin-left: 132px; }
+.cns-spike_train-wrapper--depth-7 { margin-left: 154px; }
+.cns-spike_train-wrapper--depth-8 { margin-left: 176px; }
+
+.cns-spike_train-wrapper--running {
+  background: rgba(249, 159, 27, 0.05);
+  border-color: rgba(249, 159, 27, 0.55);
+}
+
+.cns-spike_train-wrapper--failed {
+  background: rgba(239, 68, 68, 0.07);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.cns-spike_train-left {
+  flex: 0 0 320px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cns-spike_train-title {
+  flex: 1;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cns-spike_train-status {
+  flex: 0 0 auto;
+  font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cns-spike_train-status--running {
+  color: #f99f1b;
+}
+.cns-spike_train-status--success {
+  color: #4ade80;
+}
+.cns-spike_train-status--failed {
+  color: #ef4444;
+}
+
+.cns-spike_train-id {
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.cns-spike_train-controls {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid rgba(56, 189, 248, 0.8);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.cns-spike_train-wrapper--running .cns-spike_train-controls {
+  border-left-color: rgba(249, 159, 27, 0.9);
+}
+.cns-spike_train-wrapper--failed .cns-spike_train-controls {
+  border-left-color: rgba(239, 68, 68, 0.9);
+}
+.cns-spike_train-wrapper--success .cns-spike_train-controls {
+  border-left-color: rgba(74, 222, 128, 0.9);
+}
+
+.cns-spike_train-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.cns-spike_train-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cns-spike_train {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cns-spike_train-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+}
+
+.cns-spike_train-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.nested-spike_trains {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+

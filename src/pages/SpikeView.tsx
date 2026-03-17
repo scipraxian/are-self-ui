@@ -1,6 +1,7 @@
 import 'flexlayout-react/style/light.css';
-import { useCallback, useMemo, useState } from 'react';
-import { Layout, Model, Actions, TabNode } from 'flexlayout-react';
+import './SpikeView.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Actions, DockLocation, Layout, Model, TabNode } from 'flexlayout-react';
 import { SpikeStream } from '../components/SpikeStream';
 
 interface SpikeViewProps {
@@ -8,7 +9,7 @@ interface SpikeViewProps {
 }
 
 const createInitialModel = (initialSpikeId?: string) => {
-    const tabs: unknown[] = [];
+    const tabs: any[] = [];
 
     if (initialSpikeId) {
         tabs.push({
@@ -43,7 +44,7 @@ const createInitialModel = (initialSpikeId?: string) => {
         },
     };
 
-    return Model.fromJson(json);
+    return Model.fromJson(json as any);
 };
 
 export const SpikeView = ({ initialSpikeId }: SpikeViewProps) => {
@@ -56,7 +57,7 @@ export const SpikeView = ({ initialSpikeId }: SpikeViewProps) => {
             const spikeId = node.getId() || node.getName();
             if (!spikeId || spikeId === 'placeholder') {
                 return (
-                    <div style={{ padding: '16px', color: '#e5e7eb', backgroundColor: '#020617' }}>
+                    <div className="spikeview-placeholder">
                         Select a Spike to begin streaming logs.
                     </div>
                 );
@@ -82,14 +83,22 @@ export const SpikeView = ({ initialSpikeId }: SpikeViewProps) => {
                     name: spikeId,
                 },
                 targetNode.getId(),
-                Actions.getTabSetInsertPos(targetNode, 'flexlayout_tab'),
+                DockLocation.CENTER,
+                -1,
             );
 
-            const newModel = model.doAction(action);
-            setModel(newModel as Model);
+            const newModel = model.doAction(action) as unknown as Model;
+            setModel(newModel);
         },
         [model],
     );
+
+    // If a new spike is selected externally (e.g. from CNSMonitor), open it as a tab.
+    useEffect(() => {
+        if (initialSpikeId) {
+            openSpike(initialSpikeId);
+        }
+    }, [initialSpikeId, openSpike]);
 
     const quickSpikeId = useMemo(() => `ad-hoc-${nextIdCounter}`, [nextIdCounter]);
 
@@ -99,28 +108,20 @@ export const SpikeView = ({ initialSpikeId }: SpikeViewProps) => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-            <div style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
+        <div className="spikeview-root">
+            <div className="spikeview-toolbar">
+                <div className="spikeview-title">
                     SPIKE TELEMETRY MATRIX
                 </div>
                 <button
                     type="button"
                     onClick={handleOpenQuickSpike}
-                    style={{
-                        fontSize: '0.75rem',
-                        padding: '4px 10px',
-                        borderRadius: '9999px',
-                        border: '1px solid rgba(148, 163, 184, 0.6)',
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        color: '#e5e7eb',
-                        cursor: 'pointer',
-                    }}
+                    className="spikeview-open-btn"
                 >
                     + Open Spike Tab
                 </button>
             </div>
-            <div style={{ flex: 1, minHeight: 0 }}>
+            <div className="spikeview-layout">
                 <Layout model={model} factory={factory} />
             </div>
         </div>

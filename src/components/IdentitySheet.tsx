@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cpu, Loader2, Database, Wrench, Zap, Activity } from 'lucide-react';
 import { apiFetch } from '../api';
 import './IdentitySheet.css';
+import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
 interface OutlierData {
     id: string | number;
@@ -96,6 +97,25 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
     const baseData: BaseIdentityData | null = data as BaseIdentityData | null;
+
+    const focusFillCss = useMemo(() => {
+        if (!discData?.reasoning_session || discData.reasoning_session.length === 0) return '';
+        return discData.reasoning_session
+            .map((session) => {
+                const focusPercent = session.max_focus
+                    ? Math.round((session.current_focus / session.max_focus) * 100)
+                    : 0;
+                const clamped = Math.min(Math.max(focusPercent, 0), 100);
+                const sid = safeCssIdent(session.id);
+                return `.session-focus-fill--${sid}{width:${clamped}%;}`;
+            })
+            .join('\n');
+    }, [discData?.reasoning_session]);
+
+    useEffect(() => {
+        if (!focusFillCss) return;
+        ensureDynamicCss(`identitysheet:focusfills:${safeCssIdent(String(id))}`, focusFillCss);
+    }, [focusFillCss, id]);
 
     const hydrateFormFromData = useCallback((current: BaseIdentityData | IdentityDiscData) => {
         const base = current as BaseIdentityData;
@@ -602,9 +622,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                             ) : (
                                 <div className="session-list">
                                     {sessions.map(session => {
-                                        const focusPercent = session.max_focus
-                                            ? Math.round((session.current_focus / session.max_focus) * 100)
-                                            : 0;
+                                        const sessionClassId = safeCssIdent(session.id);
                                         return (
                                             <div key={session.id} className="session-item">
                                                 <div className="session-header">
@@ -613,8 +631,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                                 </div>
                                                 <div className="session-focus-bar">
                                                     <div
-                                                        className="session-focus-fill"
-                                                        style={{ width: `${Math.min(Math.max(focusPercent, 0), 100)}%` }}
+                                                        className={`session-focus-fill session-focus-fill--${sessionClassId}`}
                                                     />
                                                 </div>
                                                 <div className="session-metrics font-mono text-xs">

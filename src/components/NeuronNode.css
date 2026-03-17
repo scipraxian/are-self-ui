@@ -165,3 +165,26 @@
   padding: 0;
 }
 
+.neuronnode-header {
+  margin: 0;
+  padding: 12px 16px;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  justify-content: space-between;
+}
+
+.neuronnode-header--root {
+  background: rgba(239, 68, 68, 0.15);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.neuronnode-header--subgraph {
+  background: linear-gradient(135deg, rgba(249, 159, 27, 0.15) 0%, rgba(180, 83, 9, 0.15) 100%);
+  border-bottom: 1px solid rgba(249, 159, 27, 0.3);
+}
+
+.neuronnode-header--default {
+  background: rgba(56, 189, 248, 0.08);
+  border-bottom: 1px solid var(--border-glass);
+}
+

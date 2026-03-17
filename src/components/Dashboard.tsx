@@ -1,5 +1,7 @@
+import './Dashboard.css';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../api';
 
 type MissionStatus = {
     name?: string | null;
@@ -18,33 +20,23 @@ type DashboardSummary = {
     recent_missions?: Mission[] | null;
 };
 
-const DASHBOARD_SUMMARY_URL = 'http://localhost:8000/api/v2/dashboard/summary/';
+const DASHBOARD_SUMMARY_URL = '/api/v2/dashboard/summary/';
 const POLL_INTERVAL_MS = 3000;
 
-const getMissionStatusColor = (mission: Mission): string => {
-    if (mission.is_alive) return '#f99f1b';
-    if (mission.ended_successfully) return '#4ade80';
-    if (mission.ended_badly) return '#ef4444';
-    return '#64748b';
+const getMissionStatusClass = (mission: Mission): string => {
+    if (mission.is_alive) return 'running';
+    if (mission.ended_successfully) return 'success';
+    if (mission.ended_badly) return 'failed';
+    return 'pending';
 };
 
 const MissionRow = ({ mission, onClick }: { mission: Mission; onClick: () => void }) => {
-    const statusColor = getMissionStatusColor(mission);
+    const statusClass = getMissionStatusClass(mission);
 
     return (
         <div
             onClick={onClick}
-            style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid #333',
-                borderLeft: `4px solid ${statusColor}`,
-                padding: '16px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}
+            className={`mc-mission-row mc-mission-row--${statusClass}`}
         >
             <div>
                 <strong className="common-layout-20">{mission.pathway_name}</strong>
@@ -52,7 +44,7 @@ const MissionRow = ({ mission, onClick }: { mission: Mission; onClick: () => voi
                     #{mission.id.substring(0, 8)}
                 </div>
             </div>
-            <div style={{ color: statusColor, fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.9rem' }}>
+            <div className={`mc-mission-status mc-mission-status--${statusClass}`}>
                 {mission.status?.name || 'UNKNOWN'}
             </div>
         </div>
@@ -69,7 +61,7 @@ export const Dashboard = () => {
 
         const fetchSummary = async () => {
             try {
-                const res = await fetch(DASHBOARD_SUMMARY_URL, { signal: controller.signal });
+                const res = await apiFetch(DASHBOARD_SUMMARY_URL, { signal: controller.signal });
 
                 // No content changed (useful with polling); keep existing UI as-is.
                 if (res.status === 204) return;

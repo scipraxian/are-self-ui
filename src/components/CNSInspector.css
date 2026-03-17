@@ -83,6 +83,149 @@
   transition: transform 0.1s;
 }
 
+.cnsinspector-ui-1:hover {
+  transform: scale(1.02);
+}
+
+.cnsinspector-accordion {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border: 1px solid rgba(74, 222, 128, 0.55);
+}
+
+.cnsinspector-accordion--green {
+  border-color: rgba(74, 222, 128, 0.55);
+}
+.cnsinspector-accordion--blue {
+  border-color: rgba(56, 189, 248, 0.55);
+}
+.cnsinspector-accordion--yellow {
+  border-color: rgba(250, 204, 21, 0.55);
+}
+.cnsinspector-accordion--red {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.cnsinspector-accordion-summary {
+  padding: 8px 15px;
+  font-family: Outfit, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cnsinspector-accordion--green .cnsinspector-accordion-summary {
+  background-color: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+.cnsinspector-accordion--blue .cnsinspector-accordion-summary {
+  background-color: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+.cnsinspector-accordion--yellow .cnsinspector-accordion-summary {
+  background-color: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+}
+.cnsinspector-accordion--red .cnsinspector-accordion-summary {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.cnsinspector-accordion-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cnsinspector-context-row {
+  border: 1px solid rgba(74, 222, 128, 0.55);
+  border-radius: 4px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.cnsinspector-context-row--default {
+  border-color: rgba(74, 222, 128, 0.55);
+}
+
+.cnsinspector-context-row--override {
+  border-color: rgba(250, 204, 21, 0.55);
+}
+
+.cnsinspector-context-row--global {
+  border-color: rgba(56, 189, 248, 0.55);
+}
+
+.cnsinspector-context-key {
+  font-weight: 800;
+  font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.9rem;
+}
+
+.cnsinspector-context-key--default {
+  color: #4ade80;
+}
+.cnsinspector-context-key--override {
+  color: #facc15;
+}
+.cnsinspector-context-key--global {
+  color: #38bdf8;
+}
+
+.cnsinspector-context-source {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(74, 222, 128, 0.55);
+  color: #4ade80;
+}
+
+.cnsinspector-context-source--default {
+  border-color: rgba(74, 222, 128, 0.55);
+  color: #4ade80;
+}
+.cnsinspector-context-source--override {
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #facc15;
+}
+.cnsinspector-context-source--global {
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+.cnsinspector-context-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px;
+  color: #e2e8f0;
+  font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+textarea.cnsinspector-context-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.cnsinspector-context-input--global {
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .cnsinspector-ui-2 {
   margin-top: 20px;
   text-align: center;

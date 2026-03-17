@@ -54,14 +54,14 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
             </div>
             <div className="cnseditorpalette-ui-16">
                 <div>
-                    <h3 className="glass-panel-title cnseditorpalette-ui-15">SPELLS</h3>
+                    <h3 className="glass-panel-title cnseditorpalette-ui-15">Neurons</h3>
                     <div className="common-layout-6">
                         {spells.map(renderItem)}
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="glass-panel-title cnseditorpalette-ui-14">SUB-GRAPHS</h3>
+                    <h3 className="glass-panel-title cnseditorpalette-ui-14">Pathways</h3>
                     <div className="common-layout-6">
                         {subGraphs.map(renderItem)}
                     </div>

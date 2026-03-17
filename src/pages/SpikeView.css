@@ -1,0 +1,50 @@
+.spikeview-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.spikeview-toolbar {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.spikeview-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+}
+
+.spikeview-open-btn {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.6);
+    color: #e5e7eb;
+    cursor: pointer;
+    transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.spikeview-open-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(56, 189, 248, 0.75);
+    background: rgba(15, 23, 42, 0.75);
+}
+
+.spikeview-layout {
+    flex: 1;
+    min-height: 0;
+}
+
+.spikeview-placeholder {
+    padding: 16px;
+    color: #e5e7eb;
+    background-color: #020617;
+}
+

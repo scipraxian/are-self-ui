@@ -1,6 +1,8 @@
-import React from 'react';
+import './CNSNode.css';
+import React, { useEffect, useMemo } from 'react';
 import { Eye, Play, X } from 'lucide-react';
 import type {CNSNeuron} from "../types.ts";
+import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
 interface CNSNodeProps {
     node: CNSNeuron;
@@ -25,21 +27,28 @@ export const CNSNode = ({ node, isSelected, onSelect, onDelete, onDragStart, onP
         if (node.status_id === 5) headerBg = '#f44336'; // Failed
     }
 
+    const cssId = useMemo(() => safeCssIdent(String(node.id)), [node.id]);
+    const posClass = `cnsnode-pos-${cssId}`;
+    const headerClass = `cnsnode-header-bg-${cssId}`;
+
+    useEffect(() => {
+        const key = `cnsnode:${cssId}`;
+        const zIndex = isSelected ? 10 : 1;
+        ensureDynamicCss(
+            key,
+            `.${posClass}{left:${node.x}px;top:${node.y}px;z-index:${zIndex};}
+             .${headerClass}{background:${headerBg};}`,
+        );
+    }, [cssId, headerBg, isSelected, node.x, node.y, headerClass, posClass]);
+
     return (
         <div
-            className={`absolute w-[220px] rounded-lg shadow-xl flex flex-col pointer-events-auto select-none ${isSelected ? 'ring-2 ring-accent-orange shadow-[0_0_15px_rgba(247,148,29,0.3)]' : 'border border-[#3a3a3a]'}`}
-            style={{
-                left: node.x,
-                top: node.y,
-                backgroundColor: 'rgba(35, 35, 35, 0.95)',
-                zIndex: isSelected ? 10 : 1
-            }}
+            className={`cnsnode-root ${posClass} ${isSelected ? 'cnsnode-root--selected' : ''}`}
             onMouseDown={(e) => { e.stopPropagation(); onSelect(node, e.shiftKey); }}
         >
             {/* HEADER */}
             <div
-                className="flex justify-between items-center p-2 rounded-t-[7px] border-b border-white/5 cursor-move"
-                style={{ background: headerBg }}
+                className={`cnsnode-header ${headerClass}`}
                 onMouseDown={(e) => onDragStart(e, node)}
             >
                 <h4 className="m-0 text-sm font-bold text-white drop-shadow-md">

@@ -35,3 +35,96 @@
   gap: 16px;
 }
 
+.cnssidebar-env {
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.cnssidebar-env-label {
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: 0.12em;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.cnssidebar-env-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cnssidebar-env-select {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 0 10px;
+  outline: none;
+  font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.75rem;
+}
+
+.cnssidebar-env-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cnssidebar-env-edit {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(2, 6, 23, 0.45);
+  color: rgba(226, 232, 240, 0.92);
+  text-decoration: none;
+  font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+
+.cnssidebar-env-edit:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.cnssidebar-env-edit.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.cnssidebar-item {
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.cnssidebar-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.cnssidebar-item--active {
+  background-color: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+}
+

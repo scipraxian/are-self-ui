@@ -178,3 +178,30 @@
   padding-bottom: 16px;
 }
 
+.frontallobedetail-status {
+  font-weight: 800;
+}
+
+.frontallobedetail-status--active {
+  color: #facc15;
+}
+
+.frontallobedetail-status--inactive {
+  color: #4ade80;
+}
+
+.frontallobedetail-goal {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  padding-left: 8px;
+  border-left: 2px solid #facc15;
+}
+
+.frontallobedetail-goal--achieved {
+  border-left-color: #4ade80;
+}
+
+.frontallobedetail-goal--pending {
+  border-left-color: #facc15;
+}
+

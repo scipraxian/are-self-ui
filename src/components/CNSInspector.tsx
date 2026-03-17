@@ -21,17 +21,17 @@ interface NodeDetails {
 
 interface AccordionProps {
     title: string;
-    color: string;
+    variant?: 'green' | 'blue' | 'yellow' | 'red';
     open?: boolean;
     children: ReactNode;
     rightElement?: ReactNode;
 }
 
-const Accordion = ({ title, color, open = false, children, rightElement }: AccordionProps) => {
+const Accordion = ({ title, variant = 'green', open = false, children, rightElement }: AccordionProps) => {
     return (
-        <details open={open} style={{ marginBottom: '10px', border: `1px solid ${color}`, borderRadius: '8px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-            <summary style={{ backgroundColor: `${color}33`, color: color, padding: '8px 15px', fontFamily: 'Outfit, sans-serif', fontSize: '0.95rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>► {title}</span>
+        <details open={open} className={`cnsinspector-accordion cnsinspector-accordion--${variant}`}>
+            <summary className="cnsinspector-accordion-summary">
+                <span className="cnsinspector-accordion-title">► {title}</span>
                 {rightElement && <span>{rightElement}</span>}
             </summary>
             <div className="cnsinspector-ui-22">
@@ -119,7 +119,7 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
 
                     <Accordion
                         title={`CONTEXT VARIABLES (${details.context_matrix.length})`}
-                        color="#4ade80"
+                        variant="green"
                         open
                         rightElement={
                             <button className="cnsinspector-ui-9" onClick={handleAddVariable}>
@@ -133,26 +133,20 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                                     const isGlobal = item.source === 'global';
                                     const isOverride = item.source === 'override';
 
-                                    let borderColor = '#4ade80'; // Default
-                                    let labelColor = '#4ade80';
-                                    if (isGlobal) {
-                                        borderColor = '#38bdf8';
-                                        labelColor = '#38bdf8';
-                                    } else if (isOverride) {
-                                        borderColor = '#facc15';
-                                        labelColor = '#facc15';
-                                    }
-
                                     const isLong = item.display_value.length > 50 || item.key.toLowerCase().includes('prompt');
+                                    const sourceClass = isGlobal ? 'global' : isOverride ? 'override' : 'default';
 
                                     return (
-                                        <div key={item.key} style={{ border: `1px solid ${borderColor}`, borderRadius: '4px', padding: '10px', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                                        <div
+                                            key={item.key}
+                                            className={`cnsinspector-context-row cnsinspector-context-row--${sourceClass}`}
+                                        >
                                             <div className="cnsinspector-ui-7">
-                                                <div style={{ color: labelColor, fontWeight: 'bold', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>
+                                                <div className={`cnsinspector-context-key cnsinspector-context-key--${sourceClass}`}>
                                                     &gt; {item.key}
                                                 </div>
                                                 <div className="cnsinspector-ui-6">
-                                                    <span style={{ fontSize: '0.7rem', color: isGlobal ? '#94a3b8' : labelColor, textTransform: 'uppercase', border: `1px solid ${isGlobal ? '#475569' : labelColor}`, padding: '2px 6px', borderRadius: '4px' }}>
+                                                    <span className={`cnsinspector-context-source cnsinspector-context-source--${sourceClass}`}>
                                                         {item.source}
                                                     </span>
                                                     {isOverride && (
@@ -168,20 +162,7 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                                             <div className="cnsinspector-ui-4">
                                                 {isLong ? (
                                                     <textarea
-                                                        style={{
-                                                            width: '100%',
-                                                            background: 'rgba(0,0,0,0.4)',
-                                                            border: `1px solid ${isGlobal ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                                                            borderRadius: '4px',
-                                                            padding: '8px',
-                                                            color: isGlobal ? '#94a3b8' : '#e2e8f0',
-                                                            fontFamily: 'JetBrains Mono',
-                                                            fontSize: '0.8rem',
-                                                            minHeight: '80px',
-                                                            resize: 'vertical',
-                                                            outline: 'none',
-                                                            cursor: isGlobal ? 'not-allowed' : 'text'
-                                                        }}
+                                                        className={`cnsinspector-context-input cnsinspector-context-input--${sourceClass}`}
                                                         defaultValue={item.value}
                                                         readOnly={item.is_readonly}
                                                         placeholder={isGlobal ? 'Value handled globally.' : 'Enter specific override...'}
@@ -192,18 +173,7 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                                                 ) : (
                                                     <input
                                                         type="text"
-                                                        style={{
-                                                            width: '100%',
-                                                            background: 'rgba(0,0,0,0.4)',
-                                                            border: `1px solid ${isGlobal ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                                                            borderRadius: '4px',
-                                                            padding: '8px',
-                                                            color: isGlobal ? '#94a3b8' : '#e2e8f0',
-                                                            fontFamily: 'JetBrains Mono',
-                                                            fontSize: '0.8rem',
-                                                            outline: 'none',
-                                                            cursor: isGlobal ? 'not-allowed' : 'text'
-                                                        }}
+                                                        className={`cnsinspector-context-input cnsinspector-context-input--${sourceClass}`}
                                                         defaultValue={item.value}
                                                         readOnly={item.is_readonly}
                                                         placeholder={isGlobal ? 'Value handled globally.' : 'Enter specific override...'}
@@ -228,11 +198,9 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
 
             <div className="cnsinspector-ui-2">
                 <a className="cnsinspector-ui-1"
-                    href={`http://localhost:8000/admin/central_nervous_system/neuron/${node.id}/change/`}
+                    href={`/admin/central_nervous_system/neuron/${node.id}/change/`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
                     ACCESS DB RECORD ↗
                 </a>

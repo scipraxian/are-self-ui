@@ -2,6 +2,7 @@ import "./SpikeTrainCard.css";
 import { useDuration } from '../hooks/useDuration';
 import type {SpikeTrain} from "../types.ts";
 import React from "react";
+import { SpikeNode } from "./SpikeNode";
 
 // Define the exact shape of your props
 interface SpikeTrainCardProps {
@@ -9,6 +10,7 @@ interface SpikeTrainCardProps {
     onViewGraph: (id: number) => void;
     onEditGraph: (pathwayId: number) => void;
     onStop: (id: number) => void;
+    onSpikeClick?: (spikeId: string) => void;
 }
 
 
@@ -16,7 +18,8 @@ export const SpikeTrainCard: React.FC<SpikeTrainCardProps> = ({
                                                                   spikeTrain,
                                                                   onViewGraph,
                                                                   onEditGraph,
-                                                                  onStop
+                                                                  onStop,
+                                                                  onSpikeClick
                                                               }) => {
     const { formattedDuration, isActive } = useDuration(
         spikeTrain.created,
@@ -24,24 +27,19 @@ export const SpikeTrainCard: React.FC<SpikeTrainCardProps> = ({
         spikeTrain.status_name
     );
 
-    const getStatusColor = (status: string) => {
+    const getStatusClass = (status: string) => {
         switch (status) {
-            case 'Completed': return '#10b981';
-            case 'Running': return '#38bdf8';
-            case 'Failed': return '#ef4444';
-            default: return '#64748b';
+            case 'Completed': return 'success';
+            case 'Running': return 'running';
+            case 'Failed': return 'failed';
+            default: return 'pending';
         }
     };
 
+    const statusClass = getStatusClass(spikeTrain.status_name);
+
     return (
-        <div style={{
-            border: `1px solid ${isActive ? '#38bdf8' : '#334155'}`,
-            borderRadius: '8px',
-            padding: '16px',
-            marginBottom: '16px',
-            backgroundColor: 'var(--bg-panel, #0f172a)',
-            boxShadow: isActive ? '0 0 15px rgba(56, 189, 248, 0.1)' : 'none'
-        }}>
+        <div className={`spiketraincard-root ${isActive ? "spiketraincard-root--active" : ""}`}>
             {/* Header: Title and Live Timer */}
             <div className="common-layout-3">
                 <div>
@@ -49,7 +47,7 @@ export const SpikeTrainCard: React.FC<SpikeTrainCardProps> = ({
                     <span className="common-layout-29">ID: {spikeTrain.id}</span>
                 </div>
                 <div className="spiketraincard-ui-198">
-                    <div style={{ color: getStatusColor(spikeTrain.status_name), fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.9rem' }}>
+                    <div className={`spiketraincard-status spiketraincard-status--${statusClass}`}>
                         {spikeTrain.status_name}
                     </div>
                     <div className="spiketraincard-ui-197">
@@ -61,21 +59,17 @@ export const SpikeTrainCard: React.FC<SpikeTrainCardProps> = ({
             {/* The Swimlane: Mapping the Spikes */}
             <div className="spiketraincard-ui-196">
                 {spikeTrain.spikes.map(spike => (
-                    <div key={spike.id} style={{
-                        minWidth: '140px',
-                        padding: '12px',
-                        borderRadius: '6px',
-                        backgroundColor: '#1e293b',
-                        borderLeft: `4px solid ${getStatusColor(spike.status_name)}`
-                    }}>
-                        <div className="spiketraincard-ui-195">
-                            {spike.effector_name}
-                        </div>
-                        <div className="spiketraincard-ui-194">
-                            <span>{spike.status_name}</span>
-                            {spike.target_hostname && <span>{spike.target_hostname}</span>}
-                        </div>
-                    </div>
+                    <SpikeNode
+                        key={spike.id}
+                        spike={{
+                            id: String(spike.id),
+                            status_name: spike.status_name,
+                            effector_name: spike.effector_name,
+                            target_name: spike.target_hostname ?? undefined,
+                            result_code: spike.result_code,
+                        }}
+                        onClick={onSpikeClick}
+                    />
                 ))}
             </div>
 
