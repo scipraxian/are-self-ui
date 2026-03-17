@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.cursor/agents/rule-applier.md
+.cursor/commands/apply-rules.md
+.cursor/commands/coding-partner.md
+.cursor/commands/create-tests.md
+.cursor/commands/use-ts-style-guide.md
+.cursor/rules/coding-partner.mdc
+.cursor/rules/typescript-lang-style.mdc
+.cursor/skills/create-typescript-tests/SKILL.md
+.gitignore
