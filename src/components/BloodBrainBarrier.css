@@ -191,6 +191,41 @@
     cursor: pointer;
     color: var(--accent-orange);
 }
+
+.bbb-footer-chat:hover {
+    color: var(--accent-orange);
+    filter: brightness(1.2);
+}
+
+/* Thalamus chat slide-out panel (matches .bbb-panel-right width) */
+.bbb-chat-panel-wrap {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    max-width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    pointer-events: auto;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+}
+
+.bbb-chat-panel-wrap.bbb-chat-panel-wrap--open {
+    transform: translateX(0);
+}
+
+.bbb-chat-panel-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 16px;
+    padding-bottom: 60px;
+}
 .bloodbrainbarrier-ui-1 {
   color: #e2e8f0;
   white-space: nowrap;

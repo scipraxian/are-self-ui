@@ -22,6 +22,7 @@ import { HeartbeatControlPanel } from './HeartbeatControlPanel';
 import type { GraphNode, PFCAgileItem } from '../types';
 import { HamburgerMenu } from './HamburgerMenu';
 import { useGABA } from '../context/GABAProvider';
+import { ThalamusChat } from './ThalamusChat.tsx';
 
 export const BloodBrainBarrier = () => {
     const location = useLocation();
@@ -58,6 +59,9 @@ export const BloodBrainBarrier = () => {
 
     // Matrix View State
     const [, setMatrixHasSelection] = useState<boolean>(false);
+
+    // Thalamus chat panel (slide-out from lower-right chat bubble)
+    const [chatPanelOpen, setChatPanelOpen] = useState(false);
 
     // Keep viewport (and CNS edit/view mode) in sync with URL path (deep-linkable)
     useEffect(() => {
@@ -422,10 +426,27 @@ export const BloodBrainBarrier = () => {
                             </span>
                         )}
                     </div>
-                    <div className="bbb-footer-chat">
+                    <div
+                        className="bbb-footer-chat"
+                        onClick={() => setChatPanelOpen((open) => !open)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setChatPanelOpen((open) => !open)}
+                        aria-label={chatPanelOpen ? 'Close Thalamus chat' : 'Open Thalamus chat'}
+                    >
                         <MessageSquare size={18} />
                     </div>
                 </footer>
+
+                {/* Thalamus chat slide-out panel */}
+                <div
+                    className={`bbb-chat-panel-wrap ${chatPanelOpen ? 'bbb-chat-panel-wrap--open' : ''}`}
+                    aria-hidden={!chatPanelOpen}
+                >
+                    <div className="bbb-chat-panel-inner">
+                        <ThalamusChat onClose={() => setChatPanelOpen(false)} />
+                    </div>
+                </div>
             </div>
         </div>
     );

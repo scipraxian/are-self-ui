@@ -1,0 +1,163 @@
+/* Thalamus chat panel – glassmorphic, matches .bbb-panel-right */
+
+.thalamus-chat {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+}
+
+.thalamus-chat-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.thalamus-chat-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.thalamus-thread {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.thalamus-viewport {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.thalamus-welcome {
+    padding: 24px 16px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.thalamus-welcome-hint {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.thalamus-message {
+    padding: 10px 16px;
+    margin: 4px 0;
+    border-radius: 8px;
+    max-width: 90%;
+}
+
+.thalamus-message--user {
+    align-self: flex-end;
+    background: var(--bg-panel-hover);
+    border: 1px solid var(--border-glass);
+}
+
+.thalamus-message--assistant {
+    align-self: flex-start;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glass);
+}
+
+.thalamus-message-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.thalamus-footer {
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.thalamus-scroll-btn {
+    align-self: flex-end;
+    background: transparent;
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.thalamus-scroll-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass-strong);
+}
+
+.thalamus-composer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.thalamus-input {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    resize: none;
+}
+
+.thalamus-input::placeholder {
+    color: var(--text-muted);
+}
+
+.thalamus-input:focus {
+    outline: none;
+    border-color: var(--border-glass-strong);
+}
+
+.thalamus-send,
+.thalamus-cancel {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border-glass);
+}
+
+.thalamus-send {
+    background: var(--accent-purple, #a855f7);
+    color: #fff;
+}
+
+.thalamus-send:hover {
+    filter: brightness(1.1);
+}
+
+.thalamus-cancel {
+    background: var(--bg-panel-hover);
+    color: var(--text-secondary);
+}
+
+.thalamus-cancel:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass-strong);
+}
