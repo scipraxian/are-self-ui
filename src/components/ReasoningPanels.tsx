@@ -1,7 +1,6 @@
 import "./ReasoningPanels.css";
 import { type ReactNode, useEffect, useState } from 'react';
-import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download } from 'lucide-react';
-import type {
+import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';import type {
     GraphNode,
     ReasoningMessageData,
     ReasoningSessionData,
@@ -36,9 +35,10 @@ interface ReasoningSidebarProps {
     activeSessionId: string | null;
     onSelectSession: (id: string) => void;
     onExit: () => void;
+    onToggleChat: () => void; // Added Prop
 }
 
-export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit }: ReasoningSidebarProps) => {
+export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onToggleChat }: ReasoningSidebarProps) => {
     const [sessions, setSessions] = useState<ReasoningSessionData[]>([]);
 
     useEffect(() => {
@@ -79,23 +79,32 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit }: R
         <div className="reasoningpanels-ui-184">
             <h2 className="glass-panel-title reasoningpanels-ui-183">COGNITIVE THREADS</h2>
             <div className="scroll-hidden reasoningpanels-ui-182">
-                {sessions.map(s => (
-                    <div key={s.id} onClick={() => onSelectSession(s.id)}
-                         style={{
-                             padding: '12px', borderRadius: '8px', cursor: 'pointer',
-                             background: s.id === activeSessionId ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
-                             border: `1px solid ${s.id === activeSessionId ? '#a855f7' : 'var(--border-glass)'}`
-                         }}>
-                        <div className="font-mono text-xs reasoningpanels-ui-181">{s.id.split('-')[0].toUpperCase()}</div>
-                        <div className="font-mono text-xs" style={{ color: s.status_name === 'Active' ? '#facc15' : '#94a3b8', marginTop: '4px' }}>
-                            {s.status_name}
+                {sessions.map(s => {
+                    const isActive = s.id === activeSessionId;
+                    const isStatusActive = s.status_name === 'Active';
+                    return (
+                        <div
+                            key={s.id}
+                            onClick={() => onSelectSession(s.id)}
+                            className={`reasoningpanels-session-card ${isActive ? 'reasoningpanels-session-card--active' : ''}`}
+                        >
+                            <div className="font-mono text-xs reasoningpanels-ui-181">
+                                {s.id.split('-')[0].toUpperCase()}
+                            </div>
+                            <div className={`font-mono text-xs reasoningpanels-status-text ${isStatusActive ? 'reasoningpanels-status-text--active' : ''}`}>
+                                {s.status_name}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {activeSessionId && (
                 <div className="reasoningpanels-ui-180">
+                    <button className="btn-ghost reasoningpanels-btn-override" onClick={onToggleChat}>
+                        <MessageSquare size={14} /> MANUAL OVERRIDE
+                    </button>
+
                     {isAlive ? (
                         <button className="btn-ghost reasoningpanels-ui-179" onClick={() => handleAction('stop')}>
                             <Power size={14} /> HALT CORTEX
