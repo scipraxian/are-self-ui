@@ -1,3 +1,24 @@
+/* Accordion component */
+.accordion-panel {
+    margin-bottom: 10px;
+    border: 1px solid var(--accordion-accent, #999);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.accordion-summary {
+    background-color: color-mix(in srgb, var(--accordion-accent, #999) 20%, transparent);
+    color: var(--accordion-accent, #999);
+    padding: 8px 15px;
+    font-family: Outfit, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+}
+
 .reasoningpanels-ui-154 {
   display: flex;
   align-items: center;

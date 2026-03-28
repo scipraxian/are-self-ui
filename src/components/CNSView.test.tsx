@@ -32,7 +32,7 @@ describe('CNSView', () => {
         const onEditPathway = vi.fn();
 
         render(
-            <CNSView onViewPathway={onViewPathway} onEditPathway={onEditPathway} />
+            <CNSView onViewPathway={onViewPathway} onEditPathway={onEditPathway} selectedEnvironmentId="" />
         );
 
         await waitFor(
@@ -56,7 +56,7 @@ describe('CNSView', () => {
         const onEditPathway = vi.fn();
 
         render(
-            <CNSView onViewPathway={onViewPathway} onEditPathway={onEditPathway} />
+            <CNSView onViewPathway={onViewPathway} onEditPathway={onEditPathway} selectedEnvironmentId="" />
         );
 
         await waitFor(

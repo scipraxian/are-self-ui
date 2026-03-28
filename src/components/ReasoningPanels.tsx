@@ -18,9 +18,10 @@ interface AccordionProps {
 }
 
 const Accordion = ({ title, color, open = false, children }: AccordionProps) => {
+    const accentVars = { '--accordion-accent': color } as React.CSSProperties;
     return (
-        <details open={open} style={{ marginBottom: '10px', border: `1px solid ${color}`, borderRadius: '8px', background: 'rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-            <summary style={{ backgroundColor: `${color}33`, color: color, padding: '8px 15px', fontFamily: 'Outfit, sans-serif', fontSize: '0.95rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' }}>
+        <details open={open} className="accordion-panel" style={accentVars}>
+            <summary className="accordion-summary">
                 ► {title}
             </summary>
             <div className="common-layout-7">

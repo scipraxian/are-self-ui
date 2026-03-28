@@ -1,0 +1,22 @@
+/* FrontalSession – session chat overlay */
+
+.frontal-session-chat-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    background-color: rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+.frontal-session-chat-container {
+    pointer-events: auto;
+    width: 450px;
+    height: 70vh;
+    max-height: 800px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}

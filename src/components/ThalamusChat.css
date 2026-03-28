@@ -161,3 +161,110 @@
     color: var(--text-primary);
     border-color: var(--border-glass-strong);
 }
+
+/* Chat title */
+.thalamus-chat-title {
+    font-weight: bold;
+    font-size: 1.125rem;
+    letter-spacing: 0.1em;
+    color: var(--accent-purple, #818cf8);
+}
+
+/* Chain of Thought */
+.thalamus-cot-root {
+    margin: 8px 0;
+}
+
+.thalamus-cot-trigger {
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: bold;
+    color: #6b7280;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.thalamus-cot-trigger:hover {
+    color: #d1d5db;
+}
+
+.thalamus-cot-content {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    font-style: italic;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    border-left: 2px solid #4b5563;
+    padding-left: 12px;
+}
+
+/* Tool call display */
+.thalamus-tool-call {
+    background: #1f2937;
+    border: 1px solid rgba(30, 58, 138, 0.5);
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.thalamus-tool-call-header {
+    font-weight: bold;
+    color: #60a5fa;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.thalamus-tool-call-args {
+    color: #d1d5db;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    background: #111827;
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+/* Tool result display */
+.thalamus-tool-result {
+    background: rgba(31, 41, 55, 0.5);
+    border: 1px dashed #374151;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 4px 0;
+    font-size: 0.875rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.thalamus-tool-result-label {
+    font-weight: 600;
+    color: #4ade80;
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.thalamus-tool-result-value {
+    color: #9ca3af;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Syncing state */
+.thalamus-welcome--syncing {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #6b7280;
+}

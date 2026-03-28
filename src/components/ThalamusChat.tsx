@@ -21,8 +21,8 @@ import { apiFetch } from '../api';
 import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
 import './ThalamusChat.css';
 
-const INTERACT_URL = 'http://127.0.0.1:8000/api/v2/thalamus/interact/';
-const MESSAGES_URL = 'http://127.0.0.1:8000/api/v2/thalamus/messages/';
+const INTERACT_URL = '/api/v2/thalamus/interact/';
+const MESSAGES_URL = '/api/v2/thalamus/messages/';
 
 // ---------------------------------------------------------------------------
 // Local JSON type aliases — mirrors assistant-ui's ReadonlyJSONObject without
@@ -320,7 +320,7 @@ const thalamusModelAdapter: ChatModelAdapter = {
 
 const ChainOfThought: React.FC = () => (
     <ChainOfThoughtPrimitive.Root className="thalamus-cot-root my-2">
-        <ChainOfThoughtPrimitive.AccordionTrigger className="thalamus-cot-trigger cursor-pointer text-sm font-bold text-gray-500 mb-1 flex items-center hover:text-gray-300 transition-colors">
+        <ChainOfThoughtPrimitive.AccordionTrigger className="thalamus-cot-trigger">
             <span>🤔 Thought Process</span>
         </ChainOfThoughtPrimitive.AccordionTrigger>
 
@@ -335,7 +335,7 @@ const ChainOfThought: React.FC = () => (
                                 ? part.text
                                 : '';
                     return (
-                        <div className="thalamus-cot-content text-sm text-gray-400 italic mt-2 whitespace-pre-wrap border-l-2 border-gray-600 pl-3">
+                        <div className="thalamus-cot-content">
                             {text}
                         </div>
                     );
@@ -362,22 +362,22 @@ const CustomMessageTools: React.FC<CustomMessageToolsProps> = ({ content }) => (
 
             return (
                 <React.Fragment key={`${part.toolCallId}-${idx}`}>
-                    <div className="thalamus-tool-call bg-gray-800 border border-blue-900/50 rounded-md p-3 my-2 text-sm shadow-sm">
-                        <div className="font-bold text-blue-400 mb-1 flex items-center gap-2">
+                    <div className="thalamus-tool-call">
+                        <div className="thalamus-tool-call-header">
                             <span>⚙️</span>
                             <span>{part.toolName}</span>
                         </div>
-                        <pre className="text-gray-300 font-mono text-xs bg-gray-900 p-2 rounded overflow-x-auto whitespace-pre-wrap">
+                        <pre className="thalamus-tool-call-args">
                             {part.argsText}
                         </pre>
                     </div>
 
                     {hasResult && (
-                        <div className="thalamus-tool-result bg-gray-800/50 border border-gray-700 border-dashed rounded-md p-3 my-1 text-sm shadow-inner">
-                            <div className="font-semibold text-green-400 mb-1 text-xs uppercase tracking-wide">
+                        <div className="thalamus-tool-result">
+                            <div className="thalamus-tool-result-label">
                                 Tool Return Value
                             </div>
-                            <div className="text-gray-400 font-mono text-xs whitespace-pre-wrap break-words">
+                            <div className="thalamus-tool-result-value">
                                 {safeStringify(part.result)}
                             </div>
                         </div>
@@ -483,7 +483,7 @@ function ThalamusRuntimeProvider({ children }: { children: React.ReactNode }): R
 
     if (isSyncing) {
         return (
-            <div className="thalamus-welcome flex justify-center items-center h-full text-gray-500">
+            <div className="thalamus-welcome thalamus-welcome--syncing">
                 <p>Syncing neural pathways…</p>
             </div>
         );
@@ -502,15 +502,15 @@ export interface ThalamusChatProps {
 
 export function ThalamusChat({ onClose }: ThalamusChatProps): React.JSX.Element {
     return (
-        <div className="thalamus-chat glass-panel flex flex-col h-full">
-            <div className="thalamus-chat-header flex justify-between items-center p-4 border-b border-gray-700">
-                <h2 className="glass-panel-title font-bold text-lg tracking-widest text-indigo-400">
+        <div className="thalamus-chat glass-panel">
+            <div className="thalamus-chat-header">
+                <h2 className="glass-panel-title thalamus-chat-title">
                     THALAMUS
                 </h2>
                 {onClose && (
                     <button
                         type="button"
-                        className="bbb-close-btn text-gray-400 hover:text-white transition-colors"
+                        className="panel-close-btn"
                         onClick={onClose}
                         aria-label="Close chat"
                     >
@@ -518,7 +518,7 @@ export function ThalamusChat({ onClose }: ThalamusChatProps): React.JSX.Element 
                     </button>
                 )}
             </div>
-            <div className="thalamus-chat-body flex-1 overflow-hidden relative">
+            <div className="thalamus-chat-body">
                 <ThalamusRuntimeProvider>
                     <ThalamusThreadInner />
                 </ThalamusRuntimeProvider>

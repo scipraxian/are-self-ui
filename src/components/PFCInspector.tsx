@@ -54,12 +54,6 @@ export const PFCInspector = ({ item, onUpdate, onDelete }: PFCInspectorProps) =>
         setLocalData(item);
     }, [item]);
 
-    const getItemColor = (type: string) => {
-        if (type === 'EPIC') return '#a855f7';
-        if (type === 'STORY') return '#3b82f6';
-        return '#4ade80';
-    };
-
     const endpointMap = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
     const typeClass = item.item_type.toLowerCase() as 'epic' | 'story' | 'task';
 

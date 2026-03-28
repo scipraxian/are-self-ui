@@ -1,0 +1,56 @@
+/* ThreePanel – stateless three-column layout primitive */
+
+.three-panel-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: 20px;
+    gap: 20px;
+    pointer-events: auto;
+}
+
+.three-panel-left {
+    flex: 0 0 320px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    overflow: hidden;
+}
+
+.three-panel-center {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    pointer-events: auto;
+}
+
+.three-panel-right {
+    flex: 0 0 350px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    overflow: hidden;
+}
+
+/* Center panel variant: CNS graph needs fill + no overflow */
+.three-panel-center--cns-graph {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Center panel variant: Reasoning 3D graph */
+.three-panel-center--reasoning-graph {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Center content wrapper for stubs that need a glass panel filling the center */
+.three-panel-center-stage {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}

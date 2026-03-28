@@ -29,7 +29,7 @@ export const SynapticCleftProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (!sockets.current[cls]) {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//127.0.0.1:8000/ws/synapse/${cls}/`;
+            const wsUrl = `${protocol}//${window.location.host}/ws/synapse/${cls}/`;
 
             const ws = new WebSocket(wsUrl);
 

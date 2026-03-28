@@ -1,0 +1,125 @@
+/* LayoutShell – root layout replacing BloodBrainBarrier */
+
+.layout-shell {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-obsidian);
+}
+
+.layout-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.layout-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Footer */
+.layout-footer {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-radius: 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    pointer-events: auto;
+}
+
+.layout-footer-ticker {
+    color: var(--accent-purple);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    overflow: hidden;
+}
+
+.layout-footer-ticker-text {
+    color: var(--text-primary);
+}
+
+.layout-footer-chat {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: var(--accent-orange);
+}
+
+.layout-footer-chat:hover {
+    color: var(--accent-orange);
+    filter: brightness(1.2);
+}
+
+/* Thalamus chat slide-out panel */
+.layout-chat-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    max-width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    pointer-events: auto;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+}
+
+.layout-chat-panel--open {
+    transform: translateX(0);
+}
+
+.layout-chat-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 16px;
+    padding-bottom: 60px;
+}
+
+/* Universal close button */
+.panel-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.panel-close-btn:hover {
+    color: var(--accent-red);
+}
+
+/* Placeholder / empty state */
+.layout-placeholder {
+    flex: 1;
+    border: 1px dashed var(--text-muted);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
