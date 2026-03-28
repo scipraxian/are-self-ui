@@ -92,7 +92,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onT
                                 {s.id.split('-')[0].toUpperCase()}
                             </div>
                             <div className={`font-mono text-xs reasoningpanels-status-text ${isStatusActive ? 'reasoningpanels-status-text--active' : ''}`}>
-                                {s.status_name}
+                                {s.status_name} - {new Date(s.created).toLocaleString()}
                             </div>
                         </div>
                     );
