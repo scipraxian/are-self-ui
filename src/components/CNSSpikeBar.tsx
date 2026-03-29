@@ -33,11 +33,14 @@ const abbreviate = (name: string, maxLen: number): string => {
 };
 
 export const CNSSpikeBar = ({ spikes, onSpikeClick }: CNSSpikeBarProps) => {
-    const totalDuration = spikes.reduce((sum, s) => sum + getDuration(s), 0) || 1;
+    const visibleSpikes = spikes.filter(s =>
+        !s.effector_name || s.effector_name.toLowerCase() !== 'begin play'
+    );
+    const totalDuration = visibleSpikes.reduce((sum, s) => sum + getDuration(s), 0) || 1;
 
     return (
         <div className="cns-spike-bar">
-            {spikes.map(spike => {
+            {visibleSpikes.map(spike => {
                 const duration = getDuration(spike);
                 const proportion = duration / totalDuration;
                 const status = getSpikeStatus(spike);

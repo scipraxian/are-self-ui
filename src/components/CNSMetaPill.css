@@ -1,0 +1,40 @@
+.cns-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.cns-meta-pill-label {
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cns-meta-pill-value {
+    color: #cbd5e1;
+}
+
+.cns-meta-pill--success .cns-meta-pill-value {
+    color: #4ade80;
+}
+
+.cns-meta-pill--failed .cns-meta-pill-value {
+    color: #ef4444;
+}
+
+.cns-meta-pill--running .cns-meta-pill-value {
+    color: #f99f1b;
+    animation: meta-pulse 2s ease-in-out infinite;
+}
+
+@keyframes meta-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}

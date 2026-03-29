@@ -1,0 +1,97 @@
+.cns-terminal-pane {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.cns-terminal-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(15, 23, 42, 0.8);
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.cns-terminal-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+.cns-terminal-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.cns-terminal-action-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #64748b;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.cns-terminal-action-btn:hover {
+    color: #e2e8f0;
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.cns-terminal-action-btn--active {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.cns-terminal-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: rgba(15, 23, 42, 0.9);
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.cns-terminal-search-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    outline: none;
+}
+
+.cns-terminal-search-input:focus {
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.cns-terminal-search-hint {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.cns-terminal-body {
+    flex: 1;
+    min-height: 0;
+}
