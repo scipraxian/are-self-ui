@@ -37,10 +37,11 @@ export function LayoutShell() {
     return (
         <div className="layout-shell">
             {/* Background 3D layer */}
-            <div className="layout-bg">
+            <div className={`layout-bg ${!isRoot ? 'layout-bg--inactive' : ''}`}>
                 {showBackground && (
                     <BackgroundCanvas
                         onLobeClick={isRoot ? handleLobeClick : () => {}}
+                        interactive={isRoot}
                     />
                 )}
             </div>
