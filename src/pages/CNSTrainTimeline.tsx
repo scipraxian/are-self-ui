@@ -6,6 +6,7 @@ import { CNSTrainSidebar } from '../components/CNSTrainSidebar';
 import { CNSTrainStack } from '../components/CNSTrainStack';
 import { useDendrite } from '../components/SynapticCleft';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway, SpikeTrain } from '../types';
 
@@ -13,6 +14,7 @@ export function CNSTrainTimeline() {
     const { pathwayId } = useParams<{ pathwayId: string }>();
     const navigate = useNavigate();
     const { setOverrides } = useBreadcrumbs();
+    const { selectedEnvironmentId } = useEnvironment();
     const [pathway, setPathway] = useState<NeuralPathway | null>(null);
     const [trains, setTrains] = useState<SpikeTrain[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +34,11 @@ export function CNSTrainTimeline() {
     const fetchTrains = useCallback(async () => {
         if (!pathwayId) return;
         try {
-            const res = await apiFetch(`/api/v2/spiketrains/?pathway=${encodeURIComponent(pathwayId)}&ordering=-created&limit=30`);
+            let url = `/api/v2/spiketrains/?pathway=${encodeURIComponent(pathwayId)}&ordering=-created&limit=30`;
+            if (selectedEnvironmentId) {
+                url += `&environment=${encodeURIComponent(selectedEnvironmentId)}`;
+            }
+            const res = await apiFetch(url);
             if (!res.ok) return;
             const data = await res.json();
             setTrains(Array.isArray(data) ? data : data.results ?? []);
@@ -41,7 +47,7 @@ export function CNSTrainTimeline() {
         } finally {
             setIsLoading(false);
         }
-    }, [pathwayId]);
+    }, [pathwayId, selectedEnvironmentId]);
 
     useEffect(() => {
         fetchPathway();
@@ -51,7 +57,10 @@ export function CNSTrainTimeline() {
     // Set breadcrumb overrides with pathway name
     useEffect(() => {
         if (pathway && pathwayId) {
-            setOverrides([{ segment: pathwayId, label: pathway.name }]);
+            setOverrides([
+                { segment: 'pathway', label: '' },
+                { segment: pathwayId, label: pathway.name },
+            ]);
         }
         return () => setOverrides([]);
     }, [pathway, pathwayId, setOverrides]);

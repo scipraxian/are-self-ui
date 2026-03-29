@@ -4,12 +4,13 @@ import { ThreePanel } from '../components/ThreePanel';
 import { CNSDashboardSidebar } from '../components/CNSDashboardSidebar';
 import { CNSPathwayDashboard } from '../components/CNSPathwayDashboard';
 import { useDendrite } from '../components/SynapticCleft';
+import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway, SpikeTrain } from '../types';
 
 export function CNSPage() {
     const navigate = useNavigate();
-    const [selectedEnvironmentId, setSelectedEnvironmentId] = useState('');
+    const { selectedEnvironmentId } = useEnvironment();
     const [searchQuery, setSearchQuery] = useState('');
     const [pathways, setPathways] = useState<NeuralPathway[]>([]);
     const [trains, setTrains] = useState<SpikeTrain[]>([]);
@@ -31,7 +32,11 @@ export function CNSPage() {
 
     const fetchTrains = useCallback(async () => {
         try {
-            const res = await apiFetch('/api/v2/spiketrains/?ordering=-created&limit=200');
+            let url = '/api/v2/spiketrains/?ordering=-created&limit=200';
+            if (selectedEnvironmentId) {
+                url += `&environment=${encodeURIComponent(selectedEnvironmentId)}`;
+            }
+            const res = await apiFetch(url);
             if (!res.ok) return;
             const data = await res.json();
             setTrains(Array.isArray(data) ? data : data.results ?? []);
@@ -40,7 +45,7 @@ export function CNSPage() {
         } finally {
             setIsLoadingTrains(false);
         }
-    }, []);
+    }, [selectedEnvironmentId]);
 
     useEffect(() => {
         fetchPathways();
@@ -71,8 +76,6 @@ export function CNSPage() {
                 <CNSDashboardSidebar
                     pathways={pathways}
                     isLoading={isLoadingPathways}
-                    selectedEnvironmentId={selectedEnvironmentId}
-                    onEnvironmentChange={setSelectedEnvironmentId}
                     searchQuery={searchQuery}
                     onSearchChange={setSearchQuery}
                 />

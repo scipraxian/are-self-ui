@@ -3,10 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
-import { apiFetch } from '../api';
+import { useEnvironment } from '../context/EnvironmentProvider';
 import './NavBar.css';
-
-type EnvironmentOption = { id: string; name: string };
 
 const BREADCRUMB_MAP: Record<string, string> = {
     'frontal': 'Frontal Lobe',
@@ -40,7 +38,9 @@ function buildCrumbs(pathname: string, overrides: { segment: string; label: stri
         // Check overrides first
         const override = overrides.find(o => o.segment === seg);
         if (override) {
-            crumbs.push({ path: accumulated, label: override.label });
+            if (override.label) {
+                crumbs.push({ path: accumulated, label: override.label });
+            }
             continue;
         }
 
@@ -65,12 +65,11 @@ function buildCrumbs(pathname: string, overrides: { segment: string; label: stri
 
 export const NavBar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
-    const [envId, setEnvId] = useState('');
     const rootRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const { registerEscapeHandler } = useGABA();
     const { overrides } = useBreadcrumbs();
+    const { environments, selectedEnvironmentId, setSelectedEnvironmentId } = useEnvironment();
 
     const crumbs = buildCrumbs(location.pathname, overrides);
 
@@ -82,24 +81,6 @@ export const NavBar = () => {
             document.title = 'Are-Self';
         }
     }, [crumbs]);
-
-    // Fetch environments
-    useEffect(() => {
-        let mounted = true;
-        const fetchEnvs = async () => {
-            try {
-                const res = await apiFetch('/api/v1/environments/');
-                if (!res.ok) return;
-                const data = await res.json();
-                const list = (data?.results ?? data) as EnvironmentOption[];
-                if (mounted) setEnvironments(Array.isArray(list) ? list : []);
-            } catch {
-                // ignore
-            }
-        };
-        fetchEnvs();
-        return () => { mounted = false; };
-    }, []);
 
     // Click outside closes dropdown
     useEffect(() => {
@@ -154,8 +135,8 @@ export const NavBar = () => {
             <div className="navbar-right">
                 <select
                     className="navbar-env-select"
-                    value={envId}
-                    onChange={(e) => setEnvId(e.target.value)}
+                    value={selectedEnvironmentId}
+                    onChange={(e) => setSelectedEnvironmentId(e.target.value)}
                 >
                     <option value="">All Environments</option>
                     {environments.map(env => (

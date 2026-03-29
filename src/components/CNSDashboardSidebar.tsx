@@ -1,17 +1,14 @@
 import './CNSDashboardSidebar.css';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Eye, Edit } from 'lucide-react';
+import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway } from '../types';
-
-type EnvironmentOption = { id: string; name: string };
 
 interface CNSDashboardSidebarProps {
     pathways: NeuralPathway[];
     isLoading: boolean;
-    selectedEnvironmentId: string;
-    onEnvironmentChange: (id: string) => void;
     searchQuery: string;
     onSearchChange: (query: string) => void;
 }
@@ -24,34 +21,11 @@ interface PathwayGroup {
 export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
     pathways,
     isLoading,
-    selectedEnvironmentId,
-    onEnvironmentChange,
     searchQuery,
     onSearchChange,
 }) => {
     const navigate = useNavigate();
-    const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
-    const [isEnvLoading, setIsEnvLoading] = useState(true);
-
-    useEffect(() => {
-        let mounted = true;
-        const fetchEnvironments = async () => {
-            setIsEnvLoading(true);
-            try {
-                const res = await apiFetch('/api/v1/environments/');
-                if (!res.ok) return;
-                const data = await res.json();
-                const next = (data?.results ?? data) as EnvironmentOption[];
-                if (mounted) setEnvironments(Array.isArray(next) ? next : []);
-            } catch (err) {
-                console.error('Failed to fetch environments', err);
-            } finally {
-                if (mounted) setIsEnvLoading(false);
-            }
-        };
-        fetchEnvironments();
-        return () => { mounted = false; };
-    }, []);
+    const { environments, selectedEnvironmentId, setSelectedEnvironmentId, isLoading: isEnvLoading } = useEnvironment();
 
     const handleLaunch = async (e: React.MouseEvent, pathwayId: number) => {
         e.stopPropagation();
@@ -104,7 +78,7 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
                 <select
                     className="cns-dash-env-select"
                     value={selectedEnvironmentId}
-                    onChange={(e) => onEnvironmentChange(e.target.value)}
+                    onChange={(e) => setSelectedEnvironmentId(e.target.value)}
                     disabled={isEnvLoading}
                 >
                     <option value="">{isEnvLoading ? 'Loading…' : '-- Select Environment --'}</option>

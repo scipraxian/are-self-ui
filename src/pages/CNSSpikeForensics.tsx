@@ -82,7 +82,8 @@ export function CNSSpikeForensics() {
     useEffect(() => {
         if (spike && spikeId) {
             setOverrides([
-                { segment: spikeId, label: spike.effector_name + ' ' + shortHash(String(spike.id)) },
+                { segment: 'spike', label: '' },
+                { segment: spikeId, label: `${spike.effector_name} ${shortHash(String(spike.id))}` },
             ]);
         }
         return () => setOverrides([]);
