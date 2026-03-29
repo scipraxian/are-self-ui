@@ -61,24 +61,42 @@ export interface ReasoningMessageData {
     [key: string]: unknown;
 }
 
+export interface ModelUsageRecord {
+    id: number;
+    input_tokens: number;
+    output_tokens: number;
+    query_time: string;
+    estimated_cost: string;
+    request_payload: Array<{ role: string; content: string }>;
+    response_payload: {
+        choices?: Array<{
+            message: {
+                role: string;
+                content: string | null;
+                tool_calls?: Array<{
+                    id: string;
+                    type: string;
+                    function: { name: string; arguments: string };
+                }>;
+            };
+        }>;
+        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    };
+    ai_model_provider?: {
+        ai_model: { name: string };
+        provider: { name: string };
+    };
+}
+
 export interface ReasoningTurnData {
     id: number;
     turn_number: number;
     status_name: string;
-    // Older sessions populated `thought_process` directly; newer ones often leave this empty
-    // and instead embed the THOUGHT content in the `messages` array. The UI code derives a
-    // displayable thought from either source.
-    thought_process: string;
-    // Legacy payloads used `request_payload.messages`; newer ones primarily rely on `messages` below.
-    request_payload: { messages?: { role: string; content: string }[] } | string | Record<string, unknown>;
-    // Newer schema: full message timeline for the turn.
-    messages?: ReasoningMessageData[];
-    tokens_input: number;
-    tokens_output: number;
-    inference_time: string;
+    status?: number;
     delta: string;
     created: string;
     tool_calls: ToolCallData[];
+    model_usage_record?: ModelUsageRecord;
 }
 
 export interface ReasoningGoalData {
@@ -183,6 +201,8 @@ export interface Spike {
     modified: string;
     target_hostname: string | null;
     result_code: number | null;
+    delta?: string;
+    average_delta?: string | number;
 }
 
 export interface SpikeTrain {
@@ -258,6 +278,7 @@ export interface PFCAgileItem {
     owning_disc: { id: number; name: string } | null;
     previous_owners?: { id: number; name: string }[];
     parent_name?: string;
+    parent_id?: string;
     environment?: { id: string; name: string } | null;
     comments?: PFCCommentData[]; // <--- ADD THIS
 

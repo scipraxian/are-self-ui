@@ -6,10 +6,12 @@ interface ThreePanelProps {
     center?: ReactNode;
     right?: ReactNode;
     centerClassName?: string;
+    rightClassName?: string;
 }
 
-export function ThreePanel({ left, center, right, centerClassName }: ThreePanelProps) {
+export function ThreePanel({ left, center, right, centerClassName, rightClassName }: ThreePanelProps) {
     const centerClasses = ['three-panel-center', centerClassName].filter(Boolean).join(' ');
+    const rightClasses = ['glass-panel three-panel-right', rightClassName].filter(Boolean).join(' ');
 
     return (
         <div className="three-panel-layout">
@@ -19,7 +21,7 @@ export function ThreePanel({ left, center, right, centerClassName }: ThreePanelP
             <main className={centerClasses}>
                 {center}
             </main>
-            <aside className="glass-panel three-panel-right">
+            <aside className={rightClasses}>
                 {right}
             </aside>
         </div>

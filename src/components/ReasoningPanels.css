@@ -19,268 +19,425 @@
     user-select: none;
 }
 
-.reasoningpanels-ui-154 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #38bdf8;
-  font-weight: 800;
-  font-family: var(--font-mono);
+.accordion-content {
+    padding: 12px;
 }
 
-.reasoningpanels-ui-155 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #a855f7;
-  font-weight: 800;
-  font-family: var(--font-mono);
+/* --- Inspector root layout --- */
+.inspector-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
 }
 
-.reasoningpanels-ui-156 {
-  color: white;
-  font-size: 1rem;
-  margin-top: 4px;
+.inspector-body {
+    flex: 1;
 }
 
-.reasoningpanels-ui-157 {
-  color: #f99f1b;
-  font-weight: bold;
-  font-size: 0.7rem;
-  text-transform: uppercase;
+.inspector-section-title {
+    margin-bottom: 16px;
+    color: #f8fafc;
 }
 
-.reasoningpanels-ui-158 {
-  flex: 1;
-  padding: 10px;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid #f99f1b;
-  border-radius: 5px;
+.inspector-turn-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.reasoningpanels-ui-159 {
-  color: white;
-  font-size: 1rem;
-  margin-top: 4px;
+.inspector-node-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.reasoningpanels-ui-160 {
-  color: #38bdf8;
-  font-weight: bold;
-  font-size: 0.7rem;
-  text-transform: uppercase;
+/* --- Badge row (TURN / IN / OUT / TIMING) --- */
+.inspector-badge-row {
+    display: flex;
+    gap: 10px;
+    font-family: Outfit;
+    text-transform: uppercase;
 }
 
-.reasoningpanels-ui-161 {
-  flex: 1;
-  padding: 10px;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid #38bdf8;
-  border-radius: 5px;
+.inspector-badge--turn {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    background: #f99f1b;
+    color: black;
+    font-weight: 800;
+    border-radius: 20px;
 }
 
-.reasoningpanels-ui-162 {
-  display: flex;
-  gap: 10px;
+.inspector-badge--tokens-in {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    background: #cc99cc;
+    color: black;
+    font-weight: 800;
+    border-radius: 20px;
 }
 
-.reasoningpanels-ui-163 {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  color: #e2e8f0;
-  font-size: 0.85rem;
-  line-height: 1.5;
+.inspector-badge--tokens-out {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    background: #38bdf8;
+    color: black;
+    font-weight: 800;
+    border-radius: 20px;
 }
 
-.reasoningpanels-ui-164 {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  color: #e2e8f0;
-  font-size: 0.85rem;
-  line-height: 1.5;
+.inspector-badge--timing {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    background: #4ade80;
+    color: black;
+    font-weight: 800;
+    border-radius: 20px;
 }
 
-.reasoningpanels-ui-165 {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  font-size: 0.8rem;
-  color: #e2e8f0;
+/* --- Status line --- */
+.inspector-status-line {
+    font-weight: 700;
+    margin-top: 8px;
+    font-family: JetBrains Mono;
+    font-size: 0.9rem;
 }
 
-.reasoningpanels-ui-166 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #ef4444;
-  font-weight: 800;
-  font-family: var(--font-mono);
+.inspector-status--completed {
+    color: #4ade80;
 }
 
-.reasoningpanels-ui-167 {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  font-size: 0.8rem;
-  color: #99ccff;
+.inspector-status--error {
+    color: #ef4444;
 }
 
-.reasoningpanels-ui-168 {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  color: #e2e8f0;
-  font-size: 0.85rem;
-  line-height: 1.5;
+.inspector-status--active {
+    color: #facc15;
 }
 
-.reasoningpanels-ui-169 {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  background: #4ade80;
-  color: black;
-  font-weight: 800;
-  border-radius: 20px;
+/* --- Thought text --- */
+.inspector-thought-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    line-height: 1.5;
 }
 
-.reasoningpanels-ui-170 {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  background: #38bdf8;
-  color: black;
-  font-weight: 800;
-  border-radius: 20px;
+/* --- Tool call cards --- */
+.inspector-tool-call-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.reasoningpanels-ui-171 {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  background: #f99f1b;
-  color: black;
-  font-weight: 800;
-  border-radius: 20px;
+.inspector-tool-call {
+    border: 1px solid #4ade80;
+    border-radius: 4px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
 }
 
-.reasoningpanels-ui-172 {
-  margin-bottom: 16px;
-  color: #f8fafc;
+.inspector-tool-call--error {
+    border-color: #ef4444;
 }
 
-.reasoningpanels-ui-173 {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  font-size: 0.8rem;
-  color: #e2e8f0;
+.inspector-tool-call-header {
+    color: #4ade80;
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-family: JetBrains Mono;
+    font-size: 0.9rem;
 }
 
-.reasoningpanels-ui-174 {
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  margin-bottom: 8px;
+.inspector-tool-call--error .inspector-tool-call-header {
+    color: #ef4444;
 }
 
-.reasoningpanels-ui-175 {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: JetBrains Mono;
-  font-size: 0.8rem;
-  color: #cbd5e1;
+.inspector-tool-result {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    font-size: 0.8rem;
+    color: #4ade80;
+    overflow-x: auto;
 }
 
-.reasoningpanels-ui-176 {
-  justify-content: flex-start;
+.inspector-tool-result--error {
+    color: #ef4444;
 }
 
-.reasoningpanels-ui-177 {
-  color: #38bdf8;
-  border-color: rgba(56,189,248,0.3);
-  justify-content: flex-start;
+/* --- Tool node header --- */
+.inspector-tool-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ef4444;
+    font-weight: 800;
+    font-family: var(--font-mono);
 }
 
-.reasoningpanels-ui-178 {
-  color: #facc15;
-  border-color: rgba(250,204,21,0.3);
-  justify-content: flex-start;
+/* --- Arguments / pre-formatted text --- */
+.inspector-args-pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    font-size: 0.8rem;
+    color: #e2e8f0;
 }
 
-.reasoningpanels-ui-179 {
-  color: #ef4444;
-  border-color: rgba(239,68,68,0.3);
-  justify-content: flex-start;
+.inspector-args-pre--blue {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    font-size: 0.8rem;
+    color: #99ccff;
 }
 
-.reasoningpanels-ui-180 {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-glass);
+.inspector-pre-text {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    font-size: 0.8rem;
+    color: #e2e8f0;
 }
 
-.reasoningpanels-ui-181 {
-  color: #f8fafc;
-  font-weight: 700;
+.inspector-muted-text {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
 }
 
-.reasoningpanels-ui-182 {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.inspector-pre-text--muted {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    font-size: 0.8rem;
+    color: #cbd5e1;
 }
 
-.reasoningpanels-ui-183 {
-  margin-bottom: 16px;
+/* --- Conclusion fields --- */
+.inspector-conclusion-fields {
+    display: flex;
+    gap: 10px;
 }
 
-.reasoningpanels-ui-184 {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+.inspector-field-box--blue {
+    flex: 1;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #38bdf8;
+    border-radius: 5px;
+}
+
+.inspector-field-label--blue {
+    color: #38bdf8;
+    font-weight: bold;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.inspector-field-value-alt {
+    color: white;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+.inspector-field-box--orange {
+    flex: 1;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #f99f1b;
+    border-radius: 5px;
+}
+
+.inspector-field-label--orange {
+    color: #f99f1b;
+    font-weight: bold;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.inspector-field-value {
+    color: white;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+/* --- Summary / trace text --- */
+.inspector-summary-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.inspector-trace-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: JetBrains Mono;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* --- Engram / Goal headers --- */
+.inspector-engram-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #a855f7;
+    font-weight: 800;
+    font-family: var(--font-mono);
+}
+
+.inspector-goal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #38bdf8;
+    font-weight: 800;
+    font-family: var(--font-mono);
+}
+
+/* --- Description box (engram/goal) --- */
+.inspector-description-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+}
+
+/* --- Admin link --- */
+.inspector-admin-section {
+    margin-top: 20px;
+    text-align: center;
+    padding-bottom: 20px;
+}
+
+.inspector-admin-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--accent-purple, #a855f7);
+    color: black;
+    font-family: Outfit, sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    text-decoration: none;
+    border-radius: 20px;
+    border: 2px solid var(--accent-purple, #a855f7);
+    width: 80%;
+    text-transform: uppercase;
+    transition: transform 0.1s;
+}
+
+.inspector-admin-link:hover {
+    transform: scale(1.02);
+}
+
+/* --- Sidebar --- */
+.sidebar-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.sidebar-title {
+    margin-bottom: 16px;
+}
+
+.sidebar-session-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-session-id {
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.sidebar-action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.sidebar-btn--halt {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    justify-content: flex-start;
+}
+
+.sidebar-btn--reboot {
+    color: #facc15;
+    border-color: rgba(250, 204, 21, 0.3);
+    justify-content: flex-start;
+}
+
+.sidebar-btn--dump {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+    justify-content: flex-start;
+}
+
+.sidebar-btn--exit {
+    justify-content: flex-start;
 }
 
 /* Sidebar Session Cards */
 .reasoningpanels-session-card {
-  padding: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-glass);
-  transition: all 0.2s ease;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    transition: all 0.2s ease;
 }
 
 .reasoningpanels-session-card--active {
-  background: rgba(168, 85, 247, 0.15);
-  border-color: #a855f7;
+    background: rgba(168, 85, 247, 0.15);
+    border-color: #a855f7;
 }
 
 .reasoningpanels-status-text {
-  color: #94a3b8;
-  margin-top: 4px;
+    color: #94a3b8;
+    margin-top: 4px;
 }
 
 .reasoningpanels-status-text--active {
-  color: #facc15;
+    color: #facc15;
 }
 
 /* The Override Button */
 .reasoningpanels-btn-override {
-  color: #a855f7;
-  border-color: rgba(168, 85, 247, 0.3);
-  justify-content: flex-start;
+    color: #a855f7;
+    border-color: rgba(168, 85, 247, 0.3);
+    justify-content: flex-start;
 }
 
 .reasoningpanels-btn-override:hover {
-  background: rgba(168, 85, 247, 0.1);
+    background: rgba(168, 85, 247, 0.1);
 }

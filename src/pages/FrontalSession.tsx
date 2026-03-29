@@ -8,6 +8,14 @@ import { useGABA } from '../context/GABAProvider';
 import type { GraphNode } from '../types';
 import './FrontalSession.css';
 
+interface CortexStats {
+    level: number;
+    focus: string;
+    xp: number;
+    status: string;
+    latestThought: string;
+}
+
 export function FrontalSession() {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
@@ -15,14 +23,7 @@ export function FrontalSession() {
 
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [isSessionChatOpen, setIsSessionChatOpen] = useState(false);
-    // cortexStats will be piped to the footer via context in Step 2
-    const [, setCortexStats] = useState<{
-        level: number;
-        focus: string;
-        xp: number;
-        status: string;
-        latestThought: string;
-    } | null>(null);
+    const [cortexStats, setCortexStats] = useState<CortexStats | null>(null);
 
     // Redirect if no sessionId
     useEffect(() => {
@@ -45,6 +46,8 @@ export function FrontalSession() {
 
     if (!sessionId) return null;
 
+    const isAlive = cortexStats && ['Active', 'Running', 'Pending', 'Thinking'].includes(cortexStats.status);
+
     return (
         <ThreePanel
             centerClassName="three-panel-center--reasoning-graph"
@@ -58,6 +61,25 @@ export function FrontalSession() {
             }
             center={
                 <>
+                    {cortexStats && (
+                        <div className="cortex-stats-bar">
+                            <div className={`cortex-stats-status ${isAlive ? 'cortex-stats-status--active' : ''}`}>
+                                {cortexStats.status}
+                            </div>
+                            <div className="cortex-stats-item">
+                                <span className="cortex-stats-label">LVL</span>
+                                <span className="cortex-stats-value">{cortexStats.level}</span>
+                            </div>
+                            <div className="cortex-stats-item">
+                                <span className="cortex-stats-label">FOCUS</span>
+                                <span className="cortex-stats-value">{cortexStats.focus}</span>
+                            </div>
+                            <div className="cortex-stats-item">
+                                <span className="cortex-stats-label">XP</span>
+                                <span className="cortex-stats-value">{cortexStats.xp}</span>
+                            </div>
+                        </div>
+                    )}
                     <ReasoningGraph3D
                         sessionId={sessionId}
                         onNodeSelect={setSelectedNode}

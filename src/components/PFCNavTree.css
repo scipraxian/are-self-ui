@@ -1,0 +1,194 @@
+.pfc-nav-tree {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 8px;
+}
+
+.pfc-nav-tree-title {
+    font-family: Outfit, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 4px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.pfc-nav-tree-list {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pfc-nav-tree-list::-webkit-scrollbar {
+    display: none;
+}
+
+.pfc-nav-tree-empty {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    padding: 12px 8px;
+    text-align: center;
+}
+
+.pfc-nav-tree-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.pfc-nav-tree-epic {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.pfc-nav-tree-epic:hover {
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.pfc-nav-tree-epic--selected {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.pfc-nav-tree-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.pfc-nav-tree-epic-name {
+    flex: 1;
+    font-family: Outfit, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #a855f7;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pfc-nav-tree-badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-glass);
+    padding: 1px 5px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.pfc-nav-tree-filter {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.pfc-nav-tree-filter:hover {
+    opacity: 1;
+    color: var(--accent-blue);
+}
+
+.pfc-nav-tree-filter--active {
+    opacity: 1;
+    color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.1);
+}
+
+.pfc-nav-tree-children {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.pfc-nav-tree-story {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.pfc-nav-tree-story:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.pfc-nav-tree-story--selected {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.pfc-nav-tree-story-name {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #3b82f6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pfc-nav-tree-story-status {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.pfc-nav-tree-clear-filter {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--accent-blue);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.pfc-nav-tree-clear-filter:hover {
+    background: rgba(56, 189, 248, 0.2);
+}
+
+.pfc-nav-tree-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-glass);
+    margin-top: auto;
+}

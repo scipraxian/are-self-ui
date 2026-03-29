@@ -34,7 +34,7 @@ const Accordion = ({ title, variant = 'green', open = false, children, rightElem
                 <span className="cnsinspector-accordion-title">► {title}</span>
                 {rightElement && <span>{rightElement}</span>}
             </summary>
-            <div className="cnsinspector-ui-22">
+            <div className="cns-inspector-accordion-body">
                 {children}
             </div>
         </details>
@@ -65,13 +65,13 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
         return (
             <div className="flex flex-col items-center justify-center p-8 text-center h-full">
                 <h2 className="glass-panel-title">TELEMETRY OVERRIDE</h2>
-                <div className="cnsinspector-ui-21">Select a neuron to inspect its properties.</div>
+                <div className="cns-inspector-empty-hint">Select a neuron to inspect its properties.</div>
             </div>
         );
     }
 
     if (!details) {
-        return <div className="flex flex-col items-center justify-center p-8 text-center h-full cnsinspector-ui-20">Loading details...</div>;
+        return <div className="cns-inspector-loading">Loading details...</div>;
     }
 
     const handleAddVariable = (e: React.MouseEvent) => {
@@ -95,25 +95,25 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
     };
 
     return (
-        <div className="scroll-hidden cnsinspector-ui-19">
-            <div className="cnsinspector-ui-18">
-                <div className="cnsinspector-ui-17">
-                    <h2 className="glass-panel-title cnsinspector-ui-16">
+        <div className="scroll-hidden cns-inspector-root">
+            <div className="cns-inspector-body">
+                <div className="cns-inspector-title-row">
+                    <h2 className="glass-panel-title cns-inspector-title">
                         TELEMETRY OVERRIDE
                     </h2>
-                    <button onClick={() => onDelete(node.id)} className="btn-ghost cnsinspector-ui-15" title="Delete Node">
+                    <button onClick={() => onDelete(node.id)} className="btn-ghost cns-inspector-delete-btn" title="Delete Node">
                         <Trash2 size={16} />
                     </button>
                 </div>
 
-                <div className="cnsinspector-ui-14">
+                <div className="cns-inspector-content">
 
-                    <div className="cnsinspector-ui-13">
-                        <div className="cnsinspector-ui-12">ID: {details.neuron_id}</div>
-                        <div className="cnsinspector-ui-11">{details.name}</div>
+                    <div className="cns-inspector-node-layout">
+                        <div className="cns-inspector-node-id">ID: {details.neuron_id}</div>
+                        <div className="cns-inspector-node-name">{details.name}</div>
                     </div>
 
-                    <div className="cnsinspector-ui-10">
+                    <div className="cns-inspector-description-box">
                         {details.description || 'No specialized purpose defined for this neuron.'}
                     </div>
 
@@ -122,13 +122,13 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                         variant="green"
                         open
                         rightElement={
-                            <button className="cnsinspector-ui-9" onClick={handleAddVariable}>
+                            <button className="cns-inspector-add-btn" onClick={handleAddVariable}>
                                 <Plus size={14} /> ADD
                             </button>
                         }
                     >
                         {details.context_matrix.length > 0 ? (
-                            <div className="cnsinspector-ui-8">
+                            <div className="cns-inspector-var-list">
                                 {details.context_matrix.map((item) => {
                                     const isGlobal = item.source === 'global';
                                     const isOverride = item.source === 'override';
@@ -141,16 +141,16 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                                             key={item.key}
                                             className={`cnsinspector-context-row cnsinspector-context-row--${sourceClass}`}
                                         >
-                                            <div className="cnsinspector-ui-7">
+                                            <div className="cns-inspector-var-header">
                                                 <div className={`cnsinspector-context-key cnsinspector-context-key--${sourceClass}`}>
                                                     &gt; {item.key}
                                                 </div>
-                                                <div className="cnsinspector-ui-6">
+                                                <div className="cns-inspector-source-row">
                                                     <span className={`cnsinspector-context-source cnsinspector-context-source--${sourceClass}`}>
                                                         {item.source}
                                                     </span>
                                                     {isOverride && (
-                                                        <button className="cnsinspector-ui-5"
+                                                        <button className="cns-inspector-clear-btn"
                                                             onClick={(e) => handleClearOverride(e, item.key)}
                                                             title="Clear Override"
                                                         >
@@ -159,7 +159,7 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="cnsinspector-ui-4">
+                                            <div className="cns-inspector-input-wrap">
                                                 {isLong ? (
                                                     <textarea
                                                         className={`cnsinspector-context-input cnsinspector-context-input--${sourceClass}`}
@@ -188,7 +188,7 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                                 })}
                             </div>
                         ) : (
-                            <div className="cnsinspector-ui-3">
+                            <div className="cns-inspector-empty-text">
                                 No variables detected.
                             </div>
                         )}
@@ -196,8 +196,8 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                 </div>
             </div>
 
-            <div className="cnsinspector-ui-2">
-                <a className="cnsinspector-ui-1"
+            <div className="cns-inspector-admin-section">
+                <a className="cns-inspector-admin-link"
                     href={`/admin/central_nervous_system/neuron/${node.id}/change/`}
                     target="_blank"
                     rel="noopener noreferrer"

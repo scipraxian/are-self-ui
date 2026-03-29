@@ -1,29 +1,162 @@
 .cnsnode-root {
-  position: absolute;
-  width: 220px;
-  border-radius: 8px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-  pointer-events: auto;
-  user-select: none;
-  background-color: rgba(35, 35, 35, 0.95);
-  border: 1px solid #3a3a3a;
+    position: absolute;
+    width: 220px;
+    border-radius: 8px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    user-select: none;
+    background-color: rgba(35, 35, 35, 0.95);
+    border: 1px solid #3a3a3a;
 }
 
 .cnsnode-root--selected {
-  border-color: rgba(247, 148, 29, 0.75);
-  box-shadow: 0 0 15px rgba(247, 148, 29, 0.3), 0 18px 40px rgba(0, 0, 0, 0.45);
+    border-color: rgba(247, 148, 29, 0.75);
+    box-shadow: 0 0 15px rgba(247, 148, 29, 0.3), 0 18px 40px rgba(0, 0, 0, 0.45);
 }
 
 .cnsnode-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  border-top-left-radius: 7px;
-  border-top-right-radius: 7px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: move;
 }
 
+.cnsnode-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.cnsnode-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.cnsnode-inspect-btn {
+    background-color: #0078d4;
+    color: white;
+    border-radius: 9999px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+
+.cnsnode-inspect-btn:hover {
+    background-color: var(--accent-orange, #f7941d);
+}
+
+.cnsnode-play-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 2px;
+    padding: 0 6px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+
+.cnsnode-play-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.cnsnode-delete-btn {
+    color: #9ca3af;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 150ms ease;
+}
+
+.cnsnode-delete-btn:hover {
+    color: #ef4444;
+}
+
+.cnsnode-body {
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    min-height: 80px;
+}
+
+.cnsnode-ports-left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cnsnode-ports-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.cnsnode-port-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #999;
+}
+
+.cnsnode-port-label--right {
+    flex-direction: row-reverse;
+}
+
+.cnsnode-port {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cnsnode-port--input {
+    background-color: #888;
+}
+
+.cnsnode-port--flow {
+    background-color: white;
+    cursor: crosshair;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.cnsnode-port--flow:hover {
+    transform: scale(1.25);
+    box-shadow: 0 0 8px #fff;
+}
+
+.cnsnode-port--success {
+    background-color: #4caf50;
+    cursor: crosshair;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.cnsnode-port--success:hover {
+    transform: scale(1.25);
+    box-shadow: 0 0 8px #4caf50;
+}
+
+.cnsnode-port--fail {
+    background-color: #f44336;
+    cursor: crosshair;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.cnsnode-port--fail:hover {
+    transform: scale(1.25);
+    box-shadow: 0 0 8px #f44336;
+}

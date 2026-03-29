@@ -1,13 +1,39 @@
 import "./ReasoningPanels.css";
 import { type ReactNode, useEffect, useState } from 'react';
-import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';import type {
+import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';
+import type {
     GraphNode,
-    ReasoningMessageData,
+    ModelUsageRecord,
     ReasoningSessionData,
     ReasoningTurnData,
     ToolCallData
 } from "../types.ts";
 import { getCookie } from '../api';
+
+// --- Shared thought extraction (same logic as ReasoningGraph3D) ---
+const extractThoughtFromUsageRecord = (record?: ModelUsageRecord): string => {
+    if (!record?.response_payload?.choices?.length) return '';
+    const message = record.response_payload.choices[0].message;
+
+    if (typeof message.content === 'string' && message.content.trim()) {
+        return message.content.trim();
+    }
+
+    if (Array.isArray(message.tool_calls)) {
+        for (const tc of message.tool_calls) {
+            if (tc.function?.name === 'mcp_respond_to_user') {
+                try {
+                    const parsed = JSON.parse(tc.function.arguments);
+                    if (typeof parsed.thought === 'string' && parsed.thought.trim()) {
+                        return parsed.thought.trim();
+                    }
+                } catch { /* ignore parse errors */ }
+            }
+        }
+    }
+
+    return '';
+};
 
 // --- HELPER COMPONENT: Reusable Accordion ---
 interface AccordionProps {
@@ -24,7 +50,7 @@ const Accordion = ({ title, color, open = false, children }: AccordionProps) => 
             <summary className="accordion-summary">
                 ► {title}
             </summary>
-            <div className="common-layout-7">
+            <div className="accordion-content">
                 {children}
             </div>
         </details>
@@ -36,7 +62,7 @@ interface ReasoningSidebarProps {
     activeSessionId: string | null;
     onSelectSession: (id: string) => void;
     onExit: () => void;
-    onToggleChat: () => void; // Added Prop
+    onToggleChat: () => void;
 }
 
 export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onToggleChat }: ReasoningSidebarProps) => {
@@ -77,9 +103,9 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onT
     const isAlive = activeSession && ['Active', 'Pending', 'Running', 'Thinking'].includes(activeSession.status_name);
 
     return (
-        <div className="reasoningpanels-ui-184">
-            <h2 className="glass-panel-title reasoningpanels-ui-183">COGNITIVE THREADS</h2>
-            <div className="scroll-hidden reasoningpanels-ui-182">
+        <div className="sidebar-root">
+            <h2 className="glass-panel-title sidebar-title">COGNITIVE THREADS</h2>
+            <div className="scroll-hidden sidebar-session-list">
                 {sessions.map(s => {
                     const isActive = s.id === activeSessionId;
                     const isStatusActive = s.status_name === 'Active';
@@ -89,7 +115,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onT
                             onClick={() => onSelectSession(s.id)}
                             className={`reasoningpanels-session-card ${isActive ? 'reasoningpanels-session-card--active' : ''}`}
                         >
-                            <div className="font-mono text-xs reasoningpanels-ui-181">
+                            <div className="font-mono text-xs sidebar-session-id">
                                 {s.id.split('-')[0].toUpperCase()}
                             </div>
                             <div className={`font-mono text-xs reasoningpanels-status-text ${isStatusActive ? 'reasoningpanels-status-text--active' : ''}`}>
@@ -101,26 +127,26 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onT
             </div>
 
             {activeSessionId && (
-                <div className="reasoningpanels-ui-180">
+                <div className="sidebar-action-group">
                     <button className="btn-ghost reasoningpanels-btn-override" onClick={onToggleChat}>
                         <MessageSquare size={14} /> MANUAL OVERRIDE
                     </button>
 
                     {isAlive ? (
-                        <button className="btn-ghost reasoningpanels-ui-179" onClick={() => handleAction('stop')}>
+                        <button className="btn-ghost sidebar-btn--halt" onClick={() => handleAction('stop')}>
                             <Power size={14} /> HALT CORTEX
                         </button>
                     ) : (
                         <>
-                            <button className="btn-ghost reasoningpanels-ui-178" onClick={() => handleAction('rerun')}>
+                            <button className="btn-ghost sidebar-btn--reboot" onClick={() => handleAction('rerun')}>
                                 <RefreshCw size={14} /> REBOOT CORTEX
                             </button>
-                            <button className="btn-ghost reasoningpanels-ui-177" onClick={handleDump}>
+                            <button className="btn-ghost sidebar-btn--dump" onClick={handleDump}>
                                 <Download size={14} /> DUMP DATA
                             </button>
                         </>
                     )}
-                    <button className="btn-ghost reasoningpanels-ui-176" onClick={onExit}>
+                    <button className="btn-ghost sidebar-btn--exit" onClick={onExit}>
                         <LogOut size={14} /> EXIT TO MAP
                     </button>
                 </div>
@@ -136,14 +162,11 @@ interface ReasoningInspectorProps {
 export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
     if (!node) return <div className="bbb-placeholder font-mono text-sm">Select a node on the graph.</div>;
 
-    // We cast the strictly-typed GraphNode to 'any' locally for the JSX template to satisfy React's strict DOM limits.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const n = node as any;
 
     const getAdminUrl = (nodeData: GraphNode) => {
         if (!nodeData || !nodeData.id) return '#';
-
-        // Strip out the prefix (e.g., "turn-15" becomes "15")
         const dbId = String(nodeData.id).split('-').slice(1).join('-');
 
         switch (nodeData.type) {
@@ -166,25 +189,17 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
         }
     };
 
-    const renderMessages = (messages?: ReasoningMessageData[]) => {
-        if (!messages || !Array.isArray(messages)) return null;
-
+    const renderMessages = (messages: Array<{ role: string; content: string }>) => {
         return messages.map((msg, i: number) => {
-            const roleName = typeof msg.role === 'string' ? msg.role : (msg.role?.name || '');
-            const roleStr = String(roleName).toUpperCase();
+            const roleStr = String(msg.role).toUpperCase();
             let roleColor =
-                roleName === 'system' ? '#cc99cc' :
-                    roleName === 'user' ? '#99ccff' :
+                msg.role === 'system' ? '#cc99cc' :
+                    msg.role === 'user' ? '#99ccff' :
                         '#4ade80';
-
-            // Visually distinguish volatile/system-injected messages from durable ones.
-            if (msg.is_volatile) {
-                roleColor = '#64748b'; // slate-500: softer, secondary tone
-            }
 
             return (
                 <Accordion key={i} title={`[${roleStr}] PROMPT`} color={roleColor}>
-                    {roleName === 'user' ? (
+                    {msg.role === 'user' ? (
                         msg.content.split(/^(?=\[[A-Z0-9\s:()-]+\])/m).map((sec: string, idx: number) => {
                             if (!sec.trim()) return null;
                             const match = sec.trim().match(/^\[([^\]]+)\](.*[\s\S]*)/);
@@ -198,16 +213,16 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
 
                                 return (
                                     <Accordion key={idx} title={title} color={innerColor}>
-                                        <pre className="reasoningpanels-ui-175">
+                                        <pre className="inspector-pre-text--muted">
                                             {body}
                                         </pre>
                                     </Accordion>
                                 );
                             }
-                            return <div className="reasoningpanels-ui-174" key={idx}>{sec.trim()}</div>;
+                            return <div className="inspector-muted-text" key={idx}>{sec.trim()}</div>;
                         })
                     ) : (
-                        <pre className="reasoningpanels-ui-173">
+                        <pre className="inspector-pre-text">
                             {msg.content}
                         </pre>
                     )}
@@ -216,56 +231,45 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
         });
     };
 
-    const deriveTurnThought = (turn: ReasoningTurnData): string | null => {
-        let thought = (turn.thought_process || '').trim();
-
-        if (!thought && Array.isArray(turn.messages)) {
-            const assistantMsg = turn.messages.find((m: ReasoningMessageData) => {
-                const roleName = typeof m.role === 'string' ? m.role : m.role?.name;
-                return String(roleName).toLowerCase() === 'assistant' &&
-                    typeof m.content === 'string' &&
-                    m.content.toUpperCase().startsWith('THOUGHT:');
-            });
-            if (assistantMsg && assistantMsg.content) {
-                thought = assistantMsg.content;
-            }
-        }
-
-        if (!thought) return null;
-        return thought.replace(/^(THOUGHT:\s*)+/i, '').trim();
-    };
-
     return (
-        <div className="scroll-hidden common-layout-8">
-            <div className="common-layout-9">
-                <h2 className="glass-panel-title reasoningpanels-ui-172">
+        <div className="scroll-hidden inspector-root">
+            <div className="inspector-body">
+                <h2 className="glass-panel-title inspector-section-title">
                     {String(n.type).toUpperCase()} DETAILS
                 </h2>
 
                 {n.type === 'turn' && (
-                    <div className="common-layout-10">
-                        {/*
-                          Narrow the generic graph node to the richer turn shape for
-                          downstream helpers that expect full turn/message data.
-                        */}
+                    <div className="inspector-turn-content">
                         {(() => {
                             const turn = n as ReasoningTurnData;
-                            const turnThought = deriveTurnThought(turn);
-                            const hasMessages = Array.isArray(turn.messages) && turn.messages.length > 0;
+                            const tokensIn = turn.model_usage_record?.input_tokens ?? 0;
+                            const tokensOut = turn.model_usage_record?.output_tokens ?? 0;
+                            const timing = turn.model_usage_record?.query_time || turn.delta || '--';
+                            const modelName = turn.model_usage_record?.ai_model_provider?.ai_model?.name || 'Unknown';
+                            const turnThought = extractThoughtFromUsageRecord(turn.model_usage_record);
+                            const messages = turn.model_usage_record?.request_payload || [];
+                            const hasMessages = Array.isArray(messages) && messages.length > 0;
+                            const statusClass = n.status_name === 'Error'
+                                ? 'inspector-status--error'
+                                : ['Active', 'Running', 'Pending', 'Thinking'].includes(n.status_name)
+                                    ? 'inspector-status--active'
+                                    : 'inspector-status--completed';
                             return (
                                 <>
-                        <div className="common-layout-11">
-                            <div className="reasoningpanels-ui-171">TURN {turn.turn_number}</div>
-                            <div className="common-layout-12">IN {turn.tokens_input}</div>
-                            <div className="reasoningpanels-ui-170">OUT {turn.tokens_output}</div>
-                            <div className="reasoningpanels-ui-169">{turn.inference_time || turn.delta || '--'}</div>
+                        <div className="inspector-badge-row">
+                            <div className="inspector-badge--turn">TURN {turn.turn_number}</div>
+                            <div className="inspector-badge--tokens-in">IN {tokensIn}</div>
+                            <div className="inspector-badge--tokens-out">OUT {tokensOut}</div>
+                            <div className="inspector-badge--timing">{timing}</div>
                         </div>
 
-                        <div style={{ color: n.status_name === 'Error' ? '#ef4444' : '#4ade80', fontWeight: 700, marginTop: '8px', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>Status: {n.status_name}</div>
+                        <div className={`inspector-status-line ${statusClass}`}>
+                            Status: {n.status_name} | Model: {modelName}
+                        </div>
 
                         {turnThought && (
                             <Accordion title="THOUGHT PROCESS" color="#cc99cc" open>
-                                <div className="reasoningpanels-ui-168">
+                                <div className="inspector-thought-text">
                                     {turnThought}
                                 </div>
                             </Accordion>
@@ -273,31 +277,30 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
 
                         {hasMessages && (
                             <Accordion title="CONVERSATION LOG" color="#f99f1b">
-                                {renderMessages(turn.messages)}
+                                {renderMessages(messages)}
                             </Accordion>
                         )}
 
                         {turn.tool_calls && Array.isArray(turn.tool_calls) && turn.tool_calls.length > 0 && (
                             <Accordion title={`TOOL CALLS (${n.tool_calls.length})`} color="#4ade80" open>
-                                <div className="common-layout-14">
-                                    {/* FIX 3: Strictly type the call parameter using ToolCallData */}
+                                <div className="inspector-tool-call-list">
                                     {turn.tool_calls.map((call: ToolCallData, idx: number) => {
                                         const isError = call.traceback || (call.result_payload && String(call.result_payload).includes('FIZZLE'));
-                                        const callColor = isError ? '#ef4444' : '#4ade80';
+                                        const errorClass = isError ? 'inspector-tool-call--error' : '';
                                         const argsStr = typeof call.arguments === 'object' ? JSON.stringify(call.arguments, null, 2) : String(call.arguments || '');
 
                                         return (
-                                            <div key={idx} style={{ border: `1px solid ${callColor}`, borderRadius: '4px', padding: '10px', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                                                <div style={{ color: callColor, fontWeight: 'bold', marginBottom: '10px', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>
+                                            <div key={idx} className={`inspector-tool-call ${errorClass}`}>
+                                                <div className="inspector-tool-call-header">
                                                     &gt; CALL [{idx + 1}]: {call.tool_name}
                                                 </div>
                                                 <Accordion title="ARGUMENTS" color="#99ccff">
-                                                    <pre className="reasoningpanels-ui-167">
+                                                    <pre className="inspector-args-pre--blue">
                                                         {argsStr || '{}'}
                                                     </pre>
                                                 </Accordion>
-                                                <Accordion title="RESULT" color={callColor}>
-                                                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', color: callColor, overflowX: 'auto' }}>
+                                                <Accordion title="RESULT" color={isError ? '#ef4444' : '#4ade80'}>
+                                                    <pre className="inspector-tool-result">
                                                         {call.result_payload || call.traceback || "Pending..."}
                                                     </pre>
                                                 </Accordion>
@@ -314,19 +317,19 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                 )}
 
                 {n.type === 'tool' && (
-                    <div className="common-layout-32">
-                        <div className="reasoningpanels-ui-166">
+                    <div className="inspector-node-content">
+                        <div className="inspector-tool-header">
                             <Terminal size={16} /> {n.tool_name || n.label}
                         </div>
 
                         <Accordion title="ARGUMENTS" color="#38bdf8" open>
-                            <pre className="reasoningpanels-ui-165">
+                            <pre className="inspector-args-pre">
                                 {n.arguments ? (typeof n.arguments === 'object' ? JSON.stringify(n.arguments, null, 2) : String(n.arguments)) : '{}'}
                             </pre>
                         </Accordion>
 
                         <Accordion title="RESULT" color={n.traceback ? '#ef4444' : '#4ade80'} open>
-                            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', color: n.traceback ? '#ef4444' : '#4ade80', maxHeight: '400px', overflowY: 'auto' }}>
+                            <pre className={`inspector-tool-result ${n.traceback ? 'inspector-tool-result--error' : ''}`}>
                                 {n.result_payload || n.traceback || "Pending..."}
                             </pre>
                         </Accordion>
@@ -334,36 +337,36 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                 )}
 
                 {n.type === 'conclusion' && (
-                    <div className="common-layout-32">
+                    <div className="inspector-node-content">
                         <Accordion title="EXECUTIVE SUMMARY" color="#4ade80" open>
-                            <div className="reasoningpanels-ui-164">
+                            <div className="inspector-summary-text">
                                 {n.summary}
                             </div>
                         </Accordion>
                         <Accordion title="REASONING TRACE" color="#a855f7">
-                            <div className="reasoningpanels-ui-163">
+                            <div className="inspector-trace-text">
                                 {n.reasoning_trace}
                             </div>
                         </Accordion>
-                        <div className="reasoningpanels-ui-162">
-                            <div className="reasoningpanels-ui-161">
-                                <div className="reasoningpanels-ui-160">Outcome Status</div>
-                                <div className="reasoningpanels-ui-159">{n.outcome_status}</div>
+                        <div className="inspector-conclusion-fields">
+                            <div className="inspector-field-box--blue">
+                                <div className="inspector-field-label--blue">Outcome Status</div>
+                                <div className="inspector-field-value-alt">{n.outcome_status}</div>
                             </div>
-                            <div className="reasoningpanels-ui-158">
-                                <div className="reasoningpanels-ui-157">Recommended Action</div>
-                                <div className="reasoningpanels-ui-156">{n.recommended_action}</div>
+                            <div className="inspector-field-box--orange">
+                                <div className="inspector-field-label--orange">Recommended Action</div>
+                                <div className="inspector-field-value">{n.recommended_action}</div>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {n.type === 'engram' && (
-                    <div className="common-layout-32">
-                        <div className="reasoningpanels-ui-155">
+                    <div className="inspector-node-content">
+                        <div className="inspector-engram-header">
                             <Database size={16} /> {n.name}
                         </div>
-                        <div className="common-layout-13">
+                        <div className="inspector-description-box">
                             {n.description}
                         </div>
                         <div className="font-mono text-xs text-muted">Relevance: {n.relevance_score}</div>
@@ -371,25 +374,22 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                 )}
 
                 {n.type === 'goal' && (
-                    <div className="common-layout-32">
-                        <div className="reasoningpanels-ui-154">
+                    <div className="inspector-node-content">
+                        <div className="inspector-goal-header">
                             <Target size={16} /> {n.label}
                         </div>
-                        <div className="common-layout-13">
+                        <div className="inspector-description-box">
                             {n.rendered_goal}
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="common-layout-16">
-                {/* Note we pass `node` instead of `n` here so we pass the strictly typed variable to the helper */}
-                <a className="common-layout-17"
+            <div className="inspector-admin-section">
+                <a className="inspector-admin-link"
                     href={getAdminUrl(node)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
                     ACCESS DB RECORD ↗
                 </a>

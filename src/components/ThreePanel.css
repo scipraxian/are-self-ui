@@ -3,6 +3,7 @@
 .three-panel-layout {
     display: flex;
     flex: 1;
+    min-height: 0;
     overflow: hidden;
     padding: 20px;
     gap: 20px;
@@ -16,15 +17,18 @@
     flex-direction: column;
     pointer-events: auto;
     overflow: hidden;
+    min-height: 0;
 }
 
 .three-panel-center {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     position: relative;
     pointer-events: auto;
+    overflow: hidden;
 }
 
 .three-panel-right {
@@ -33,7 +37,19 @@
     display: flex;
     flex-direction: column;
     pointer-events: auto;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    transition: flex-basis 0.25s ease;
+    min-height: 0;
+}
+
+.three-panel-right::-webkit-scrollbar {
+    display: none;
+}
+
+.three-panel-right--expanded {
+    flex: 0 0 600px;
 }
 
 /* Center panel variant: CNS graph needs fill + no overflow */
@@ -51,6 +67,7 @@
 /* Center content wrapper for stubs that need a glass panel filling the center */
 .three-panel-center-stage {
     flex: 1;
+    min-height: 0;
     position: relative;
     overflow: hidden;
 }

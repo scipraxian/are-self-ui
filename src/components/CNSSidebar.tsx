@@ -1,5 +1,7 @@
 import "./CNSSidebar.css";
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Play, Eye, Edit } from 'lucide-react';
 import type { NeuralPathway } from "../types.ts";
 import { apiFetch } from '../api';
 
@@ -20,6 +22,7 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({
     selectedEnvironmentId,
     onEnvironmentChange,
 }) => {
+    const navigate = useNavigate();
     const [pathways, setPathways] = useState<NeuralPathway[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
@@ -28,7 +31,6 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({
     useEffect(() => {
         const fetchPathways = async () => {
             try {
-                // Hitting your new v2 endpoint
                 const res = await apiFetch('/api/v2/neuralpathways/');
                 const data = await res.json();
                 setPathways(data);
@@ -63,12 +65,21 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({
         };
     }, []);
 
+    const handleLaunch = async (e: React.MouseEvent, pathwayId: string) => {
+        e.stopPropagation();
+        try {
+            await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/launch/`, { method: 'POST' });
+        } catch {
+            // ignore
+        }
+    };
+
     const adminEnvironmentHref = selectedEnvironmentId
         ? `/admin/environmental_pathways/environment/${encodeURIComponent(selectedEnvironmentId)}/change/`
         : '/admin/';
 
     return (
-        <div className="cnssidebar-ui-32">
+        <div className="cns-sidebar-root">
             <div className="common-layout-18">
                 <h2 className="glass-panel-title common-layout-4">CENTRAL NERVOUS SYSTEM</h2>
                 <button onClick={onExit} className="bbb-close-btn common-layout-5">✕</button>
@@ -108,24 +119,60 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({
             {isLoading ? (
                 <div className="bbb-placeholder font-mono text-sm">Loading networks...</div>
             ) : (
-                <div className="cnssidebar-ui-31">
-                    {pathways.map(pw => (
-                        <div
-                            key={pw.id}
-                            onClick={() => onSelectPathway(pw.id.toString())}
-                            className={`cnssidebar-item ${activePathwayId === pw.id.toString() ? "cnssidebar-item--active" : ""}`}
-                        >
-                            <div className="cnssidebar-ui-30">
-                                <span>{pw.name}</span>
-                                {pw.is_favorite && <span className="cnssidebar-ui-29">★</span>}
-                            </div>
-                            {pw.description && (
-                                <div className="cnssidebar-ui-28">
-                                    {pw.description}
-                                </div>
-                            )}
+                <div className="cns-sidebar-list">
+                    {/* Show All option */}
+                    <div
+                        onClick={() => onSelectPathway('')}
+                        className={`cnssidebar-item ${!activePathwayId ? 'cnssidebar-item--active' : ''}`}
+                    >
+                        <div className="cns-sidebar-item-title">
+                            <span>Show All</span>
                         </div>
-                    ))}
+                    </div>
+
+                    {pathways.map(pw => {
+                        const pwId = pw.id.toString();
+                        return (
+                            <div
+                                key={pw.id}
+                                onClick={() => onSelectPathway(pwId)}
+                                className={`cnssidebar-item ${activePathwayId === pwId ? "cnssidebar-item--active" : ""}`}
+                            >
+                                <div className="cns-sidebar-item-title">
+                                    <span>{pw.name}</span>
+                                    {pw.is_favorite && <span className="cns-sidebar-favorite">★</span>}
+                                </div>
+                                {pw.description && (
+                                    <div className="cns-sidebar-description">
+                                        {pw.description}
+                                    </div>
+                                )}
+                                <div className="cns-sidebar-actions">
+                                    <button
+                                        className="cns-sidebar-action-btn cns-sidebar-action-btn--launch"
+                                        onClick={(e) => handleLaunch(e, pwId)}
+                                        title="Launch Spike Train"
+                                    >
+                                        <Play size={12} />
+                                    </button>
+                                    <button
+                                        className="cns-sidebar-action-btn"
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/cns/monitor/${pwId}`); }}
+                                        title="View Graph"
+                                    >
+                                        <Eye size={12} />
+                                    </button>
+                                    <button
+                                        className="cns-sidebar-action-btn"
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/cns/edit/${pwId}`); }}
+                                        title="Edit Graph"
+                                    >
+                                        <Edit size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>

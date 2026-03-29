@@ -6,11 +6,11 @@ import { LayoutShell } from './components/LayoutShell';
 import { BrainView } from './pages/BrainView';
 import { FrontalIndex } from './pages/FrontalIndex';
 import { FrontalSession } from './pages/FrontalSession';
-import { CNSStub } from './pages/CNSStub';
+import { CNSPage } from './pages/CNSPage';
 import { CNSEditStub } from './pages/CNSEditStub';
 import { CNSMonitorStub } from './pages/CNSMonitorStub';
 import { TemporalStub } from './pages/TemporalStub';
-import { PFCStub } from './pages/PFCStub';
+import { PFCPage } from './pages/PFCPage';
 import { IdentityStub } from './pages/IdentityStub';
 import { IdentityDetailStub } from './pages/IdentityDetailStub';
 import { PNSStub } from './pages/PNSStub';
@@ -28,11 +28,11 @@ function App() {
                                     <Route index element={<FrontalIndex />} />
                                     <Route path=":sessionId" element={<FrontalSession />} />
                                 </Route>
-                                <Route path="cns" element={<CNSStub />} />
+                                <Route path="cns" element={<CNSPage />} />
                                 <Route path="cns/edit/:pathwayId" element={<CNSEditStub />} />
                                 <Route path="cns/monitor/:pathwayId" element={<CNSMonitorStub />} />
                                 <Route path="temporal" element={<TemporalStub />} />
-                                <Route path="pfc" element={<PFCStub />} />
+                                <Route path="pfc" element={<PFCPage />} />
                                 <Route path="identity" element={<IdentityStub />} />
                                 <Route path="identity/:discId" element={<IdentityDetailStub />} />
                                 <Route path="pns" element={<PNSStub />} />
