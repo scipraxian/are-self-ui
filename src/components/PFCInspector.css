@@ -1,9 +1,9 @@
 /* Inspector layout structure */
 .pfc-inspector {
-    display: flex;
     flex-direction: column;
     height: 100%;
     position: relative;
+    overflow: visible;
 }
 
 .pfc-inspector-header {
@@ -12,12 +12,12 @@
 }
 
 .pfc-inspector-body {
-    flex: 1;
-    overflow-y: auto;
+    flex: none;
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    overflow: visible;
 }
 
 .pfc-inspector-body::-webkit-scrollbar {
@@ -154,7 +154,7 @@
     padding: 8px 10px;
     font-family: JetBrains Mono, monospace;
     font-size: 0.8rem;
-    min-height: 60px;
+    min-height: 100px;
     resize: vertical;
     outline: none;
 }
