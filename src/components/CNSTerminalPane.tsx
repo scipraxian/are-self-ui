@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SearchAddon } from 'xterm-addon-search';
 import { useTerminal } from '../hooks/useTerminal';
 import { useSynapticCleft } from '../hooks/useSynapticCleft';
+import 'xterm/css/xterm.css';
 
 interface CNSTerminalPaneProps {
     title: string;
