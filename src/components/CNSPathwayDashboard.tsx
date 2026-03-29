@@ -24,6 +24,8 @@ export const CNSPathwayDashboard = ({ pathways, trains, searchQuery, isLoading }
     const filtered = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         let list = pathways;
+        // Hide pathways with no trains
+        list = list.filter(p => (trainsByPathway.get(p.id)?.length ?? 0) > 0);
         if (q) {
             list = list.filter(p => p.name.toLowerCase().includes(q));
         }
@@ -33,7 +35,7 @@ export const CNSPathwayDashboard = ({ pathways, trains, searchQuery, isLoading }
             if (!a.is_favorite && b.is_favorite) return 1;
             return a.name.localeCompare(b.name);
         });
-    }, [pathways, searchQuery]);
+    }, [pathways, searchQuery, trainsByPathway]);
 
     if (isLoading) {
         return (

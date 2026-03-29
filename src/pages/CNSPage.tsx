@@ -85,11 +85,7 @@ export function CNSPage() {
                     isLoading={isLoading}
                 />
             }
-            right={
-                <div className="cns-dash-right-empty">
-                    <p>Select a pathway to view execution history.</p>
-                </div>
-            }
+            right={null}
         />
     );
 }

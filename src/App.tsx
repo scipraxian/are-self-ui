@@ -14,7 +14,8 @@ import { PFCPage } from './pages/PFCPage';
 import { IdentityStub } from './pages/IdentityStub';
 import { IdentityDetailStub } from './pages/IdentityDetailStub';
 import { PNSStub } from './pages/PNSStub';
-import { CNSTrainTimelinePlaceholder } from './pages/CNSTrainTimelinePlaceholder';
+import { CNSTrainTimeline } from './pages/CNSTrainTimeline';
+import { CNSSpikeForensicsPlaceholder } from './pages/CNSSpikeForensicsPlaceholder';
 
 function App() {
     return (
@@ -30,7 +31,8 @@ function App() {
                                     <Route path=":sessionId" element={<FrontalSession />} />
                                 </Route>
                                 <Route path="cns" element={<CNSPage />} />
-                                <Route path="cns/pathway/:pathwayId" element={<CNSTrainTimelinePlaceholder />} />
+                                <Route path="cns/pathway/:pathwayId" element={<CNSTrainTimeline />} />
+                                <Route path="cns/spike/:spikeId" element={<CNSSpikeForensicsPlaceholder />} />
                                 <Route path="cns/edit/:pathwayId" element={<CNSEditStub />} />
                                 <Route path="cns/monitor/:pathwayId" element={<CNSMonitorStub />} />
                                 <Route path="temporal" element={<TemporalStub />} />
