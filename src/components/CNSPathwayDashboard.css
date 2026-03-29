@@ -1,0 +1,37 @@
+.cns-dashboard {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.cns-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 4px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.cns-dashboard-loading,
+.cns-dashboard-empty {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 48px 16px;
+}
+
+.cns-dash-right-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 20px;
+}
