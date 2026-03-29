@@ -41,22 +41,38 @@ export const CNSTerminalPane = ({
         contentRef.current += (contentRef.current ? '\n' : '') + line;
     }, []);
 
-    // Terminal attach + historical hydration
+    // Terminal attach + historical hydration — defer until container has real dimensions
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
 
-        open(container);
+        let opened = false;
 
-        if (initialContent) {
-            clear();
-            const lines = initialContent.split(/\r?\n/);
-            for (const line of lines) {
-                writeln(line);
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            if (!entry) return;
+
+            const { width, height } = entry.contentRect;
+            if (width > 0 && height > 0 && !opened) {
+                opened = true;
+                observer.disconnect();
+
+                open(container);
+
+                if (initialContent) {
+                    clear();
+                    const lines = initialContent.split(/\r?\n/);
+                    for (const line of lines) {
+                        writeln(line);
+                    }
+                }
             }
-        }
+        });
+
+        observer.observe(container);
 
         return () => {
+            observer.disconnect();
             serializeIfNeeded();
             dispose();
         };

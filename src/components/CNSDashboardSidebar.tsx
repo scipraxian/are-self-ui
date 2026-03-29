@@ -99,8 +99,6 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
 
     return (
         <div className="cns-dash-sidebar">
-            <h2 className="glass-panel-title">CENTRAL NERVOUS SYSTEM</h2>
-
             <div className="cns-dash-env">
                 <label className="cns-dash-env-label">ENVIRONMENT</label>
                 <select

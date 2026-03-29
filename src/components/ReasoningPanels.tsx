@@ -1,6 +1,6 @@
 import "./ReasoningPanels.css";
 import { type ReactNode, useEffect, useState } from 'react';
-import { Power, RefreshCw, LogOut, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';
+import { Power, RefreshCw, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';
 import type {
     GraphNode,
     ModelUsageRecord,
@@ -61,11 +61,11 @@ const Accordion = ({ title, color, open = false, children }: AccordionProps) => 
 interface ReasoningSidebarProps {
     activeSessionId: string | null;
     onSelectSession: (id: string) => void;
-    onExit: () => void;
+    onExit?: () => void;
     onToggleChat: () => void;
 }
 
-export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onToggleChat }: ReasoningSidebarProps) => {
+export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleChat }: ReasoningSidebarProps) => {
     const [sessions, setSessions] = useState<ReasoningSessionData[]>([]);
 
     useEffect(() => {
@@ -146,9 +146,6 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onExit, onT
                             </button>
                         </>
                     )}
-                    <button className="btn-ghost sidebar-btn--exit" onClick={onExit}>
-                        <LogOut size={14} /> EXIT TO MAP
-                    </button>
                 </div>
             )}
         </div>

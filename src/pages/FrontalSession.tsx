@@ -55,7 +55,6 @@ export function FrontalSession() {
                 <ReasoningSidebar
                     activeSessionId={sessionId}
                     onSelectSession={(id) => navigate(`/frontal/${id}`)}
-                    onExit={() => navigate('/')}
                     onToggleChat={() => setIsSessionChatOpen((prev) => !prev)}
                 />
             }

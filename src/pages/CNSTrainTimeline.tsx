@@ -5,12 +5,14 @@ import { ThreePanel } from '../components/ThreePanel';
 import { CNSTrainSidebar } from '../components/CNSTrainSidebar';
 import { CNSTrainStack } from '../components/CNSTrainStack';
 import { useDendrite } from '../components/SynapticCleft';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway, SpikeTrain } from '../types';
 
 export function CNSTrainTimeline() {
     const { pathwayId } = useParams<{ pathwayId: string }>();
     const navigate = useNavigate();
+    const { setOverrides } = useBreadcrumbs();
     const [pathway, setPathway] = useState<NeuralPathway | null>(null);
     const [trains, setTrains] = useState<SpikeTrain[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +47,14 @@ export function CNSTrainTimeline() {
         fetchPathway();
         fetchTrains();
     }, [fetchPathway, fetchTrains]);
+
+    // Set breadcrumb overrides with pathway name
+    useEffect(() => {
+        if (pathway && pathwayId) {
+            setOverrides([{ segment: pathwayId, label: pathway.name }]);
+        }
+        return () => setOverrides([]);
+    }, [pathway, pathwayId, setOverrides]);
 
     // Real-time updates
     const spikeTrainEvent = useDendrite('SpikeTrain', null);

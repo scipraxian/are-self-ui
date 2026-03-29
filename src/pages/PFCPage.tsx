@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ThreePanel } from '../components/ThreePanel';
 import { PrefrontalCortex } from '../components/PrefrontalCortex';
 import { PFCInspector } from '../components/PFCInspector';
@@ -7,7 +6,6 @@ import { PFCNavTree } from '../components/PFCNavTree';
 import type { PFCAgileItem } from '../types';
 
 export function PFCPage() {
-    const navigate = useNavigate();
     const [selectedPfcItem, setSelectedPfcItem] = useState<PFCAgileItem | null>(null);
     const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
     const [createModalType, setCreateModalType] = useState<'EPIC' | 'STORY' | 'TASK' | null>(null);
@@ -32,9 +30,6 @@ export function PFCPage() {
             }
             center={
                 <div className="glass-panel three-panel-center-stage">
-                    <button className="panel-close-btn" onClick={() => navigate('/')}>
-                        ✕
-                    </button>
                     <PrefrontalCortex
                         onItemSelect={setSelectedPfcItem}
                         selectedItemId={selectedPfcItem?.id}

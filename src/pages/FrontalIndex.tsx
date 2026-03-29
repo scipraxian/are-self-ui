@@ -11,7 +11,6 @@ export function FrontalIndex() {
                 <ReasoningSidebar
                     activeSessionId={null}
                     onSelectSession={(id) => navigate(id)}
-                    onExit={() => navigate('/')}
                     onToggleChat={() => {}}
                 />
             }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BackgroundCanvas } from './BackgroundCanvas';
-import { HamburgerMenu } from './HamburgerMenu';
+import { NavBar } from './NavBar';
 import { useGABA } from '../context/GABAProvider';
 import './LayoutShell.css';
 
@@ -47,7 +47,7 @@ export function LayoutShell() {
 
             {/* UI layer */}
             <div className="layout-ui">
-                <HamburgerMenu />
+                <NavBar />
 
                 {/* Lobe page content via React Router */}
                 <Outlet />

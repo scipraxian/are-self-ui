@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { CNSTerminalPane } from '../components/CNSTerminalPane';
 import { CNSMetaPill } from '../components/CNSMetaPill';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 
 interface SpikeDetail {
     id: string;
@@ -55,6 +56,7 @@ const shortHash = (id: string): string => {
 export function CNSSpikeForensics() {
     const { spikeId } = useParams<{ spikeId: string }>();
     const navigate = useNavigate();
+    const { setOverrides } = useBreadcrumbs();
     const [spike, setSpike] = useState<SpikeDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -75,6 +77,16 @@ export function CNSSpikeForensics() {
     useEffect(() => {
         fetchSpike();
     }, [fetchSpike]);
+
+    // Set breadcrumb overrides with effector name and spike hash
+    useEffect(() => {
+        if (spike && spikeId) {
+            setOverrides([
+                { segment: spikeId, label: spike.effector_name + ' ' + shortHash(String(spike.id)) },
+            ]);
+        }
+        return () => setOverrides([]);
+    }, [spike, spikeId, setOverrides]);
 
     // ESC navigates back (only when search is not open — search handles its own ESC)
     useEffect(() => {
@@ -103,9 +115,6 @@ export function CNSSpikeForensics() {
             <div className="spike-forensics">
                 <div className="spike-forensics-loading">
                     Spike not found.
-                    <button className="spike-forensics-back-btn" onClick={() => navigate(-1)} style={{ marginLeft: 12 }}>
-                        &larr; Back
-                    </button>
                 </div>
             </div>
         );
@@ -117,14 +126,6 @@ export function CNSSpikeForensics() {
     return (
         <div className="spike-forensics">
             <div className="spike-forensics-header">
-                <div className="spike-forensics-breadcrumb">
-                    <button className="spike-forensics-back-btn" onClick={() => navigate(-1)}>
-                        &larr; Back
-                    </button>
-                    <span className="spike-forensics-breadcrumb-sep">/</span>
-                    <span className="spike-forensics-breadcrumb-name">{spike.effector_name}</span>
-                    <span className="spike-forensics-breadcrumb-hash">{shortHash(String(spike.id))}</span>
-                </div>
                 <div className="spike-forensics-meta">
                     <CNSMetaPill label="EFFECTOR" value={spike.effector_name} />
                     <CNSMetaPill label="STATUS" value={spike.status_name} variant={statusVariant} />

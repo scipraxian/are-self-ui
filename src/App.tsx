@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@lobehub/ui';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GABAProvider } from './context/GABAProvider';
+import { BreadcrumbProvider } from './context/BreadcrumbProvider';
 import { SynapticCleftProvider } from './components/SynapticCleft';
 import { LayoutShell } from './components/LayoutShell';
 import { BrainView } from './pages/BrainView';
@@ -22,6 +23,7 @@ function App() {
         <SynapticCleftProvider>
             <ThemeProvider themeMode="dark">
                 <BrowserRouter>
+                    <BreadcrumbProvider>
                     <GABAProvider>
                         <Routes>
                             <Route element={<LayoutShell />}>
@@ -43,6 +45,7 @@ function App() {
                             </Route>
                         </Routes>
                     </GABAProvider>
+                    </BreadcrumbProvider>
                 </BrowserRouter>
             </ThemeProvider>
         </SynapticCleftProvider>

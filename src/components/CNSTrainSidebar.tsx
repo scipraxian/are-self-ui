@@ -72,10 +72,6 @@ export const CNSTrainSidebar = ({ pathway, trains, pathwayId }: CNSTrainSidebarP
 
     return (
         <div className="cns-train-sidebar">
-            <button className="cns-train-sidebar-back" onClick={() => navigate('/cns')}>
-                &larr; Back to Dashboard
-            </button>
-
             <h2 className="cns-train-sidebar-title">
                 {pathway?.name || `Pathway #${pathwayId}`}
             </h2>
