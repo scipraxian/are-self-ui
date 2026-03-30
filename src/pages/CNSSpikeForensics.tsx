@@ -78,14 +78,37 @@ export function CNSSpikeForensics() {
         fetchSpike();
     }, [fetchSpike]);
 
-    // Breadcrumbs
+
+    // breadcrumbs
     useEffect(() => {
-        if (spike && spikeId) {
+        if (!spike || !spike.spike_train) {
             setCrumbs([
                 { label: 'Central Nervous System', path: '/cns' },
-                { label: `${spike.effector_name} ${shortHash(String(spike.id))}`, path: `/cns/spike/${spikeId}` },
             ]);
+            return;
         }
+
+        const fetchContext = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/spiketrains/${spike.spike_train}/`);
+                if (res.ok) {
+                    const train = await res.json();
+                    setCrumbs([
+                        { label: 'Central Nervous System', path: '/cns' },
+                        { label: train.pathway_name, path: `/cns/pathway/${train.pathway}` },
+                        { label: `${spike.effector_name} #${shortHash(String(spike.id))}`, path: `/cns/spike/${spikeId}` },
+                    ]);
+                }
+            } catch {
+                // Fallback — no pathway context
+                setCrumbs([
+                    { label: 'Central Nervous System', path: '/cns' },
+                    { label: `${spike.effector_name} #${shortHash(String(spike.id))}`, path: `/cns/spike/${spikeId}` },
+                ]);
+            }
+        };
+
+        fetchContext();
         return () => setCrumbs([]);
     }, [spike, spikeId, setCrumbs]);
 
