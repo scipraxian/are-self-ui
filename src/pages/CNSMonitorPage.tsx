@@ -1,11 +1,12 @@
 import './CNSMonitorPage.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ReactFlow, {
     Background,
     Controls,
     ReactFlowProvider,
     useReactFlow,
+    type Node,
     type NodeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -20,17 +21,50 @@ import { useSpikeSet } from '../context/SpikeSetProvider';
 import { apiFetch } from '../api';
 import type { Spike, SpikeTrain, Neuron, Axon } from '../types';
 
+/* ── Local interfaces ────────────────────────────────────── */
+
 interface PathwayDetail {
-    id: number;
+    id: string;
     name: string;
     description: string;
     neurons: Neuron[];
     axons: Axon[];
 }
 
+interface NeuronMonitorData {
+    label: string;
+    effectorName: string | null;
+    is_root: boolean;
+    invoked_pathway_name: string | null;
+    invoked_pathway_id: string | null;
+    spikeStatus: SpikeStatus;
+    spike: Spike | null;
+    spikeId: string | undefined;
+}
+
+interface MonitorFlowNode {
+    id: string;
+    type: 'neuronMonitor';
+    position: { x: number; y: number };
+    data: NeuronMonitorData;
+    sourceData: Neuron;
+}
+
+interface ParentContext {
+    parentTrainId?: string;
+    parentPathwayName?: string;
+    parentPathwayId?: string;
+}
+
+type SpikeStatus = 'unrun' | 'running' | 'success' | 'failed' | 'pending';
+
+/* ── Constants ───────────────────────────────────────────── */
+
 const nodeTypes = { neuronMonitor: NeuronMonitorNode };
 
-function getSpikeStatus(statusName: string): 'unrun' | 'running' | 'success' | 'failed' | 'pending' {
+/* ── Utility functions ───────────────────────────────────── */
+
+function getSpikeStatus(statusName: string): SpikeStatus {
     const s = statusName.toLowerCase();
     if (s.includes('success') || s.includes('completed') || s.includes('done')) return 'success';
     if (s.includes('fail') || s.includes('error') || s.includes('abort')) return 'failed';
@@ -55,7 +89,7 @@ function isFailedStatus(statusName: string): boolean {
     return s.includes('fail') || s.includes('error') || s.includes('abort');
 }
 
-function parsePosition(uiJson: unknown): { x: number; y: number } {
+function parsePosition(uiJson: string | { x: number; y: number } | null): { x: number; y: number } {
     if (!uiJson) return { x: 0, y: 0 };
     try {
         const data = typeof uiJson === 'string' ? JSON.parse(uiJson) : uiJson;
@@ -78,6 +112,17 @@ function formatDuration(created: string, modified: string): string {
     const rem = (s % 60).toFixed(0);
     return `${m}m ${rem}s`;
 }
+
+function spikeVariant(spike: Spike | null): 'default' | 'success' | 'failed' | 'running' {
+    if (!spike) return 'default';
+    const status = getSpikeStatus(spike.status_name);
+    if (status === 'success') return 'success';
+    if (status === 'failed') return 'failed';
+    if (status === 'running' || status === 'pending') return 'running';
+    return 'default';
+}
+
+/* ── Inner graph component (needs ReactFlowProvider) ─────── */
 
 function MonitorGraph({
     pathway,
@@ -106,9 +151,9 @@ function MonitorGraph({
         return map;
     }, [train]);
 
-    const flowNodes = useMemo(() => {
+    const flowNodes: MonitorFlowNode[] = useMemo(() => {
         return pathway.neurons.map(neuron => {
-            const spike = spikeMap.get(String(neuron.id)) || null;
+            const spike = spikeMap.get(String(neuron.id)) ?? null;
             const spikeStatus = spike ? getSpikeStatus(spike.status_name) : 'unrun';
 
             return {
@@ -176,13 +221,15 @@ function MonitorGraph({
     }, [flowNodes, autoPan, reactFlowInstance]);
 
     const handleNodeClick: NodeMouseHandler = useCallback((event, node) => {
-        const spike = spikeMap.get(node.id) || null;
-        const neuron = (node as unknown as { sourceData: Neuron }).sourceData;
+        const typedNode = node as Node<NeuronMonitorData> & { sourceData: Neuron };
+        const spike = spikeMap.get(node.id) ?? null;
+        const neuron = typedNode.sourceData;
         onNodeClick(node.id, spike, neuron, event as unknown as React.MouseEvent);
     }, [spikeMap, onNodeClick]);
 
     const handleNodeDoubleClick: NodeMouseHandler = useCallback((_event, node) => {
-        const neuron = (node as unknown as { sourceData: Neuron }).sourceData;
+        const typedNode = node as Node<NeuronMonitorData> & { sourceData: Neuron };
+        const neuron = typedNode.sourceData;
         onNodeDoubleClick(node.id, neuron);
     }, [onNodeDoubleClick]);
 
@@ -193,6 +240,7 @@ function MonitorGraph({
             onNodeClick={handleNodeClick}
             onNodeDoubleClick={handleNodeDoubleClick}
             nodeTypes={nodeTypes}
+            zoomOnDoubleClick={false}
             nodesDraggable={false}
             nodesConnectable={false}
             elementsSelectable
@@ -204,10 +252,16 @@ function MonitorGraph({
     );
 }
 
+/* ── Page component ──────────────────────────────────────── */
+
 export function CNSMonitorPage() {
     const { spiketrainId } = useParams<{ spiketrainId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { setCrumbs } = useBreadcrumbs();
+    const { addSpike } = useSpikeSet();
+
+    const parentContext = (location.state as ParentContext) || null;
 
     const [pathway, setPathway] = useState<PathwayDetail | null>(null);
     const [train, setTrain] = useState<SpikeTrain | null>(null);
@@ -216,42 +270,73 @@ export function CNSMonitorPage() {
     const [selectedNeuron, setSelectedNeuron] = useState<Neuron | null>(null);
     const [autoPan, setAutoPan] = useState(false);
 
-    // Fetch the specific train, then its pathway
-    const fetchTrain = useCallback(async () => {
-        if (!spiketrainId) return;
-        try {
-            const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
-            if (!res.ok) return;
-            const trainData: SpikeTrain = await res.json();
-            setTrain(trainData);
-            const pwId = String(trainData.pathway);
-            setPathwayId(pwId);
+// Remove refetchTick state entirely
+// Remove the two dendrite useEffect blocks entirely
 
-            // Fetch the pathway blueprint
-            const pwRes = await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pwId)}/`);
-            if (!pwRes.ok) return;
-            const pwData = await pwRes.json();
-            setPathway(pwData);
-        } catch (err) {
-            console.error('Failed to fetch train/pathway', err);
-        }
-    }, [spiketrainId]);
+// Real-time events — these change reference when a new event fires
+    const spikeEvent = useDendrite('Spike', null);
+    const trainEvent = useDendrite('SpikeTrain', null);
 
+// Single effect that refetches when spiketrainId OR any dendrite event changes
     useEffect(() => {
-        fetchTrain();
-    }, [fetchTrain]);
+        if (!spiketrainId) return;
 
-    // Breadcrumbs
+        let cancelled = false;
+
+        const load = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
+                if (!res.ok || cancelled) return;
+                const trainData = (await res.json()) as SpikeTrain;
+                if (cancelled) return;
+                setTrain(trainData);
+                const pwId = String(trainData.pathway);
+                setPathwayId(pwId);
+
+                const pwRes = await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pwId)}/`);
+                if (!pwRes.ok || cancelled) return;
+                const pwData = (await pwRes.json()) as PathwayDetail;
+                if (cancelled) return;
+                setPathway(pwData);
+            } catch (err) {
+                console.error('Failed to fetch train/pathway', err);
+            }
+        };
+
+        load();
+        return () => { cancelled = true; };
+    }, [spiketrainId, spikeEvent, trainEvent]);
+
+    // Breadcrumbs — include parent context if we drilled from a parent train
     useEffect(() => {
         if (pathway && spiketrainId) {
-            setCrumbs([
+            const crumbs = [
                 { label: 'Central Nervous System', path: '/cns' },
-                { label: pathway.name, path: `/cns/pathway/${pathway.id}` },
-                { label: `Train #${spiketrainId.slice(0, 6).toUpperCase()}`, path: `/cns/spiketrain/${spiketrainId}` },
-            ]);
+            ];
+
+            if (parentContext?.parentPathwayName && parentContext.parentPathwayId) {
+                crumbs.push({
+                    label: parentContext.parentPathwayName,
+                    path: `/cns/pathway/${parentContext.parentPathwayId}`,
+                });
+            }
+            if (parentContext?.parentTrainId) {
+                crumbs.push({
+                    label: `Train #${parentContext.parentTrainId.slice(0, 6).toUpperCase()}`,
+                    path: `/cns/spiketrain/${parentContext.parentTrainId}`,
+                });
+            }
+
+            crumbs.push({ label: pathway.name, path: `/cns/pathway/${pathway.id}` });
+            crumbs.push({
+                label: `Train #${spiketrainId.slice(0, 6).toUpperCase()}`,
+                path: `/cns/spiketrain/${spiketrainId}`,
+            });
+
+            setCrumbs(crumbs);
         }
         return () => setCrumbs([]);
-    }, [pathway, spiketrainId, setCrumbs]);
+    }, [pathway, spiketrainId, parentContext, setCrumbs]);
 
     // Escape key → back to timeline
     useEffect(() => {
@@ -262,11 +347,6 @@ export function CNSMonitorPage() {
         return () => window.removeEventListener('keydown', handle);
     }, [navigate, pathwayId]);
 
-    // Real-time via useDendrite
-    const spikeEvent = useDendrite('Spike', null);
-    const trainEvent = useDendrite('SpikeTrain', null);
-    useEffect(() => { if (spikeEvent) fetchTrain(); }, [spikeEvent, fetchTrain]);
-    useEffect(() => { if (trainEvent) fetchTrain(); }, [trainEvent, fetchTrain]);
 
     // Launch new train
     const handleLaunch = useCallback(async () => {
@@ -278,38 +358,43 @@ export function CNSMonitorPage() {
         }
     }, [pathwayId]);
 
-    const { addSpike } = useSpikeSet();
+    const handleNodeClick = useCallback(
+        (_neuronId: string, spike: Spike | null, neuron: Neuron, event: React.MouseEvent) => {
+            if (event.shiftKey && spike) {
+                addSpike({
+                    spikeId: String(spike.id),
+                    label: neuron.effector_name || neuron.invoked_pathway_name || 'Unknown',
+                    trainHash: String(spiketrainId).slice(0, 6).toUpperCase(),
+                });
+            } else {
+                setSelectedSpike(spike);
+                setSelectedNeuron(neuron);
+            }
+        },
+        [addSpike, spiketrainId],
+    );
 
-    const handleNodeClick = useCallback((_neuronId: string, spike: Spike | null, neuron: Neuron, event: React.MouseEvent) => {
-        if (event.shiftKey && spike) {
-            addSpike({
-                spikeId: String(spike.id),
-                label: neuron.effector_name || neuron.invoked_pathway_name || 'Unknown',
-                trainHash: String(spiketrainId).slice(0, 6).toUpperCase(),
-            });
-        } else {
-            setSelectedSpike(spike);
-            setSelectedNeuron(neuron);
-        }
-    }, [addSpike, spiketrainId]);
+    const handleNodeDoubleClick = useCallback(
+        (_neuronId: string, neuron: Neuron) => {
+            if (!neuron.invoked_pathway) return;
 
-    const handleNodeDoubleClick = useCallback((_neuronId: string, neuron: Neuron) => {
-        if (neuron.invoked_pathway) {
-            navigate(`/cns/pathway/${neuron.invoked_pathway}`);
-        }
-    }, [navigate]);
+            const spike = train?.spikes?.find(s => String(s.neuron) === String(neuron.id));
+            if (spike?.child_trains && spike.child_trains.length > 0) {
+                navigate(`/cns/spiketrain/${spike.child_trains[0]}`, {
+                    state: {
+                        parentTrainId: spiketrainId,
+                        parentPathwayName: pathway?.name,
+                        parentPathwayId: pathwayId,
+                    } satisfies ParentContext,
+                });
+            } else {
+                navigate(`/cns/pathway/${neuron.invoked_pathway}`);
+            }
+        },
+        [train, navigate, spiketrainId, pathway, pathwayId],
+    );
 
     if (!spiketrainId) return null;
-
-    // Determine spike status variant for meta pill
-    const spikeVariant = (spike: Spike | null): 'default' | 'success' | 'failed' | 'running' => {
-        if (!spike) return 'default';
-        const status = getSpikeStatus(spike.status_name);
-        if (status === 'success') return 'success';
-        if (status === 'failed') return 'failed';
-        if (status === 'running' || status === 'pending') return 'running';
-        return 'default';
-    };
 
     return (
         <ThreePanel

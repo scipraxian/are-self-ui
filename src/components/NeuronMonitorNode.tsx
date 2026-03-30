@@ -1,5 +1,6 @@
 import './NeuronMonitorNode.css';
 import { Handle, Position } from 'reactflow';
+import { Network } from 'lucide-react';
 import type { Spike } from '../types';
 
 interface NeuronMonitorData {
@@ -46,9 +47,14 @@ export const NeuronMonitorNode = ({ data }: { data: NeuronMonitorData }) => {
                 <Handle type="target" position={Position.Left} id="in" className="neuron-monitor-handle neuron-monitor-handle--in" />
             )}
 
+            {data.invoked_pathway_id && (
+                <span className="neuron-monitor-subgraph-indicator" title="Sub-graph — double-click to drill">
+                    <Network size={10} />
+                </span>
+            )}
+
             <div className="neuron-monitor-body">
                 <div className="neuron-monitor-label">
-                    {data.invoked_pathway_id && <span className="neuron-monitor-subgraph-icon" title="Sub-graph — double-click to drill in">⧉ </span>}
                     {data.label}
                 </div>
                 {data.spike && (

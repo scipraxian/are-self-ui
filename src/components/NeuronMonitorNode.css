@@ -1,4 +1,5 @@
 .neuron-monitor-node {
+    position: relative;
     background: var(--bg-panel);
     border: 2px solid var(--border-glass);
     border-radius: 8px;
@@ -73,9 +74,14 @@
     border-width: 3px;
 }
 
-.neuron-monitor-subgraph-icon {
-    font-size: 0.75rem;
+.neuron-monitor-subgraph-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    color: #38bdf8;
     opacity: 0.7;
+    display: flex;
+    align-items: center;
 }
 
 .neuron-monitor-effector {

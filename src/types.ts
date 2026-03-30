@@ -40,7 +40,6 @@ export interface ToolCallData {
     arguments: string | Record<string, unknown>;
     result_payload: string;
     traceback: string;
-    // Older payloads may include a human-readable status name, newer ones often use a numeric `status` instead.
     status_name?: string;
     is_async: boolean;
 }
@@ -48,7 +47,6 @@ export interface ToolCallData {
 export interface ReasoningMessageRole {
     id?: number;
     name: string;
-    // Some backends also send a created timestamp on the role object; we ignore it in the UI.
     created?: string;
 }
 
@@ -133,7 +131,6 @@ export interface ReasoningSessionData {
     max_focus: number;
     total_xp: number;
     created: string;
-    // Goals may be absent on some sessions in the new schema.
     goals?: ReasoningGoalData[];
     turns: ReasoningTurnData[];
     engrams: TalosEngramData[];
@@ -155,6 +152,7 @@ export interface GraphLink {
     target: string | GraphNode;
     type: string;
 }
+
 // --- CNS GRAPH EDITOR TYPES ---
 
 export interface CNSEffector {
@@ -173,7 +171,7 @@ export interface CNSContextRow {
 }
 
 export interface CNSNeuron {
-    id: number | string; // string for 'temp_' nodes before DB sync
+    id: number | string;
     title: string;
     x: number;
     y: number;
@@ -181,7 +179,7 @@ export interface CNSNeuron {
     is_root: boolean;
     has_override: boolean;
     invoked_pathway_id?: string | null;
-    status_id?: number | string; // Used in monitor mode
+    status_id?: number | string;
 }
 
 export interface CNSWire {
@@ -190,8 +188,14 @@ export interface CNSWire {
     status_id: 'flow' | 'success' | 'fail';
 }
 
+/** Position data stored in neuron.ui_json */
+export interface NeuronPosition {
+    x: number;
+    y: number;
+}
+
 export interface Spike {
-    id: number;
+    id: string;
     status: number;
     status_name: string;
     neuron: number;
@@ -203,17 +207,27 @@ export interface Spike {
     result_code: number | null;
     delta?: string;
     average_delta?: string | number;
+    spike_train?: string;
+    pathway?: string;
+    invoked_pathway?: string | null;
+    child_trains?: string[];
+    provenance?: string | null;
+    provenance_train?: string | null;
+    application_log?: string;
+    execution_log?: string;
+    blackboard?: Record<string, unknown>;
 }
 
 export interface SpikeTrain {
-    id: number;
+    id: string;
     status: number;
     status_name: string;
-    pathway: number;
+    pathway: string;
     pathway_name: string;
     created: string;
     modified: string;
     spikes: Spike[];
+    parent_spike?: string | null;
 }
 
 export interface CNSTag {
@@ -229,12 +243,12 @@ export interface Effector {
 }
 
 export interface NeuralPathway {
-    id: number;
+    id: string;
     name: string;
     description: string;
     is_favorite: boolean;
     tags: CNSTag[];
-    ui_json: any; // We'll type this strictly later if you use React Flow
+    ui_json: string | NeuronPosition | null;
 }
 
 export interface Neuron {
@@ -242,9 +256,9 @@ export interface Neuron {
     pathway: number;
     effector: number | null;
     effector_name: string | null;
-    invoked_pathway: number | null;
+    invoked_pathway: string | null;
     invoked_pathway_name: string | null;
-    ui_json: any;
+    ui_json: string | NeuronPosition | null;
     is_root: boolean;
 }
 
@@ -257,7 +271,6 @@ export interface Axon {
     type_name: string;
 }
 
-// Add this new interface above PFCAgileItem
 export interface PFCCommentData {
     id: string;
     text: string;
@@ -265,7 +278,6 @@ export interface PFCCommentData {
     user?: { id: number; username: string } | null;
 }
 
-// Update PFCAgileItem
 export interface PFCAgileItem {
     id: string;
     item_type: 'EPIC' | 'STORY' | 'TASK';
@@ -280,9 +292,7 @@ export interface PFCAgileItem {
     parent_name?: string;
     parent_id?: string;
     environment?: { id: string; name: string } | null;
-    comments?: PFCCommentData[]; // <--- ADD THIS
-
-    // PFCTicketMixin Deep Fields
+    comments?: PFCCommentData[];
     perspective?: string;
     assertions?: string;
     outside?: string;
