@@ -1,7 +1,7 @@
 import "./CNSSidebar.css";
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, Edit } from 'lucide-react';
+import { Play, Edit } from 'lucide-react';
 import type { NeuralPathway } from "../types.ts";
 import { apiFetch } from '../api';
 
@@ -157,14 +157,7 @@ export const CNSSidebar: React.FC<CNSSidebarProps> = ({
                                     </button>
                                     <button
                                         className="cns-sidebar-action-btn"
-                                        onClick={(e) => { e.stopPropagation(); navigate(`/cns/monitor/${pwId}`); }}
-                                        title="View Graph"
-                                    >
-                                        <Eye size={12} />
-                                    </button>
-                                    <button
-                                        className="cns-sidebar-action-btn"
-                                        onClick={(e) => { e.stopPropagation(); navigate(`/cns/edit/${pwId}`); }}
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/cns/pathway/${pwId}/edit`); }}
                                         title="Edit Graph"
                                     >
                                         <Edit size={12} />

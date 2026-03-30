@@ -99,7 +99,7 @@ export function CNSTrainTimeline() {
                 isLoading ? (
                     <div className="cns-train-timeline-loading">Loading spike trains...</div>
                 ) : (
-                    <CNSTrainStack trains={trains} pathwayId={pathwayId || ''} />
+                    <CNSTrainStack trains={trains} />
                 )
             }
             right={null}

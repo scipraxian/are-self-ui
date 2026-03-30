@@ -5,7 +5,6 @@ import type { SpikeTrain } from '../types';
 
 interface CNSTrainStackProps {
     trains: SpikeTrain[];
-    pathwayId: string;
 }
 
 const getTrainStatus = (train: SpikeTrain): string => {
@@ -56,7 +55,7 @@ const shortHash = (id: number | string): string => {
     return '#' + s.slice(0, 6).toUpperCase();
 };
 
-export const CNSTrainStack = ({ trains, pathwayId }: CNSTrainStackProps) => {
+export const CNSTrainStack = ({ trains }: CNSTrainStackProps) => {
     const navigate = useNavigate();
 
     if (trains.length === 0) {
@@ -71,8 +70,8 @@ export const CNSTrainStack = ({ trains, pathwayId }: CNSTrainStackProps) => {
         navigate(`/cns/spike/${spikeId}`);
     };
 
-    const handleTrainClick = () => {
-        navigate(`/cns/monitor/${pathwayId}`);
+    const handleTrainClick = (trainId: string) => {
+        navigate(`/cns/spiketrain/${trainId}`);
     };
 
     return (
@@ -85,7 +84,7 @@ export const CNSTrainStack = ({ trains, pathwayId }: CNSTrainStackProps) => {
                     <div
                         key={train.id}
                         className={`cns-train-row cns-train-row--${status}`}
-                        onClick={handleTrainClick}
+                        onClick={() => handleTrainClick(String(train.id))}
                     >
                         <div className="cns-train-header">
                             <span className="cns-train-hash">{shortHash(train.id)}</span>

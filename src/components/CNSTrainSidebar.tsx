@@ -84,10 +84,7 @@ export const CNSTrainSidebar = ({ pathway, trains, pathwayId }: CNSTrainSidebarP
                 <button className="cns-train-sidebar-action cns-train-sidebar-action--launch" onClick={handleLaunch}>
                     &#9654; Launch New Train
                 </button>
-                <button className="cns-train-sidebar-action" onClick={() => navigate(`/cns/monitor/${pathwayId}`)}>
-                    &#8857; View Graph
-                </button>
-                <button className="cns-train-sidebar-action" onClick={() => navigate(`/cns/edit/${pathwayId}`)}>
+                <button className="cns-train-sidebar-action" onClick={() => navigate(`/cns/pathway/${pathwayId}/edit`)}>
                     &#9998; Edit Graph
                 </button>
             </div>

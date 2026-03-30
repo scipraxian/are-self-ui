@@ -17,7 +17,6 @@ import { CNSMetaPill } from '../components/CNSMetaPill';
 import { useDendrite } from '../components/SynapticCleft';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useSpikeSet } from '../context/SpikeSetProvider';
-import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { Spike, SpikeTrain, Neuron, Axon } from '../types';
 
@@ -82,34 +81,30 @@ function formatDuration(created: string, modified: string): string {
 
 function MonitorGraph({
     pathway,
-    trains,
-    selectedTrainId,
+    train,
     autoPan,
     onNodeClick,
     onNodeDoubleClick,
 }: {
     pathway: PathwayDetail;
-    trains: SpikeTrain[];
-    selectedTrainId: string;
+    train: SpikeTrain | null;
     autoPan: boolean;
     onNodeClick: (neuronId: string, spike: Spike | null, neuron: Neuron, event: React.MouseEvent) => void;
     onNodeDoubleClick: (neuronId: string, neuron: Neuron) => void;
 }) {
     const reactFlowInstance = useReactFlow();
 
-    const selectedTrain = trains.find(t => String(t.id) === selectedTrainId) || trains[0];
-
     const spikeMap = useMemo(() => {
         const map = new Map<string, Spike>();
-        if (selectedTrain?.spikes) {
-            for (const spike of selectedTrain.spikes) {
+        if (train?.spikes) {
+            for (const spike of train.spikes) {
                 if (spike.neuron) {
                     map.set(String(spike.neuron), spike);
                 }
             }
         }
         return map;
-    }, [selectedTrain]);
+    }, [train]);
 
     const flowNodes = useMemo(() => {
         return pathway.neurons.map(neuron => {
@@ -210,92 +205,68 @@ function MonitorGraph({
 }
 
 export function CNSMonitorPage() {
-    const { pathwayId } = useParams<{ pathwayId: string }>();
+    const { spiketrainId } = useParams<{ spiketrainId: string }>();
     const navigate = useNavigate();
     const { setCrumbs } = useBreadcrumbs();
-    const { selectedEnvironmentId } = useEnvironment();
 
     const [pathway, setPathway] = useState<PathwayDetail | null>(null);
-    const [trains, setTrains] = useState<SpikeTrain[]>([]);
-    const [selectedTrainId, setSelectedTrainId] = useState('');
+    const [train, setTrain] = useState<SpikeTrain | null>(null);
+    const [pathwayId, setPathwayId] = useState<string>('');
     const [selectedSpike, setSelectedSpike] = useState<Spike | null>(null);
     const [selectedNeuron, setSelectedNeuron] = useState<Neuron | null>(null);
     const [autoPan, setAutoPan] = useState(false);
 
+    // Fetch the specific train, then its pathway
+    const fetchTrain = useCallback(async () => {
+        if (!spiketrainId) return;
+        try {
+            const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
+            if (!res.ok) return;
+            const trainData: SpikeTrain = await res.json();
+            setTrain(trainData);
+            const pwId = String(trainData.pathway);
+            setPathwayId(pwId);
+
+            // Fetch the pathway blueprint
+            const pwRes = await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pwId)}/`);
+            if (!pwRes.ok) return;
+            const pwData = await pwRes.json();
+            setPathway(pwData);
+        } catch (err) {
+            console.error('Failed to fetch train/pathway', err);
+        }
+    }, [spiketrainId]);
+
+    useEffect(() => {
+        fetchTrain();
+    }, [fetchTrain]);
+
     // Breadcrumbs
     useEffect(() => {
-        if (pathway) {
+        if (pathway && spiketrainId) {
             setCrumbs([
                 { label: 'Central Nervous System', path: '/cns' },
-                { label: pathway.name, path: `/cns/pathway/${pathwayId}` },
-                { label: 'Monitor', path: `/cns/monitor/${pathwayId}` },
+                { label: pathway.name, path: `/cns/pathway/${pathway.id}` },
+                { label: `Train #${spiketrainId.slice(0, 6).toUpperCase()}`, path: `/cns/spiketrain/${spiketrainId}` },
             ]);
         }
         return () => setCrumbs([]);
-    }, [pathway, pathwayId, setCrumbs]);
+    }, [pathway, spiketrainId, setCrumbs]);
 
-    // Escape key
+    // Escape key → back to timeline
     useEffect(() => {
         const handle = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') navigate(`/cns/pathway/${pathwayId}`);
+            if (e.key === 'Escape' && pathwayId) navigate(`/cns/pathway/${pathwayId}`);
         };
         window.addEventListener('keydown', handle);
         return () => window.removeEventListener('keydown', handle);
     }, [navigate, pathwayId]);
 
-    // Fetch pathway
-    const fetchPathway = useCallback(async () => {
-        if (!pathwayId) return;
-        try {
-            const res = await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/`);
-            if (!res.ok) return;
-            const data = await res.json();
-            setPathway(data);
-        } catch (err) {
-            console.error('Failed to fetch pathway', err);
-        }
-    }, [pathwayId]);
-
-    // Fetch trains
-    const fetchTrains = useCallback(async () => {
-        if (!pathwayId) return;
-        try {
-            let url = `/api/v2/spiketrains/?pathway=${encodeURIComponent(pathwayId)}&ordering=-created&limit=10`;
-            if (selectedEnvironmentId) {
-                url += `&environment=${encodeURIComponent(selectedEnvironmentId)}`;
-            }
-            const res = await apiFetch(url);
-            if (!res.ok) return;
-            const data = await res.json();
-            const list: SpikeTrain[] = Array.isArray(data) ? data : data.results ?? [];
-            setTrains(list);
-
-            // Auto-select: prefer a running train, else first
-            if (list.length > 0) {
-                setSelectedTrainId(prev => {
-                    // Keep current selection if it still exists
-                    if (prev && list.some(t => String(t.id) === prev)) return prev;
-                    const running = list.find(t => {
-                        const s = t.status_name.toLowerCase();
-                        return s.includes('running') || s.includes('active');
-                    });
-                    return String((running || list[0]).id);
-                });
-            }
-        } catch (err) {
-            console.error('Failed to fetch trains', err);
-        }
-    }, [pathwayId, selectedEnvironmentId]);
-
-    // Initial fetch
-    useEffect(() => { fetchPathway(); }, [fetchPathway]);
-    useEffect(() => { fetchTrains(); }, [fetchTrains]);
-
     // Real-time via useDendrite
     const spikeEvent = useDendrite('Spike', null);
     const trainEvent = useDendrite('SpikeTrain', null);
-    useEffect(() => { if (spikeEvent) fetchTrains(); }, [spikeEvent, fetchTrains]);
-    useEffect(() => { if (trainEvent) fetchTrains(); }, [trainEvent, fetchTrains]);
+    useEffect(() => { if (spikeEvent) fetchTrain(); }, [spikeEvent, fetchTrain]);
+    useEffect(() => { if (trainEvent) fetchTrain(); }, [trainEvent, fetchTrain]);
 
     // Launch new train
     const handleLaunch = useCallback(async () => {
@@ -314,23 +285,21 @@ export function CNSMonitorPage() {
             addSpike({
                 spikeId: String(spike.id),
                 label: neuron.effector_name || neuron.invoked_pathway_name || 'Unknown',
-                trainHash: String(selectedTrainId).slice(0, 6).toUpperCase(),
+                trainHash: String(spiketrainId).slice(0, 6).toUpperCase(),
             });
         } else {
             setSelectedSpike(spike);
             setSelectedNeuron(neuron);
         }
-    }, [addSpike, selectedTrainId]);
+    }, [addSpike, spiketrainId]);
 
     const handleNodeDoubleClick = useCallback((_neuronId: string, neuron: Neuron) => {
         if (neuron.invoked_pathway) {
-            navigate(`/cns/monitor/${neuron.invoked_pathway}`);
+            navigate(`/cns/pathway/${neuron.invoked_pathway}`);
         }
     }, [navigate]);
 
-    if (!pathwayId) return null;
-
-    const selectedTrain = trains.find(t => String(t.id) === selectedTrainId) || trains[0];
+    if (!spiketrainId) return null;
 
     // Determine spike status variant for meta pill
     const spikeVariant = (spike: Spike | null): 'default' | 'success' | 'failed' | 'running' => {
@@ -349,13 +318,12 @@ export function CNSMonitorPage() {
                 <CNSMonitorSidebar
                     pathwayName={pathway?.name || 'Loading...'}
                     pathwayDescription={pathway?.description || ''}
-                    trains={trains}
-                    selectedTrainId={selectedTrainId}
-                    onSelectTrain={setSelectedTrainId}
+                    pathwayId={pathwayId}
+                    train={train}
                     autoPan={autoPan}
                     onAutoPanChange={setAutoPan}
                     onLaunch={handleLaunch}
-                    onEdit={() => navigate(`/cns/edit/${pathwayId}`)}
+                    onEdit={() => navigate(`/cns/pathway/${pathwayId}/edit`)}
                     onBack={() => navigate(`/cns/pathway/${pathwayId}`)}
                 />
             }
@@ -364,8 +332,7 @@ export function CNSMonitorPage() {
                     <ReactFlowProvider>
                         <MonitorGraph
                             pathway={pathway}
-                            trains={trains}
-                            selectedTrainId={selectedTrainId}
+                            train={train}
                             autoPan={autoPan}
                             onNodeClick={handleNodeClick}
                             onNodeDoubleClick={handleNodeDoubleClick}
@@ -418,10 +385,10 @@ export function CNSMonitorPage() {
                             </div>
                         ) : null}
 
-                        {selectedTrain && (
+                        {train && (
                             <div className="cns-monitor-inspector-train">
-                                <CNSMetaPill label="Train" value={`#${String(selectedTrain.id).substring(0, 8)}`} />
-                                <CNSMetaPill label="Train Status" value={selectedTrain.status_name} />
+                                <CNSMetaPill label="Train" value={`#${String(train.id).substring(0, 8)}`} />
+                                <CNSMetaPill label="Train Status" value={train.status_name} />
                             </div>
                         )}
                     </div>

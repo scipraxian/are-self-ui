@@ -108,7 +108,7 @@ export const CNSPathwayCard = ({ pathway, trains }: CNSPathwayCardProps) => {
 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
-        navigate(`/cns/edit/${pathway.id}`);
+        navigate(`/cns/pathway/${pathway.id}/edit`);
     };
 
     const accentClass = lastStatus === 'success' ? 'cns-card--success'

@@ -10,7 +10,7 @@ import { BrainView } from './pages/BrainView';
 import { FrontalIndex } from './pages/FrontalIndex';
 import { FrontalSession } from './pages/FrontalSession';
 import { CNSPage } from './pages/CNSPage';
-import { CNSEditStub } from './pages/CNSEditStub';
+import { CNSEditPage } from './pages/CNSEditPage';
 import { CNSMonitorPage } from './pages/CNSMonitorPage';
 import { CNSSpikeSet } from './pages/CNSSpikeSet';
 import { TemporalStub } from './pages/TemporalStub';
@@ -37,12 +37,14 @@ function App() {
                                     <Route index element={<FrontalIndex />} />
                                     <Route path=":sessionId" element={<FrontalSession />} />
                                 </Route>
-                                <Route path="cns" element={<CNSPage />} />
-                                <Route path="cns/pathway/:pathwayId" element={<CNSTrainTimeline />} />
-                                <Route path="cns/spike/:spikeId" element={<CNSSpikeForensics />} />
-                                <Route path="cns/spikeset" element={<CNSSpikeSet />} />
-                                <Route path="cns/edit/:pathwayId" element={<CNSEditStub />} />
-                                <Route path="cns/monitor/:pathwayId" element={<CNSMonitorPage />} />
+                                <Route path="cns">
+                                    <Route index element={<CNSPage />} />
+                                    <Route path="pathway/:pathwayId" element={<CNSTrainTimeline />} />
+                                    <Route path="pathway/:pathwayId/edit" element={<CNSEditPage />} />
+                                    <Route path="spiketrain/:spiketrainId" element={<CNSMonitorPage />} />
+                                    <Route path="spike/:spikeId" element={<CNSSpikeForensics />} />
+                                    <Route path="spikeset" element={<CNSSpikeSet />} />
+                                </Route>
                                 <Route path="temporal" element={<TemporalStub />} />
                                 <Route path="pfc" element={<PFCPage />} />
                                 <Route path="identity" element={<IdentityStub />} />

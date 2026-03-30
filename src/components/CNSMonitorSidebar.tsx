@@ -4,9 +4,8 @@ import type { SpikeTrain } from '../types';
 interface CNSMonitorSidebarProps {
     pathwayName: string;
     pathwayDescription: string;
-    trains: SpikeTrain[];
-    selectedTrainId: string;
-    onSelectTrain: (id: string) => void;
+    pathwayId: string;
+    train: SpikeTrain | null;
     autoPan: boolean;
     onAutoPanChange: (enabled: boolean) => void;
     onLaunch: () => void;
@@ -16,18 +15,6 @@ interface CNSMonitorSidebarProps {
 
 function shortHash(id: number | string): string {
     return String(id).substring(0, 8);
-}
-
-function timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
 }
 
 function formatDuration(created: string, modified: string): string {
@@ -44,17 +31,13 @@ function formatDuration(created: string, modified: string): string {
 export function CNSMonitorSidebar({
     pathwayName,
     pathwayDescription,
-    trains,
-    selectedTrainId,
-    onSelectTrain,
+    train,
     autoPan,
     onAutoPanChange,
     onLaunch,
     onEdit,
     onBack,
 }: CNSMonitorSidebarProps) {
-    const selectedTrain = trains.find(t => String(t.id) === selectedTrainId) || trains[0];
-
     return (
         <div className="cns-monitor-sidebar">
             <h3 className="cns-monitor-sidebar-title font-display">{pathwayName}</h3>
@@ -62,35 +45,24 @@ export function CNSMonitorSidebar({
                 <p className="cns-monitor-sidebar-desc">{pathwayDescription}</p>
             )}
 
-            <div className="cns-monitor-sidebar-section">
-                <label className="cns-monitor-sidebar-label font-mono">SPIKE TRAIN</label>
-                <select
-                    className="cns-monitor-sidebar-select"
-                    value={selectedTrainId}
-                    onChange={(e) => onSelectTrain(e.target.value)}
-                >
-                    {trains.map(t => (
-                        <option key={t.id} value={String(t.id)}>
-                            #{shortHash(t.id)} — {t.status_name} — {timeAgo(t.created)}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            {selectedTrain && (
+            {train && (
                 <div className="cns-monitor-sidebar-stats">
                     <div className="cns-monitor-sidebar-stat">
+                        <span className="cns-monitor-sidebar-stat-label font-mono">TRAIN</span>
+                        <span className="cns-monitor-sidebar-stat-value">#{shortHash(train.id)}</span>
+                    </div>
+                    <div className="cns-monitor-sidebar-stat">
                         <span className="cns-monitor-sidebar-stat-label font-mono">STATUS</span>
-                        <span className="cns-monitor-sidebar-stat-value">{selectedTrain.status_name}</span>
+                        <span className="cns-monitor-sidebar-stat-value">{train.status_name}</span>
                     </div>
                     <div className="cns-monitor-sidebar-stat">
                         <span className="cns-monitor-sidebar-stat-label font-mono">SPIKES</span>
-                        <span className="cns-monitor-sidebar-stat-value">{selectedTrain.spikes?.length ?? 0}</span>
+                        <span className="cns-monitor-sidebar-stat-value">{train.spikes?.length ?? 0}</span>
                     </div>
                     <div className="cns-monitor-sidebar-stat">
                         <span className="cns-monitor-sidebar-stat-label font-mono">DURATION</span>
                         <span className="cns-monitor-sidebar-stat-value">
-                            {formatDuration(selectedTrain.created, selectedTrain.modified)}
+                            {formatDuration(train.created, train.modified)}
                         </span>
                     </div>
                 </div>

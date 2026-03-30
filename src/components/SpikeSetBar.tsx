@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Play } from 'lucide-react';
 import { useSpikeSet } from '../context/SpikeSetProvider';
 import './SpikeSetBar.css';
 
@@ -40,7 +41,7 @@ export const SpikeSetBar = () => {
                 onClick={handleCompare}
                 disabled={selectedSpikes.length < 2}
             >
-                Compare &blacktriangleright;
+                COMPARE <Play size={12} />
             </button>
         </div>
     );

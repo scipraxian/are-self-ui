@@ -1,7 +1,7 @@
 import './CNSDashboardSidebar.css';
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, Edit } from 'lucide-react';
+import { Play, Edit } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway } from '../types';
@@ -127,14 +127,7 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
                                         </button>
                                         <button
                                             className="cns-dash-action-btn"
-                                            onClick={() => navigate(`/cns/monitor/${pw.id}`)}
-                                            title="View Graph"
-                                        >
-                                            <Eye size={11} />
-                                        </button>
-                                        <button
-                                            className="cns-dash-action-btn"
-                                            onClick={() => navigate(`/cns/edit/${pw.id}`)}
+                                            onClick={() => navigate(`/cns/pathway/${pw.id}/edit`)}
                                             title="Edit Graph"
                                         >
                                             <Edit size={11} />

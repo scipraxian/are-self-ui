@@ -7,7 +7,7 @@ import { useGABA } from '../context/GABAProvider';
 import './LayoutShell.css';
 
 /** Routes where the 3D background should be hidden (full-screen graph takes over) */
-const GRAPH_ROUTE_PREFIXES = ['/frontal/', '/cns/edit/', '/cns/monitor/'];
+const GRAPH_ROUTE_PREFIXES = ['/frontal/', '/cns/pathway/', '/cns/spiketrain/'];
 
 function isGraphRoute(pathname: string): boolean {
     return GRAPH_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
