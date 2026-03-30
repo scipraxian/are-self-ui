@@ -86,26 +86,29 @@ export const NavBar = () => {
 
             {menuOpen && (
                 <div className="navbar-dropdown">
-                    <Link to="/" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Cortex
-                    </Link>
-                    <Link to="/frontal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Frontal Lobe / Reasoning
-                    </Link>
-                    <Link to="/temporal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Temporal Lobe / Iterations
-                    </Link>
                     <Link to="/cns" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         Central Nervous System
                     </Link>
-                    <Link to="/pfc" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Prefrontal Cortex
+                    <Link to="/" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Cortex
+                    </Link>
+                    <Link to="/environments" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Environments
+                    </Link>
+                    <Link to="/frontal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Frontal Lobe / Reasoning
                     </Link>
                     <Link to="/identity" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         Identity Ledger
                     </Link>
                     <Link to="/pns" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         Peripheral Nervous System / Fleet
+                    </Link>
+                    <Link to="/pfc" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Prefrontal Cortex
+                    </Link>
+                    <Link to="/temporal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Temporal Lobe / Iterations
                     </Link>
                 </div>
             )}

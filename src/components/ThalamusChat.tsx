@@ -319,7 +319,7 @@ const thalamusModelAdapter: ChatModelAdapter = {
 // ---------------------------------------------------------------------------
 
 const ChainOfThought: React.FC = () => (
-    <ChainOfThoughtPrimitive.Root className="thalamus-cot-root my-2">
+    <ChainOfThoughtPrimitive.Root className="thalamus-cot-root">
         <ChainOfThoughtPrimitive.AccordionTrigger className="thalamus-cot-trigger">
             <span>🤔 Thought Process</span>
         </ChainOfThoughtPrimitive.AccordionTrigger>

@@ -1,24 +1,59 @@
-/* FrontalSession – session chat overlay */
+/* FrontalSession – mode bar + stage layout */
 
-.frontal-session-chat-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20;
-    background-color: rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-}
-
-.frontal-session-chat-container {
-    pointer-events: auto;
-    width: 450px;
-    height: 70vh;
-    max-height: 800px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+.frontal-session-center {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.frontal-session-mode-bar {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 2px;
+    padding: 8px 12px 0;
+}
+
+.frontal-session-mode-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: #64748b;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 120ms ease, background 120ms ease;
+}
+
+.frontal-session-mode-tab:hover {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.frontal-session-mode-tab--active {
+    color: #e2e8f0;
+    background: var(--bg-panel);
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.frontal-session-stage {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+.frontal-session-stage .thalamus-chat {
+    height: 100%;
+    border: none;
+    border-radius: 0;
 }
 
 /* Cortex stats bar — glassmorphic overlay above graph */

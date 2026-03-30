@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Network, MessageSquare } from 'lucide-react';
 import { ThreePanel } from '../components/ThreePanel';
 import { ReasoningSidebar, ReasoningInspector } from '../components/ReasoningPanels';
 import { ReasoningGraph3D } from '../components/ReasoningGraph3D';
@@ -23,8 +24,9 @@ export function FrontalSession() {
     const { registerEscapeHandler } = useGABA();
     const { setCrumbs } = useBreadcrumbs();
 
+    type SessionViewMode = 'graph' | 'chat';
+    const [viewMode, setViewMode] = useState<SessionViewMode>('graph');
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-    const [isSessionChatOpen, setIsSessionChatOpen] = useState(false);
     const [cortexStats, setCortexStats] = useState<CortexStats | null>(null);
 
     // Breadcrumbs
@@ -45,17 +47,17 @@ export function FrontalSession() {
         }
     }, [sessionId, navigate]);
 
-    // ESC: close session chat first, then go back to /frontal
+    // ESC: switch from chat to graph first, then go back to /frontal
     useEffect(() => {
         const unregister = registerEscapeHandler(() => {
-            if (isSessionChatOpen) {
-                setIsSessionChatOpen(false);
+            if (viewMode === 'chat') {
+                setViewMode('graph');
             } else {
                 navigate('/frontal');
             }
         });
         return unregister;
-    }, [isSessionChatOpen, navigate, registerEscapeHandler]);
+    }, [viewMode, navigate, registerEscapeHandler]);
 
     if (!sessionId) return null;
 
@@ -68,47 +70,59 @@ export function FrontalSession() {
                 <ReasoningSidebar
                     activeSessionId={sessionId}
                     onSelectSession={(id) => navigate(`/frontal/${id}`)}
-                    onToggleChat={() => setIsSessionChatOpen((prev) => !prev)}
+                    onToggleChat={() => setViewMode((prev) => prev === 'chat' ? 'graph' : 'chat')}
                 />
             }
             center={
-                <>
-                    {cortexStats && (
-                        <div className="cortex-stats-bar">
-                            <div className={`cortex-stats-status ${isAlive ? 'cortex-stats-status--active' : ''}`}>
-                                {cortexStats.status}
+                <div className="frontal-session-center">
+                    <div className="frontal-session-mode-bar">
+                        <button
+                            className={`frontal-session-mode-tab ${viewMode === 'graph' ? 'frontal-session-mode-tab--active' : ''}`}
+                            onClick={() => setViewMode('graph')}
+                        >
+                            <Network size={14} /> Graph
+                        </button>
+                        <button
+                            className={`frontal-session-mode-tab ${viewMode === 'chat' ? 'frontal-session-mode-tab--active' : ''}`}
+                            onClick={() => setViewMode('chat')}
+                        >
+                            <MessageSquare size={14} /> Chat
+                        </button>
+                    </div>
+                    <div className="frontal-session-stage">
+                        {cortexStats && (
+                            <div className="cortex-stats-bar">
+                                <div className={`cortex-stats-status ${isAlive ? 'cortex-stats-status--active' : ''}`}>
+                                    {cortexStats.status}
+                                </div>
+                                <div className="cortex-stats-item">
+                                    <span className="cortex-stats-label">LVL</span>
+                                    <span className="cortex-stats-value">{cortexStats.level}</span>
+                                </div>
+                                <div className="cortex-stats-item">
+                                    <span className="cortex-stats-label">FOCUS</span>
+                                    <span className="cortex-stats-value">{cortexStats.focus}</span>
+                                </div>
+                                <div className="cortex-stats-item">
+                                    <span className="cortex-stats-label">XP</span>
+                                    <span className="cortex-stats-value">{cortexStats.xp}</span>
+                                </div>
                             </div>
-                            <div className="cortex-stats-item">
-                                <span className="cortex-stats-label">LVL</span>
-                                <span className="cortex-stats-value">{cortexStats.level}</span>
-                            </div>
-                            <div className="cortex-stats-item">
-                                <span className="cortex-stats-label">FOCUS</span>
-                                <span className="cortex-stats-value">{cortexStats.focus}</span>
-                            </div>
-                            <div className="cortex-stats-item">
-                                <span className="cortex-stats-label">XP</span>
-                                <span className="cortex-stats-value">{cortexStats.xp}</span>
-                            </div>
-                        </div>
-                    )}
-                    <ReasoningGraph3D
-                        sessionId={sessionId}
-                        onNodeSelect={setSelectedNode}
-                        onStatsUpdate={setCortexStats}
-                    />
-                    {isSessionChatOpen && (
-                        <div className="frontal-session-chat-overlay">
-                            <div className="frontal-session-chat-container">
-                                <SessionChat
-                                    sessionId={sessionId}
-                                    title="SESSION OVERRIDE"
-                                    onClose={() => setIsSessionChatOpen(false)}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </>
+                        )}
+                        {viewMode === 'graph' ? (
+                            <ReasoningGraph3D
+                                sessionId={sessionId}
+                                onNodeSelect={setSelectedNode}
+                                onStatsUpdate={setCortexStats}
+                            />
+                        ) : (
+                            <SessionChat
+                                sessionId={sessionId}
+                                title="SESSION NEURAL LINK"
+                            />
+                        )}
+                    </div>
+                </div>
             }
             right={<ReasoningInspector node={selectedNode} />}
         />
