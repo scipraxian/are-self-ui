@@ -1,86 +1,17 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import './NavBar.css';
 
-const BREADCRUMB_MAP: Record<string, string> = {
-    'frontal': 'Frontal Lobe',
-    'cns': 'Central Nervous System',
-    'temporal': 'Temporal Lobe',
-    'pfc': 'Prefrontal Cortex',
-    'identity': 'Identity Ledger',
-    'pns': 'Peripheral Nervous System',
-    'hippocampus': 'Hippocampus',
-    'hypothalamus': 'Hypothalamus',
-    'pathway': 'Pathway',
-    'spike': 'Spike',
-    'edit': 'Edit',
-    'monitor': 'Monitor',
-};
-
-interface Crumb {
-    path: string;
-    label: string;
-}
-
-function buildCrumbs(pathname: string, overrides: { segment: string; label: string }[]): Crumb[] {
-    const segments = pathname.split('/').filter(Boolean);
-    const crumbs: Crumb[] = [];
-    let accumulated = '';
-
-    for (let i = 0; i < segments.length; i++) {
-        const seg = segments[i];
-        accumulated += '/' + seg;
-
-        // Check overrides first
-        const override = overrides.find(o => o.segment === seg);
-        if (override) {
-            if (override.label) {
-                crumbs.push({ path: accumulated, label: override.label });
-            }
-            continue;
-        }
-
-        // Check static map
-        const mapped = BREADCRUMB_MAP[seg];
-        if (mapped) {
-            // Skip intermediate segments like "pathway", "spike", "edit", "monitor"
-            // if the next segment is a dynamic ID
-            if (['pathway', 'spike', 'edit', 'monitor'].includes(seg) && i + 1 < segments.length) {
-                continue;
-            }
-            crumbs.push({ path: accumulated, label: mapped });
-            continue;
-        }
-
-        // Dynamic segment — show as short hash
-        crumbs.push({ path: accumulated, label: '#' + seg.slice(0, 6).toUpperCase() });
-    }
-
-    return crumbs;
-}
-
 export const NavBar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
-    const location = useLocation();
     const { registerEscapeHandler } = useGABA();
-    const { overrides } = useBreadcrumbs();
+    const { crumbs } = useBreadcrumbs();
     const { environments, selectedEnvironmentId, setSelectedEnvironmentId } = useEnvironment();
-
-    const crumbs = buildCrumbs(location.pathname, overrides);
-
-    // Set document title
-    useEffect(() => {
-        if (crumbs.length > 0) {
-            document.title = crumbs[crumbs.length - 1].label + ' — Are-Self';
-        } else {
-            document.title = 'Are-Self';
-        }
-    }, [crumbs]);
 
     // Click outside closes dropdown
     useEffect(() => {

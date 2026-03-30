@@ -4,13 +4,21 @@ import { ThreePanel } from '../components/ThreePanel';
 import { CNSDashboardSidebar } from '../components/CNSDashboardSidebar';
 import { CNSPathwayDashboard } from '../components/CNSPathwayDashboard';
 import { useDendrite } from '../components/SynapticCleft';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway, SpikeTrain } from '../types';
 
 export function CNSPage() {
     const navigate = useNavigate();
+    const { setCrumbs } = useBreadcrumbs();
     const { selectedEnvironmentId } = useEnvironment();
+
+    // Breadcrumbs
+    useEffect(() => {
+        setCrumbs([{ label: 'Central Nervous System', path: '/cns' }]);
+        return () => setCrumbs([]);
+    }, [setCrumbs]);
     const [searchQuery, setSearchQuery] = useState('');
     const [pathways, setPathways] = useState<NeuralPathway[]>([]);
     const [trains, setTrains] = useState<SpikeTrain[]>([]);

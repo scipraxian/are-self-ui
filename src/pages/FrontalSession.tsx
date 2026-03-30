@@ -5,6 +5,7 @@ import { ReasoningSidebar, ReasoningInspector } from '../components/ReasoningPan
 import { ReasoningGraph3D } from '../components/ReasoningGraph3D';
 import { SessionChat } from '../components/SessionChat';
 import { useGABA } from '../context/GABAProvider';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import type { GraphNode } from '../types';
 import './FrontalSession.css';
 
@@ -20,10 +21,22 @@ export function FrontalSession() {
     const { sessionId } = useParams<{ sessionId: string }>();
     const navigate = useNavigate();
     const { registerEscapeHandler } = useGABA();
+    const { setCrumbs } = useBreadcrumbs();
 
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [isSessionChatOpen, setIsSessionChatOpen] = useState(false);
     const [cortexStats, setCortexStats] = useState<CortexStats | null>(null);
+
+    // Breadcrumbs
+    useEffect(() => {
+        if (sessionId) {
+            setCrumbs([
+                { label: 'Frontal Lobe', path: '/frontal' },
+                { label: `Session #${sessionId.slice(0, 6).toUpperCase()}`, path: `/frontal/${sessionId}` },
+            ]);
+        }
+        return () => setCrumbs([]);
+    }, [sessionId, setCrumbs]);
 
     // Redirect if no sessionId
     useEffect(() => {

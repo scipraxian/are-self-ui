@@ -1,0 +1,131 @@
+.cns-monitor-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cns-monitor-sidebar-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.cns-monitor-sidebar-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.cns-monitor-sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cns-monitor-sidebar-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.cns-monitor-sidebar-select {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: var(--font-mono), monospace;
+    font-size: 0.75rem;
+    padding: 8px 10px;
+    outline: none;
+    cursor: pointer;
+}
+
+.cns-monitor-sidebar-select:focus {
+    border-color: var(--accent-blue);
+}
+
+.cns-monitor-sidebar-select option {
+    background: #0f172a;
+    color: var(--text-primary);
+}
+
+.cns-monitor-sidebar-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.cns-monitor-sidebar-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cns-monitor-sidebar-stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.cns-monitor-sidebar-stat-value {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+}
+
+.cns-monitor-sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cns-monitor-sidebar-btn {
+    width: 100%;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.cns-monitor-sidebar-btn--launch {
+    background: var(--accent-blue);
+    color: #0f172a;
+    border: none;
+    font-weight: 700;
+}
+
+.cns-monitor-sidebar-btn--launch:hover {
+    background: #7dd3fc;
+}
+
+.cns-monitor-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+.cns-monitor-sidebar-toggle input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.cns-monitor-sidebar-toggle-text {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}

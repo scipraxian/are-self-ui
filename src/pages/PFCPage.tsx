@@ -1,11 +1,18 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ThreePanel } from '../components/ThreePanel';
 import { PrefrontalCortex } from '../components/PrefrontalCortex';
 import { PFCInspector } from '../components/PFCInspector';
 import { PFCNavTree } from '../components/PFCNavTree';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import type { PFCAgileItem } from '../types';
 
 export function PFCPage() {
+    const { setCrumbs } = useBreadcrumbs();
+
+    useEffect(() => {
+        setCrumbs([{ label: 'Prefrontal Cortex', path: '/pfc' }]);
+        return () => setCrumbs([]);
+    }, [setCrumbs]);
     const [selectedPfcItem, setSelectedPfcItem] = useState<PFCAgileItem | null>(null);
     const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
     const [createModalType, setCreateModalType] = useState<'EPIC' | 'STORY' | 'TASK' | null>(null);

@@ -1,24 +1,31 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
-interface BreadcrumbOverride {
-    segment: string;
+export interface Breadcrumb {
     label: string;
+    path: string;
 }
 
 interface BreadcrumbContextType {
-    overrides: BreadcrumbOverride[];
-    setOverrides: (overrides: BreadcrumbOverride[]) => void;
+    crumbs: Breadcrumb[];
+    setCrumbs: (crumbs: Breadcrumb[]) => void;
 }
 
 const BreadcrumbContext = createContext<BreadcrumbContextType>({
-    overrides: [],
-    setOverrides: () => {},
+    crumbs: [],
+    setCrumbs: () => {},
 });
 
 export const BreadcrumbProvider = ({ children }: { children: ReactNode }) => {
-    const [overrides, setOverrides] = useState<BreadcrumbOverride[]>([]);
-    const value = useMemo(() => ({ overrides, setOverrides }), [overrides]);
+    const [crumbs, setCrumbs] = useState<Breadcrumb[]>([]);
+
+    // Update document title when crumbs change
+    useEffect(() => {
+        const last = crumbs[crumbs.length - 1];
+        document.title = last ? `${last.label} — Are-Self` : 'Are-Self';
+    }, [crumbs]);
+
+    const value = useMemo(() => ({ crumbs, setCrumbs }), [crumbs]);
     return (
         <BreadcrumbContext.Provider value={value}>
             {children}

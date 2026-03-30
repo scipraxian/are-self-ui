@@ -1,9 +1,17 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThreePanel } from '../components/ThreePanel';
 import { ReasoningSidebar } from '../components/ReasoningPanels';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 
 export function FrontalIndex() {
     const navigate = useNavigate();
+    const { setCrumbs } = useBreadcrumbs();
+
+    useEffect(() => {
+        setCrumbs([{ label: 'Frontal Lobe', path: '/frontal' }]);
+        return () => setCrumbs([]);
+    }, [setCrumbs]);
 
     return (
         <ThreePanel

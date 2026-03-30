@@ -101,6 +101,7 @@ export const CNSTrainStack = ({ trains, pathwayId }: CNSTrainStackProps) => {
                             <CNSSpikeBar
                                 spikes={train.spikes}
                                 onSpikeClick={handleSpikeClick}
+                                trainId={String(train.id)}
                             />
                         )}
                     </div>

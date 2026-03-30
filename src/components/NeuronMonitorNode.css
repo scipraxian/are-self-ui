@@ -1,0 +1,113 @@
+.neuron-monitor-node {
+    background: var(--bg-panel);
+    border: 2px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 140px;
+    transition: opacity 300ms ease, border-color 300ms ease, background 300ms ease;
+}
+
+/* Unrun: ghosted */
+.neuron-monitor--unrun {
+    opacity: 0.15;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Running: amber pulse */
+.neuron-monitor--running {
+    opacity: 1;
+    border-color: var(--accent-orange);
+    background: rgba(249, 159, 27, 0.15);
+    animation: neuron-pulse 2s ease-in-out infinite;
+}
+
+/* Success: green solid */
+.neuron-monitor--success {
+    opacity: 1;
+    border-color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.12);
+}
+
+/* Failed: red solid */
+.neuron-monitor--failed {
+    opacity: 1;
+    border-color: var(--accent-red);
+    background: rgba(239, 68, 68, 0.12);
+}
+
+/* Pending: dim amber dashed */
+.neuron-monitor--pending {
+    opacity: 0.6;
+    border-color: var(--accent-orange);
+    border-style: dashed;
+}
+
+@keyframes neuron-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(249, 159, 27, 0.3); }
+    50% { box-shadow: 0 0 20px 4px rgba(249, 159, 27, 0.15); }
+}
+
+.neuron-monitor-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.neuron-monitor-label {
+    font-family: var(--font-display), sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+}
+
+.neuron-monitor-timing {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* Sub-graph indicator */
+.neuron-monitor--subgraph {
+    border-style: double;
+    border-width: 3px;
+}
+
+.neuron-monitor-subgraph-icon {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.neuron-monitor-effector {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+/* Handles */
+.neuron-monitor-handle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-obsidian);
+}
+
+.neuron-monitor-handle--in {
+    background: #94a3b8;
+}
+
+.neuron-monitor-handle--flow {
+    background: var(--accent-blue);
+}
+
+.neuron-monitor-handle--success {
+    background: var(--accent-green);
+    top: 65%;
+}
+
+.neuron-monitor-handle--fail {
+    background: var(--accent-red);
+    top: 85%;
+}

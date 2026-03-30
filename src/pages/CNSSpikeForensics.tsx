@@ -56,7 +56,7 @@ const shortHash = (id: string): string => {
 export function CNSSpikeForensics() {
     const { spikeId } = useParams<{ spikeId: string }>();
     const navigate = useNavigate();
-    const { setOverrides } = useBreadcrumbs();
+    const { setCrumbs } = useBreadcrumbs();
     const [spike, setSpike] = useState<SpikeDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -78,16 +78,16 @@ export function CNSSpikeForensics() {
         fetchSpike();
     }, [fetchSpike]);
 
-    // Set breadcrumb overrides with effector name and spike hash
+    // Breadcrumbs
     useEffect(() => {
         if (spike && spikeId) {
-            setOverrides([
-                { segment: 'spike', label: '' },
-                { segment: spikeId, label: `${spike.effector_name} ${shortHash(String(spike.id))}` },
+            setCrumbs([
+                { label: 'Central Nervous System', path: '/cns' },
+                { label: `${spike.effector_name} ${shortHash(String(spike.id))}`, path: `/cns/spike/${spikeId}` },
             ]);
         }
-        return () => setOverrides([]);
-    }, [spike, spikeId, setOverrides]);
+        return () => setCrumbs([]);
+    }, [spike, spikeId, setCrumbs]);
 
     // ESC navigates back (only when search is not open — search handles its own ESC)
     useEffect(() => {

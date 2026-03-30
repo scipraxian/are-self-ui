@@ -13,7 +13,7 @@ import type { NeuralPathway, SpikeTrain } from '../types';
 export function CNSTrainTimeline() {
     const { pathwayId } = useParams<{ pathwayId: string }>();
     const navigate = useNavigate();
-    const { setOverrides } = useBreadcrumbs();
+    const { setCrumbs } = useBreadcrumbs();
     const { selectedEnvironmentId } = useEnvironment();
     const [pathway, setPathway] = useState<NeuralPathway | null>(null);
     const [trains, setTrains] = useState<SpikeTrain[]>([]);
@@ -54,16 +54,16 @@ export function CNSTrainTimeline() {
         fetchTrains();
     }, [fetchPathway, fetchTrains]);
 
-    // Set breadcrumb overrides with pathway name
+    // Breadcrumbs
     useEffect(() => {
-        if (pathway && pathwayId) {
-            setOverrides([
-                { segment: 'pathway', label: '' },
-                { segment: pathwayId, label: pathway.name },
+        if (pathway) {
+            setCrumbs([
+                { label: 'Central Nervous System', path: '/cns' },
+                { label: pathway.name, path: `/cns/pathway/${pathwayId}` },
             ]);
         }
-        return () => setOverrides([]);
-    }, [pathway, pathwayId, setOverrides]);
+        return () => setCrumbs([]);
+    }, [pathway, pathwayId, setCrumbs]);
 
     // Real-time updates
     const spikeTrainEvent = useDendrite('SpikeTrain', null);

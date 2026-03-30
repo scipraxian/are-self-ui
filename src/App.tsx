@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GABAProvider } from './context/GABAProvider';
 import { BreadcrumbProvider } from './context/BreadcrumbProvider';
 import { EnvironmentProvider } from './context/EnvironmentProvider';
+import { SpikeSetProvider } from './context/SpikeSetProvider';
 import { SynapticCleftProvider } from './components/SynapticCleft';
 import { LayoutShell } from './components/LayoutShell';
 import { BrainView } from './pages/BrainView';
@@ -10,7 +11,8 @@ import { FrontalIndex } from './pages/FrontalIndex';
 import { FrontalSession } from './pages/FrontalSession';
 import { CNSPage } from './pages/CNSPage';
 import { CNSEditStub } from './pages/CNSEditStub';
-import { CNSMonitorStub } from './pages/CNSMonitorStub';
+import { CNSMonitorPage } from './pages/CNSMonitorPage';
+import { CNSSpikeSet } from './pages/CNSSpikeSet';
 import { TemporalStub } from './pages/TemporalStub';
 import { PFCPage } from './pages/PFCPage';
 import { IdentityStub } from './pages/IdentityStub';
@@ -26,6 +28,7 @@ function App() {
                 <BrowserRouter>
                     <EnvironmentProvider>
                     <BreadcrumbProvider>
+                    <SpikeSetProvider>
                     <GABAProvider>
                         <Routes>
                             <Route element={<LayoutShell />}>
@@ -37,8 +40,9 @@ function App() {
                                 <Route path="cns" element={<CNSPage />} />
                                 <Route path="cns/pathway/:pathwayId" element={<CNSTrainTimeline />} />
                                 <Route path="cns/spike/:spikeId" element={<CNSSpikeForensics />} />
+                                <Route path="cns/spikeset" element={<CNSSpikeSet />} />
                                 <Route path="cns/edit/:pathwayId" element={<CNSEditStub />} />
-                                <Route path="cns/monitor/:pathwayId" element={<CNSMonitorStub />} />
+                                <Route path="cns/monitor/:pathwayId" element={<CNSMonitorPage />} />
                                 <Route path="temporal" element={<TemporalStub />} />
                                 <Route path="pfc" element={<PFCPage />} />
                                 <Route path="identity" element={<IdentityStub />} />
@@ -47,6 +51,7 @@ function App() {
                             </Route>
                         </Routes>
                     </GABAProvider>
+                    </SpikeSetProvider>
                     </BreadcrumbProvider>
                     </EnvironmentProvider>
                 </BrowserRouter>

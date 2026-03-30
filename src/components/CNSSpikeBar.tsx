@@ -1,10 +1,12 @@
 import './CNSSpikeBar.css';
+import { useSpikeSet } from '../context/SpikeSetProvider';
 import type { Spike } from '../types';
 
 interface CNSSpikeBarProps {
     spikes: Spike[];
     onSpikeClick: (spikeId: string) => void;
     selectedSpikeId?: string | null;
+    trainId?: string;
 }
 
 const getSpikeStatus = (spike: Spike): string => {
@@ -32,7 +34,11 @@ const abbreviate = (name: string, maxLen: number): string => {
     return name.slice(0, maxLen - 1) + '\u2026';
 };
 
-export const CNSSpikeBar = ({ spikes, onSpikeClick }: CNSSpikeBarProps) => {
+const shortHash = (id: string): string => String(id).slice(0, 6).toUpperCase();
+
+export const CNSSpikeBar = ({ spikes, onSpikeClick, trainId }: CNSSpikeBarProps) => {
+    const { addSpike } = useSpikeSet();
+
     const visibleSpikes = spikes.filter(s =>
         !s.effector_name || s.effector_name.toLowerCase() !== 'begin play'
     );
@@ -49,8 +55,19 @@ export const CNSSpikeBar = ({ spikes, onSpikeClick }: CNSSpikeBarProps) => {
                         key={spike.id}
                         className={`cns-spike-segment cns-spike-segment--${status}`}
                         style={{ flexGrow: proportion, flexBasis: 0 }}
-                        onClick={(e) => { e.stopPropagation(); onSpikeClick(String(spike.id)); }}
-                        title={`${spike.effector_name} \u00b7 ${status.toUpperCase()} \u00b7 ${duration.toFixed(1)}s${spike.target_hostname ? ` \u00b7 ${spike.target_hostname}` : ''}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (e.shiftKey) {
+                                addSpike({
+                                    spikeId: String(spike.id),
+                                    label: spike.effector_name || 'Unknown',
+                                    trainHash: shortHash(trainId || String(spike.id)),
+                                });
+                            } else {
+                                onSpikeClick(String(spike.id));
+                            }
+                        }}
+                        title={`${spike.effector_name} \u00b7 ${status.toUpperCase()} \u00b7 ${duration.toFixed(1)}s${spike.target_hostname ? ` \u00b7 ${spike.target_hostname}` : ''}\nShift+click to add to Spike Set`}
                     >
                         {proportion > 0.12 ? abbreviate(spike.effector_name || '', 12) : ''}
                     </div>

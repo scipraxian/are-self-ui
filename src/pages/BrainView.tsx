@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+
 /**
  * BrainView – the index route ("/").
  * Full-screen 3D brain visualization. Lobe clicks are handled by LayoutShell's
@@ -5,6 +8,13 @@
  * already visible behind the Outlet).
  */
 export function BrainView() {
+    const { setCrumbs } = useBreadcrumbs();
+
+    useEffect(() => {
+        setCrumbs([]);
+        return () => setCrumbs([]);
+    }, [setCrumbs]);
+
     // The interactive brain canvas is rendered by LayoutShell's background layer.
     // On the root route, LayoutShell passes the navigation handler to BackgroundCanvas.
     return null;

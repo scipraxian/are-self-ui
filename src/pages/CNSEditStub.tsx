@@ -1,16 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ThreePanel } from '../components/ThreePanel';
 import { CNSEditorPalette } from '../components/CNSEditorPalette';
 import { CNSEditor } from '../components/CNSEditor';
 import { CNSInspector } from '../components/CNSInspector';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { apiFetch } from '../api';
 import type { GraphNode } from '../types';
 
 export function CNSEditStub() {
     const { pathwayId } = useParams<{ pathwayId: string }>();
     const navigate = useNavigate();
+    const { setCrumbs } = useBreadcrumbs();
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+
+    useEffect(() => {
+        setCrumbs([
+            { label: 'Central Nervous System', path: '/cns' },
+            { label: 'Edit', path: `/cns/edit/${pathwayId}` },
+        ]);
+        return () => setCrumbs([]);
+    }, [pathwayId, setCrumbs]);
 
     if (!pathwayId) return null;
 

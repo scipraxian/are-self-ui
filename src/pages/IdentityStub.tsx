@@ -1,9 +1,17 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThreePanel } from '../components/ThreePanel';
 import { IdentityRoster } from '../components/IdentityRoster';
+import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 
 export function IdentityStub() {
     const navigate = useNavigate();
+    const { setCrumbs } = useBreadcrumbs();
+
+    useEffect(() => {
+        setCrumbs([{ label: 'Identity Ledger', path: '/identity' }]);
+        return () => setCrumbs([]);
+    }, [setCrumbs]);
 
     return (
         <ThreePanel
