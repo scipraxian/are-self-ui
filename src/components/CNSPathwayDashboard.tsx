@@ -12,7 +12,7 @@ interface CNSPathwayDashboardProps {
 
 export const CNSPathwayDashboard = ({ pathways, trains, searchQuery, isLoading }: CNSPathwayDashboardProps) => {
     const trainsByPathway = useMemo(() => {
-        const map = new Map<number, SpikeTrain[]>();
+        const map = new Map<string, SpikeTrain[]>();
         for (const train of trains) {
             const list = map.get(train.pathway) || [];
             list.push(train);

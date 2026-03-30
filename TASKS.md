@@ -20,7 +20,8 @@ CNSTrainList with expandable rows. CNSSpikeDetail right panel. Dead code deleted
 100vh constraint. min-height: 0 on flex chain. flex-shrink: 0 on train rows.
 
 ### Step 6a — CNS Pathway Dashboard ✅
-Responsive card grid with D3 sparklines. Sidebar with search, tags, starred. Zero-run cards hidden.
+Responsive card grid with D3 sparklines. CNSDashboardSidebar with search, tags, starred.
+Zero-run cards hidden.
 
 ### Step 6b — CNS Train Timeline ✅
 Spike bars with proportional segments. Train sidebar with stats. Begin Play filtered.
@@ -64,10 +65,20 @@ SpikeTrainFilter. ?pathway= filtering now works correctly.
 ### Backend Fix — Spike Serializer ✅
 SpikeSerializer now includes spike_train field. Enables breadcrumb chain: spike → train → pathway.
 
+### Backend Fix — Spike Provenance Fields ✅
+SpikeSerializer now includes: invoked_pathway, child_trains, provenance, provenance_train.
+Enables sub-graph drill-through and parent context navigation.
+
 ### Manual Fixes ✅
 - xterm.css import added to CNSTerminalPane
 - flex-shrink: 0 on .cns-train-row
 - PFC inspector: flex: none + overflow: visible on .pfc-inspector and .pfc-inspector-body
+- V2 SpikeViewSet missing filter configuration (backend, not frontend parameter naming)
+- types.ts: Spike/SpikeTrain IDs changed to string (UUIDs), all new API fields added, `any`
+  types replaced with proper interfaces
+- CNSMonitorPage: removed all `any` types, proper ReactFlow node typing, ESLint-compliant
+  data fetching pattern (async inside effect, dendrite events as deps)
+- Sub-graph drill passes parent context via React Router navigation state for breadcrumbs
 
 ## Known Bugs (Current)
 
@@ -149,3 +160,8 @@ Working stubs. Needs proper detail view with full disc configuration editing.
 /identity/:discId                   → IdentityDetailStub
 /pns                                → PNSStub (heartbeat)
 ```
+
+
+
+User says we need:
+Environment switcher / editor

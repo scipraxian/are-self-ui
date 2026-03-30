@@ -66,8 +66,8 @@ session concludes or yields → control returns up the spike chain.
 |-------|------|-------------------|
 | `/cns` | Pathway dashboard (sparkline cards) | "Which pathways are healthy?" |
 | `/cns/pathway/:pathwayId` | Train timeline (spike bars) | "What happened recently?" |
-| `/cns/spiketrain/:spiketrainId` | Live graph (spike overlay on ReactFlow) | "How is this execution flowing?" |
-| `/cns/spike/:spikeId` | Dual-terminal forensics | "What exactly did this spike do?" |
+| `/cns/spiketrain/:spiketrainId` | Live execution graph (ghost-to-color node overlays) | "How is this execution flowing?" |
+| `/cns/spike/:spikeId` | Dual-terminal forensics (xterm.js) | "What exactly did this spike do?" |
 | `/cns/spikeset?s1=&s2=` | Multi-spike comparison | "How do these streams compare?" |
 | `/frontal` | Session list | "What sessions exist?" |
 | `/frontal/:sessionId` | 3D graph or chat view | "What did this session think/do?" |
@@ -179,6 +179,65 @@ right panel scroll, not the inspector body.
 - `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`.
 - `ReasoningTurn` has nested `model_usage_record` with response_payload deep inside.
 - Always verify fields by hitting the endpoint in browser before assuming.
+
+### ESLint / Data Fetching Pattern
+The project uses `eslint-plugin-react-hooks` with `react-hooks/set-state-in-effect` enabled.
+**You cannot call setState synchronously inside a useEffect body.** The correct data-fetching
+pattern is:
+
+```tsx
+// Dendrite events return new refs when events fire — use them as deps directly
+const spikeEvent = useDendrite('Spike', null);
+const trainEvent = useDendrite('SpikeTrain', null);
+
+useEffect(() => {
+    if (!someId) return;
+    let cancelled = false;
+
+    const load = async () => {
+        try {
+            const res = await apiFetch(`/api/v2/endpoint/${someId}/`);
+            if (!res.ok || cancelled) return;
+            const data = await res.json();
+            if (cancelled) return;
+            setSomeState(data);  // OK: inside async function, not synchronous in effect body
+        } catch (err) {
+            console.error('Fetch failed', err);
+        }
+    };
+
+    load();
+    return () => { cancelled = true; };
+}, [someId, spikeEvent, trainEvent]);  // dendrite events as deps trigger refetch
+```
+
+**Do NOT:**
+- Use `useCallback` for fetch functions and call them from effects (triggers the lint rule)
+- Use intermediate `refetchTick` state bumped by dendrite effects (also triggers it)
+- Use `void fetchTrain()` (same problem)
+
+**Do:**
+- Define async functions INSIDE the effect body
+- Put dendrite event objects directly in the dependency array — when they change ref, the
+  effect re-runs and refetches
+- Use `let cancelled = false` cleanup pattern for race conditions
+
+### Sub-Graph Drill Navigation
+When navigating to a child SpikeTrain via double-click on a sub-graph node, pass parent
+context through React Router navigation state:
+
+```tsx
+navigate(`/cns/spiketrain/${childTrainId}`, {
+    state: {
+        parentTrainId: currentTrainId,
+        parentPathwayName: pathway.name,
+        parentPathwayId: pathwayId,
+    }
+});
+```
+
+Read it back with `useLocation().state` and build breadcrumbs that include the parent chain.
+When opened fresh (no navigation state), show the shorter breadcrumb — that's correct.
 
 ## Dependencies
 - `react-force-graph-3d` + `three` — 3D force graph (Frontal Lobe)

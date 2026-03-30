@@ -25,9 +25,9 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
     onSearchChange,
 }) => {
     const navigate = useNavigate();
-    const { environments, selectedEnvironmentId, setSelectedEnvironmentId, isLoading: isEnvLoading } = useEnvironment();
+    const { environments, selectedEnvironmentId, selectEnvironment, isLoading: isEnvLoading } = useEnvironment();
 
-    const handleLaunch = async (e: React.MouseEvent, pathwayId: number) => {
+    const handleLaunch = async (e: React.MouseEvent, pathwayId: string) => {
         e.stopPropagation();
         try {
             await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/launch/`, { method: 'POST' });
@@ -78,7 +78,7 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
                 <select
                     className="cns-dash-env-select"
                     value={selectedEnvironmentId}
-                    onChange={(e) => setSelectedEnvironmentId(e.target.value)}
+                    onChange={(e) => selectEnvironment(e.target.value)}
                     disabled={isEnvLoading}
                 >
                     <option value="">{isEnvLoading ? 'Loading…' : '-- Select Environment --'}</option>

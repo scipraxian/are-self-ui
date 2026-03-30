@@ -8,7 +8,7 @@ import type { SpikeTrain } from "../types";
 type SpineNode = {
     id: string;
     type: "spike";
-    spikeTrainId: number;
+    spikeTrainId: string;
     spikeIndex: number;
     status_name: string;
     effector_name: string;

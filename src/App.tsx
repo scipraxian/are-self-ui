@@ -20,6 +20,7 @@ import { IdentityDetailStub } from './pages/IdentityDetailStub';
 import { PNSStub } from './pages/PNSStub';
 import { CNSTrainTimeline } from './pages/CNSTrainTimeline';
 import { CNSSpikeForensics } from './pages/CNSSpikeForensics';
+import { EnvironmentEditor } from './pages/EnvironmentEditor';
 
 function App() {
     return (
@@ -49,6 +50,7 @@ function App() {
                                 <Route path="pfc" element={<PFCPage />} />
                                 <Route path="identity" element={<IdentityStub />} />
                                 <Route path="identity/:discId" element={<IdentityDetailStub />} />
+                                <Route path="environments" element={<EnvironmentEditor />} />
                                 <Route path="pns" element={<PNSStub />} />
                             </Route>
                         </Routes>

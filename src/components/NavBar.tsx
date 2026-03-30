@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, Settings, X } from 'lucide-react';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
@@ -9,9 +9,10 @@ import './NavBar.css';
 export const NavBar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
     const { registerEscapeHandler } = useGABA();
     const { crumbs } = useBreadcrumbs();
-    const { environments, selectedEnvironmentId, setSelectedEnvironmentId } = useEnvironment();
+    const { environments, selectedEnvironmentId, selectEnvironment } = useEnvironment();
 
     // Click outside closes dropdown
     useEffect(() => {
@@ -67,13 +68,20 @@ export const NavBar = () => {
                 <select
                     className="navbar-env-select"
                     value={selectedEnvironmentId}
-                    onChange={(e) => setSelectedEnvironmentId(e.target.value)}
+                    onChange={(e) => selectEnvironment(e.target.value)}
                 >
                     <option value="">All Environments</option>
                     {environments.map(env => (
                         <option key={env.id} value={env.id}>{env.name}</option>
                     ))}
                 </select>
+                <button
+                    className="navbar-env-edit-btn"
+                    onClick={() => navigate('/environments')}
+                    title="Manage Environments"
+                >
+                    <Settings size={14} />
+                </button>
             </div>
 
             {menuOpen && (
