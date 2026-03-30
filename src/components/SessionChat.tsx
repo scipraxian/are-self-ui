@@ -19,7 +19,8 @@ import {useDendrite, type Neurotransmitter} from './SynapticCleft.tsx';
 import './ThalamusChat.css'; // Reusing the glassmorphic styles
 
 // Assuming a standard REST structure for your session endpoints
-const getInteractUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/interact/`;
+
+const getInteractUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/resume/`;
 const getMessagesUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/messages/`;
 
 interface BackendMessage {
@@ -60,7 +61,7 @@ const createSessionModelAdapter = (sessionId: string): ChatModelAdapter => ({
         const res = await apiFetch(getInteractUrl(sessionId), {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({message: userText.trim()}),
+            body: JSON.stringify({reply: userText.trim()}),
             signal: abortSignal,
         });
 
