@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2 } from 'lucide-react';
-import { apiFetch, getCookie } from '../api';
+import { apiFetch } from '../api';
 import { IdentityRoster } from './IdentityRoster';
 import './TemporalMatrix.css';
 
@@ -109,10 +108,6 @@ function DefinitionEditor({
     const boardRef = useRef<HTMLDivElement | null>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
-
-    useEffect(() => {
-        setEditingName(definition.name);
-    }, [definition.id, definition.name]);
 
     const handleDropOnDefinitionShift = (e: React.DragEvent, shiftDefinitionId: number) => {
         e.preventDefault();
@@ -284,18 +279,13 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
 
     const iteration = iterations.find(it => it.id === selectedIterationId) || null;
+    const hasSelection = selectedIterationId !== null || selectedDefinitionId !== null;
 
     useEffect(() => {
         if (onSelectionChange) {
             onSelectionChange(selectedIterationId !== null);
         }
     }, [selectedIterationId, onSelectionChange]);
-
-    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-    useEffect(() => {
-        setPortalTarget(document.getElementById('bbb-iteration-roster-portal'));
-    }, [selectedIterationId, selectedDefinitionId]);
-
 
     const checkScroll = () => {
         if (boardRef.current) {
@@ -313,30 +303,49 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     };
 
     useEffect(() => {
+        let cancelled = false;
         setIsLoading(true);
-        Promise.all([
-            fetch('/api/v2/iterations/').then(res => res.json()),
-            fetch('/api/v2/iteration-definitions/').then(res => res.json()),
-            fetch('/api/v1/environments/').then(res => res.json())
-        ]).then(([iterData, defData, envData]) => {
-            const results: IterationData[] = iterData.results || iterData;
-            setIterations(results);
-            if (results.length > 0) {
-                setSelectedIterationId(results[0].id);
+
+        const load = async () => {
+            try {
+                const [iterRes, defRes, envRes] = await Promise.all([
+                    apiFetch('/api/v2/iterations/'),
+                    apiFetch('/api/v2/iteration-definitions/'),
+                    apiFetch('/api/v1/environments/')
+                ]);
+                if (cancelled) return;
+                const iterData = await iterRes.json();
+                const defData = await defRes.json();
+                const envData = await envRes.json();
+                if (cancelled) return;
+
+                const results: IterationData[] = iterData.results || iterData;
+                setIterations(results);
+                if (results.length > 0) {
+                    setSelectedIterationId(results[0].id);
+                }
+                setBlueprints(defData.results || defData);
+                setEnvironments(envData.results || envData);
+            } catch (err) {
+                console.error("Temporal fetch failed:", err);
+            } finally {
+                if (!cancelled) setIsLoading(false);
             }
-            setBlueprints(defData.results || defData);
-            setEnvironments(envData.results || envData);
-            setIsLoading(false);
-        }).catch(err => {
-            console.error("Temporal fetch failed:", err);
-            setIsLoading(false);
-        });
+        };
+
+        load();
+        return () => { cancelled = true; };
     }, []);
 
-    const refetchDefinitions = () => {
-        fetch('/api/v2/iteration-definitions/').then(res => res.json()).then(data => {
+    const refetchDefinitions = async () => {
+        try {
+            const res = await apiFetch('/api/v2/iteration-definitions/');
+            if (!res.ok) return;
+            const data = await res.json();
             setBlueprints(data.results || data);
-        }).catch(err => console.error('Failed to refetch definitions', err));
+        } catch (err) {
+            console.error('Failed to refetch definitions', err);
+        }
     };
 
     useEffect(() => {
@@ -344,17 +353,27 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             setDefinitionDetail(null);
             return;
         }
+        let cancelled = false;
         setDefinitionDetailLoading(true);
-        fetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`)
-            .then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to load definition')))
-            .then((data: IterationDefinitionDetail) => {
+
+        const load = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`);
+                if (cancelled) return;
+                if (!res.ok) throw new Error('Failed to load definition');
+                const data: IterationDefinitionDetail = await res.json();
+                if (cancelled) return;
                 setDefinitionDetail(data);
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error('Definition fetch failed:', err);
-                setDefinitionDetail(null);
-            })
-            .finally(() => setDefinitionDetailLoading(false));
+                if (!cancelled) setDefinitionDetail(null);
+            } finally {
+                if (!cancelled) setDefinitionDetailLoading(false);
+            }
+        };
+
+        load();
+        return () => { cancelled = true; };
     }, [selectedDefinitionId]);
 
     useEffect(() => {
@@ -402,12 +421,10 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
 
     const handleIncept = async (definitionId: number) => {
         setIsGestating(true);
-        const csrfToken = getCookie('csrftoken');
-
         try {
-            const res = await fetch('/api/v2/iterations/incept/', {
+            const res = await apiFetch('/api/v2/iterations/incept/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     definition_id: definitionId,
                     environment_id: selectedGestationEnvironmentId
@@ -434,31 +451,28 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
 
     const handleRemoveWorker = async (shiftId: number, discId: number) => {
         if (!iteration) return;
-        const csrfToken = getCookie('csrftoken');
-
         try {
-            const res = await fetch(`/api/v2/iterations/${iteration.id}/remove_disc/`, {
+            const res = await apiFetch(`/api/v2/iterations/${iteration.id}/remove_disc/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ shift_id: shiftId, disc_id: discId })
             });
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
                 updateIterationState(updatedIteration);
-                window.dispatchEvent(new Event('sync-roster'));
             }
         } catch (err) {
             console.error("Failed to remove worker:", err);
         }
     };
+
     const handleInitiate = async () => {
         if (!iteration) return;
         if (iteration.status_name !== 'Waiting') return;
-        const csrfToken = getCookie('csrftoken');
         try {
-            const res = await fetch(`/api/v2/iterations/${iteration.id}/initiate/`, {
+            const res = await apiFetch(`/api/v2/iterations/${iteration.id}/initiate/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' }
+                headers: { 'Content-Type': 'application/json' }
             });
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
@@ -470,6 +484,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             console.error("Network error:", err);
         }
     };
+
     const handleDrop = async (e: React.DragEvent, shiftId: number) => {
         e.preventDefault();
         setDragOverShift(null);
@@ -484,19 +499,16 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         if (type === 'disc') payloadBody.disc_id = droppedId;
         if (type === 'base') payloadBody.base_id = droppedId;
 
-        const csrfToken = getCookie('csrftoken');
-
         try {
-            const res = await fetch(`/api/v2/iterations/${iteration.id}/slot_disc/`, {
+            const res = await apiFetch(`/api/v2/iterations/${iteration.id}/slot_disc/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payloadBody)
             });
 
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
                 updateIterationState(updatedIteration);
-                window.dispatchEvent(new Event('sync-roster'));
             }
         } catch (err) {
             console.error("Neural slotting failed:", err);
@@ -564,8 +576,6 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             });
             if (res.ok) {
                 const updated = await res.json();
-                // Some backends return the updated shift-definition, not the full definition.
-                // Only set definition detail if the payload looks like a definition; otherwise refetch the active definition.
                 if (updated && typeof updated === 'object' && 'shift_definitions' in updated) {
                     setDefinitionDetail(updated as IterationDefinitionDetail);
                 } else if (selectedDefinitionId) {
@@ -654,13 +664,12 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     }
 
     const iterationRosterSidebar = (
-        <div className="iteration-roster-sidebar" style={{ borderRight: 'none', background: 'transparent', width: '100%', padding: '0 0 16px 0' }}>
+        <div className="iteration-roster-sidebar">
             <div className="roster-section">
                 <h3 className="roster-section-title">Definitions</h3>
                 <button
                     className="btn-new-iteration"
                     onClick={createDefinition}
-                    style={{ marginBottom: '8px' }}
                 >
                     <Plus size={16} /> New Definition
                 </button>
@@ -681,7 +690,6 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                 <button
                     className="btn-new-iteration btn-ghost-secondary"
                     onClick={() => { setSelectedIterationId(null); setSelectedDefinitionId(null); }}
-                    style={{ marginBottom: '8px' }}
                 >
                     Gestation Chamber
                 </button>
@@ -701,15 +709,9 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         </div>
     );
 
-    const sidebarContent = selectedDefinitionId && definitionDetail
-        ? (
-            <IdentityRoster onSelectIdentity={() => { }} />
-        )
-        : iterationRosterSidebar;
-
     return (
         <div className="temporal-matrix-layout">
-            {portalTarget && createPortal(sidebarContent, portalTarget)}
+            {iterationRosterSidebar}
 
             <div className="temporal-matrix-main" style={{ padding: (selectedIterationId || selectedDefinitionId) ? '24px' : '0' }}>
                 {definitionDetailLoading && selectedDefinitionId ? (
@@ -718,6 +720,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                     </div>
                 ) : definitionDetail && selectedDefinitionId ? (
                     <DefinitionEditor
+                        key={definitionDetail.id}
                         definition={definitionDetail}
                         environments={environments}
                         selectedEnvironmentId={selectedGestationEnvironmentId}
@@ -891,6 +894,13 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                     </div>
                 )}
             </div>
+
+            {hasSelection && (
+                <div className="temporal-identity-panel">
+                    <h3 className="roster-section-title">Identity Roster</h3>
+                    <IdentityRoster onSelectIdentity={() => {}} />
+                </div>
+            )}
         </div>
     );
 };

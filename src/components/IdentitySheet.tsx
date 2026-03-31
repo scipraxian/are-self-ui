@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cpu, Loader2, Database, Wrench, Zap, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2 } from 'lucide-react';
 import { apiFetch } from '../api';
+import { EngramEditor } from './EngramEditor';
 import './IdentitySheet.css';
 import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
@@ -82,9 +84,12 @@ interface IdentityFormState {
 }
 
 export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
+    const navigate = useNavigate();
     const [data, setData] = useState<BaseIdentityData | IdentityDiscData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [activeTab, setActiveTab] = useState<ActiveTab>('telemetry');
@@ -161,7 +166,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const loadModels = async () => {
             try {
                 setIsModelsLoading(true);
-                const res = await apiFetch('/api/v2/model_registry/');
+                const res = await apiFetch('/api/v2/ai-models/');
                 if (!res.ok) return;
                 const json = await res.json();
                 setModels(json.results ?? json);
@@ -236,6 +241,26 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         }
     };
 
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        setError(null);
+        try {
+            const endpoint = type === 'disc'
+                ? `/api/v2/identity-discs/${id}/`
+                : `/api/v2/identities/${id}/`;
+            const res = await apiFetch(endpoint, { method: 'DELETE' });
+            if (!res.ok && res.status !== 204) {
+                throw new Error(`Delete failed (${res.status})`);
+            }
+            navigate('/identity');
+        } catch (err) {
+            console.error('Delete failed', err);
+            setError(err instanceof Error ? err.message : 'Failed to delete.');
+            setIsDeleting(false);
+            setConfirmDelete(false);
+        }
+    };
+
     if (isLoading || !data) {
         return (
             <div className="identity-sheet-container">
@@ -252,7 +277,6 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         baseData?.ai_model?.name ||
         'Unassigned Model';
 
-    const memories = discData?.memories ?? [];
     const sessions = discData?.reasoning_session ?? [];
 
     return (
@@ -282,12 +306,44 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     <button
                         type="button"
                         className={`btn-action ${isEditMode ? 'btn-action-active' : ''}`}
-                        onClick={() => setIsEditMode(prev => !prev)}
+                        onClick={() => { setIsEditMode(prev => !prev); setConfirmDelete(false); }}
                         disabled={isSaving}
                     >
                         <Cpu size={14} fill="currentColor" />
                         {isEditMode ? 'EXIT EDIT MODE' : 'EDIT MODE'}
                     </button>
+                    {isEditMode && (
+                        confirmDelete ? (
+                            <div className="sheet-delete-confirm">
+                                <span className="font-mono text-xs" style={{ color: 'var(--accent-red)' }}>Confirm?</span>
+                                <button
+                                    type="button"
+                                    className="btn-action btn-danger"
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? <Loader2 className="animate-spin" size={12} /> : 'Yes, Delete'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-secondary-outline"
+                                    onClick={() => setConfirmDelete(false)}
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn-action btn-danger"
+                                onClick={() => setConfirmDelete(true)}
+                            >
+                                <Trash2 size={14} />
+                                DELETE
+                            </button>
+                        )
+                    )}
                 </div>
             </div>
 
@@ -579,25 +635,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     {isDisc ? (
                         <div className="sheet-section">
                             <h3 className="sheet-section-title">Engram Stream</h3>
-                            {memories.length === 0 ? (
-                                <div className="prompt-box">
-                                    No memories linked to this Disc yet.
-                                </div>
-                            ) : (
-                                <div className="memory-list">
-                                    {memories.map(memory => (
-                                        <div key={memory.id} className="memory-item">
-                                            <div className="memory-meta font-mono text-xs">
-                                                <span>{memory.id}</span>
-                                                <span>{new Date(memory.created).toLocaleString()}</span>
-                                            </div>
-                                            <div className="memory-summary">
-                                                {memory.summary}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <EngramEditor discId={id} />
                         </div>
                     ) : (
                         <div className="sheet-section">
