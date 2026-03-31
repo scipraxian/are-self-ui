@@ -13,6 +13,8 @@ export function ThreePanel({ left, center, right, centerClassName, rightClassNam
     const centerClasses = ['three-panel-center', centerClassName].filter(Boolean).join(' ');
     const rightClasses = ['glass-panel three-panel-right', rightClassName].filter(Boolean).join(' ');
 
+    const hasRight = right != null;
+
     return (
         <div className="three-panel-layout">
             <aside className="glass-panel three-panel-left">
@@ -21,9 +23,11 @@ export function ThreePanel({ left, center, right, centerClassName, rightClassNam
             <main className={centerClasses}>
                 {center}
             </main>
-            <aside className={rightClasses}>
-                {right}
-            </aside>
+            {hasRight && (
+                <aside className={rightClasses}>
+                    {right}
+                </aside>
+            )}
         </div>
     );
 }

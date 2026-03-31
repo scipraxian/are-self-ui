@@ -41,17 +41,27 @@ strategies. The AIModelSelectionFilter on each Identity determines model routing
 vector-similarity matching, cost filters, provider preferences.
 
 ### 3. Iteration Setup → `/temporal`
-The user creates an **Iteration** from a blueprint tied to an **Environment**. Iterations have
-**Shifts** (Sifting → Pre-Planning → Planning → Executing → Post-Execution) with turn limits.
-Dragging Identities into shift columns **forges** them into **IdentityDiscs** — deployed
-instances with their own level, XP, and session history.
+The user creates an **Iteration** from a definition (blueprint) tied to an **Environment**.
+Definitions have **Shift columns** (Sifting → Pre-Planning → Planning → Executing →
+Post-Execution → Sleeping) with turn limits. Dragging Identities into shift columns **forges**
+them into **IdentityDiscs** — deployed instances with their own level, XP, and session history.
 
-`TemporalMatrix.tsx` manages its own two-phase layout internally (iteration list → identity
-roster). Do NOT wrap it in ThreePanel.
+`TemporalMatrix.tsx` manages its own three-panel internal layout: left sidebar (definitions +
+iterations + gestation chamber), center (shift columns with participant cards and drag-drop
+targets), right (IdentityRoster for drag source). Do NOT wrap it in ThreePanel.
+
+**Key endpoints:**
+- `POST /api/v2/iterations/{id}/slot_disc/` — `{shift_id, disc_id}` or `{shift_id, base_id}`
+  (auto-forges). Returns full re-serialized iteration.
+- `POST /api/v2/iterations/{id}/remove_disc/` — `{shift_id, disc_id}`. Returns full iteration.
+- `POST /api/v2/iteration-definitions/{id}/slot_disc/` — same but `shift_definition_id`.
+- `POST /api/v2/iteration-definitions/{id}/remove_disc/` — same pattern.
+- `POST /api/v2/iterations/incept/` — `{definition_id, environment_id}`. Creates iteration.
+- `POST /api/v2/iteration-definitions/{id}/incept/` — same from definition context.
 
 ### 4. Task Assignment → `/pfc`
 The **Prefrontal Cortex** is the project manager. Epics → Stories → Tasks assigned to
-IdentityDiscs. Kanban board with drag-and-drop, status columns, inspector for ticket detail.
+IdentityDiscs. Board/backlog toggle with URL-driven filters, inspector for ticket detail.
 
 ### 5. The Tick Cycle (PNS → Temporal → CNS → Frontal)
 The **PNS** ticks via Celery Beat → wakes **Temporal Lobe** → fires a **SpikeTrain** through
@@ -74,17 +84,22 @@ session concludes or yields → control returns up the spike chain.
 | `/pfc` | Agile board | "What's assigned? In progress?" |
 | `/temporal` | Iteration matrix | "Who's in which shift?" |
 | `/pns` | Fleet status | "What's ticking?" |
+| `/hippocampus` | Engram browser | "What does the swarm remember?" |
+| `/identity` | Identity ledger | "Who are the workers?" |
 
 ### 7. Memory & Learning
-The **Hippocampus** stores **Engrams** — vector-embedded facts (pgvector, 768-dim). Sessions
-produce engrams; future sessions retrieve them during HISTORY addon phase.
+The **Hippocampus** stores **Engrams** — vector-embedded facts (pgvector, 768-dim, nomic-embed-text).
+Sessions produce engrams; future sessions retrieve them during HISTORY addon phase. 90% cosine
+similarity dedup on save. Engrams auto-revectorize on description or tag changes. The
+**EngramEditor** component provides full CRUD on the Identity Memories tab; the
+**HippocampusPage** provides a global browser with search, tag filters, and inspector.
 
 ## The URL Is the Single Source of Truth
 
 **Every user action that changes what you're looking at MUST change the URL.** Non-negotiable.
 Bookmarkable, refreshable, shareable. F5 returns exactly where you were.
 
-### Current URL Structure (After Step 12)
+### Current URL Structure
 ```
 /                                   → BrainView (3D landing, interactive)
 /frontal                            → FrontalIndex (session list)
@@ -95,11 +110,16 @@ Bookmarkable, refreshable, shareable. F5 returns exactly where you were.
 /cns/spiketrain/:spiketrainId      → CNSMonitorPage (live execution graph)
 /cns/spike/:spikeId                 → CNSSpikeForensics (dual terminal)
 /cns/spikeset?s1=uuid&s2=uuid      → CNSSpikeSet (multi-spike comparison)
-/pfc                                → PFCPage (agile board)
-/temporal                           → TemporalStub (iteration matrix)
-/identity                           → IdentityStub
-/identity/:discId                   → IdentityDetailStub
-/pns                                → PNSStub (heartbeat)
+/pfc                                → PFCPage (board/backlog toggle)
+/pfc/epic/:epicId                   → PFCDetailPage (epic with child items)
+/pfc/story/:storyId                 → PFCDetailPage (story with child tasks)
+/temporal                           → TemporalMatrix (definition editor + iteration board)
+/identity                           → IdentityLedger (disc list + IdentitySheet)
+/identity/:discId                   → IdentityDetail (disc configuration)
+/hippocampus                        → HippocampusPage (engram browser)
+/pns                                → PNSPage (fleet overview)
+/pns/monitor?w1=host&w2=host        → PNSMonitorPage (xterm grid)
+/hypothalamus                       → (TODO) Model management
 /environments                       → EnvironmentEditor (CRUD + context variables)
 ```
 
@@ -148,7 +168,8 @@ inline context variable editing.
 
 ### Real-Time (Synaptic Cleft)
 - `useDendrite(receptorClass, dendriteId)` for event subscriptions. **Never use setInterval.**
-- Neurotransmitters: Dopamine (success), Cortisol (error), Acetylcholine (sync), Glutamate (streaming)
+- Neurotransmitters: Dopamine (success), Cortisol (error), Acetylcholine (sync),
+  Glutamate (streaming), Norepinephrine (PNS worker monitoring/alertness)
 
 ### Chat Integration
 - **SessionChat** (`/frontal/:sessionId` in Chat mode): Scoped to a specific reasoning session.
@@ -192,12 +213,37 @@ On non-root routes, `interactive={false}` disables OrbitControls and pointer eve
 `.pfc-inspector` and `.pfc-inspector-body`: `flex: none; overflow: visible`. Let ThreePanel's
 right panel scroll, not the inspector body.
 
+### API URL Naming
+Most backend routes use **hyphens** (`identity-discs`, `tool-definitions`,
+`iteration-definitions`). A few legacy routes use underscores (`engram_tags`,
+`reasoning_sessions`, `reasoning_turns`, `nerve_terminal_*`). **Always verify the actual
+URL by checking the API root** (`/api/v2/`) before assuming. Do not "fix" hyphens to
+underscores or vice versa — use what the backend actually serves.
+
+### DRF Serializer M2M / FK Writes
+DRF serializers that declare a nested serializer with `read_only=True` (e.g.,
+`enabled_tools = ToolDefinitionSerializer(many=True, read_only=True)`) will **silently
+ignore** that field on write. If a FK or M2M field needs to be writable, add a write-only
+`PrimaryKeyRelatedField` counterpart:
+```python
+enabled_tools = ToolDefinitionSerializer(many=True, read_only=True)
+enabled_tool_ids = serializers.PrimaryKeyRelatedField(
+    source='enabled_tools', queryset=ToolDefinition.objects.all(),
+    many=True, write_only=True, required=False
+)
+```
+This pattern is already applied on Identity and Temporal serializers. **Check for it any
+time you add a new nested serializer.**
+
 ### API Response Shapes
 - `Spike` returns: id, status, status_name, neuron, effector, effector_name, spike_train,
   created, modified, target_hostname, result_code, application_log, execution_log, blackboard,
   invoked_pathway, child_trains, provenance, provenance_train.
 - `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`.
 - `ReasoningTurn` has nested `model_usage_record` with response_payload deep inside.
+- `Engram` returns: id, name, description, is_active, relevance_score, tags (nested),
+  sessions (ID list), source_turns (ID list), spikes (ID list), creator (nested or null),
+  identity_discs (ID list), vector (null on read), created, modified.
 - Always verify fields by hitting the endpoint in browser before assuming.
 
 ### ESLint / Data Fetching Pattern
@@ -278,3 +324,5 @@ When opened fresh (no navigation state), show the shorter breadcrumb — that's 
 - Do not use setInterval for data refresh.
 - Do not use the word "battle" or military jargon anywhere.
 - Do not introduce auto-generated CSS class names.
+- Do not assume API URL casing — verify against the live API root.
+- Do not add `read_only=True` nested serializers without a write-only counterpart if the field needs to be writable.

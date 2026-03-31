@@ -9,23 +9,45 @@ Current state of the React frontend. Updated 2026-03-31.
 **Layout & Navigation** — LayoutShell, ThreePanel, NavBar with breadcrumbs + environment
 selector, BreadcrumbProvider (explicit setCrumbs per page), GABAProvider (ESC navigation),
 EnvironmentProvider (global context, server-side selection). All URL-driven, all bookmarkable.
+Glassmorphic `.glass-surface` utility class applied to all form containers.
 
 **CNS (Central Nervous System)** — Complete drill chain: pathway dashboard with D3 sparklines
-→ train timeline with spike bars → live execution graph (ReactFlow with 5 visual states,
-ghost-to-color overlay, edge animation) → dual-terminal forensics (xterm.js) → spike set
-multi-comparison (xterm grid + correlated timeline with N-way merge). Sub-graph drill via
-double-click. SpikeSetProvider for multi-select with shift+click. Real-time via useDendrite.
+→ train timeline with spike bars (500ms debounced refetch via useDendrite) → live execution
+graph (ReactFlow with 5 visual states, ghost-to-color overlay, edge animation) →
+dual-terminal forensics (xterm.js) → spike set multi-comparison (xterm grid + correlated
+timeline with N-way merge). Sub-graph drill via double-click. SpikeSetProvider for
+multi-select with shift+click. Real-time via useDendrite. No polling.
 
 **Frontal Lobe** — Session list, 3D force graph, inspector, Graph/Chat mode toggle,
-SessionChat posting to /resume/ with swarm_message_queue injection.
+SessionChat posting to /resume/ with swarm_message_queue injection. All polling replaced
+with useDendrite subscriptions (ReasoningSession, ReasoningTurn). No setInterval.
 
-**PFC (Prefrontal Cortex)** — Three-panel: epic tree left, kanban center, inspector right.
-Cards with status, drag intent. Basic functional but needs significant UX work (see below).
+**PFC (Prefrontal Cortex)** — Board/backlog toggle with URL query param filters (status,
+priority, epic, assignee). Two-panel layout (stage + optional inspector, no left nav tree).
+Single-click → inspector, double-click → full detail page. Epic/story detail drill pages.
+Inline create. Filter bar with clear button. Proper flex height chain for column scrolling.
 
-**Temporal Lobe** — Two-phase TemporalMatrix (iteration list → identity roster). Manages
-own layout (no ThreePanel). Working but missing key features (see below).
+**Temporal Lobe** — Three-panel internal layout: left sidebar (definitions list + iterations
+list + gestation chamber), center (shift columns with participants + drag-drop targets),
+right (IdentityRoster). Drag from roster → drop into shift column → calls slot_disc
+(auto-forges base identities into discs). Remove disc from shift. Definition editor with
+add/remove shift columns, turn limit editing, rename, delete. New definitions auto-populate
+with all 6 shift types. Incept from definition → creates live iteration. Initiate iteration.
+Real-time via useDendrite (no polling). Manages own layout (no ThreePanel).
 
-**Identity** — Left panel list of discs, start of detail editor on right. Stub-level.
+**Identity** — IdentitySheet with tabbed detail editor: Telemetry (live disc stats, system
+prompt template, compiled prompt), Loadout (name, AI model, tools/addons/tags as toggleable
+pills showing ALL available items in edit mode), Memories (full engram CRUD via EngramEditor),
+Flight Logs (reasoning sessions with click-through to /frontal/{sessionId}). Create new
+identity, spawn disc from base, delete with inline confirmation. Save on explicit save button.
+AI model dropdown pulls from `/api/v2/ai-models/`.
+
+**Hippocampus** — ThreePanel engram browser at `/hippocampus`. Left: search input + tag
+filter chips + active/inactive toggle + count. Center: engram card list with name,
+description preview, tags, relevance, creator, date. Right: full inspector with inline
+editing (save on blur), tag pill toggles with "+" to create new tags, is_active switch,
+provenance links (creator disc, sessions → /frontal, spikes → /cns/spike), delete with
+confirmation. URL-driven selection (`/hippocampus?selected={id}`). Real-time via useDendrite.
 
 **Environments** — Full CRUD editor page. Inline context variable editing. Set-as-active.
 Auto-save on blur.
@@ -38,115 +60,63 @@ via Norepinephrine through Synaptic Cleft. Live only — no historical view.
 
 **Backend (recent)** — Norepinephrine neurotransmitter + celery_signals.py (in-process),
 NorepinephrineHandler (log streaming with async/sync detection), CeleryWorkerViewSet,
-NeuroMuscularJunction rename (was GenericEffectorCaster), N-way spike log merge API with
-cursor-based delta updates, CELERY_WORKER_SEND_TASK_EVENTS enabled.
+NeuroMuscularJunction rename + quality pass (f-string loggers fixed, lingering "Caster"
+removed), N-way spike log merge API with cursor-based delta updates,
+CELERY_WORKER_SEND_TASK_EVENTS enabled. Engram rename (TalosEngram → Engram,
+TalosEngramTag → EngramTag, TalosHippocampus → Hippocampus) with RenameModel migration.
+Engram revectorization signal (on description change + tag M2M change). Engram query param
+filtering on EngramViewSet (`?identity_discs=`). Identity M2M write fix (PrimaryKeyRelatedField
+write-only counterparts for enabled_tools, addons, tags on both serializers). ShiftViewSet
+(read-only reference data). Auto-populate definitions with all 6 shift types on create.
+IterationShiftDefinition FK write fix (shift_id PrimaryKeyRelatedField).
+
+---
+
+## In Progress
+
+### Navigation + Identity Layout + Engram Attach
+- Hamburger menu + 3D sphere clickthroughs for all brain regions
+- Identity ledger: remove always-open empty right panel when nothing selected
+- EngramEditor: "Attach Existing" flow to link existing engrams to a disc
 
 ---
 
 ## P0 — Ship-Blocking
 
-### PFC Rework (`/pfc`)
-The PFC needs to feel like a real project management tool. Not Jira — but the same ability
-to browse, create, and manage work at every level of the hierarchy.
-
-**What works:** Three-panel layout, epic tree, kanban columns, inspector panel.
-
-**What's missing:**
-
-- **Backlog/list view.** A flat, sortable, filterable list of ALL items (epics, stories,
-  tasks) with status badges, priority, assignee. Toggle between kanban and list view.
-  Similar to Jira's backlog but without the sprint ceremony. This is how you find things
-  when you have 50+ items.
-
-- **Epic detail drill.** Click an epic → center panel shows its child stories/tasks in a
-  list (not kanban). Shows completion percentage, child count, status breakdown. The
-  inspector shows the epic's own fields. URL: `/pfc/epic/:epicId`.
-
-- **Story detail drill.** Click a story → center panel shows its child tasks. Same pattern.
-  URL: `/pfc/story/:storyId`.
-
-- **Inline create.** "+ Task" / "+ Story" / "+ Epic" buttons that expand an inline form
-  (not a modal). Minimal fields: name, status, priority. Create and it appears in the list.
-
-- **Inline edit.** Click a field in the inspector → it becomes editable. Save on blur
-  (same pattern as EnvironmentEditor). Fields: name, description, status, priority,
-  assignee (IdentityDisc), environment.
-
-- **URL-driven selection.** Currently clicking a card updates inspector via local state.
-  Needs to update URL: `/pfc?selected=taskId` or `/pfc/task/:taskId`. F5 returns to
-  exactly what you were looking at.
-
-### Glassmorphic Form Backgrounds
-Every form/editor surface across the app needs a tinted glass backdrop. Currently the 3D
-background bleeds through and makes text unreadable on: EnvironmentEditor, Identity detail,
-PFC inspector, and any other view with form inputs.
-
-Fix: Add a `.glass-surface` utility class with `background: rgba(15, 15, 30, 0.85);
-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08);` and apply it
-to all form containers. This is a single CSS class applied in multiple places, not
-per-component fixes.
-
-### Frontal Lobe Polling Removal (`/frontal`)
-FrontalIndex and FrontalSession currently poll on intervals regardless of session status.
-Replace ALL polling with useDendrite subscriptions:
-- Session list: `useDendrite('ReasoningSession', null)` triggers refetch
-- Session detail: `useDendrite('ReasoningSession', sessionId)` for status updates
-- ReasoningGraph3D: `useDendrite('ReasoningTurn', null)` for new turns
-- No setInterval anywhere in frontal lobe code
-
-### CNS Pathway View Throttling (`/cns/pathway/:pathwayId`)
-When a pathway is actively running, the train timeline view hammers the backend with
-repeated fetches. Needs: debounced refetch on Dendrite events (500ms minimum between
-API calls), or better — only refetch when a SpikeTrain status change event arrives for
-trains belonging to this pathway.
-
----
-
-## P1 — Core Feature Gaps
-
-### Temporal Lobe Identity Drag-and-Drop (`/temporal`)
-The iteration matrix used to support dragging IdentityDiscs into shift columns to forge
-them into deployed instances. This was lost in the React rebuild.
-
-Restore:
-- Identity roster panel (right side or bottom) showing available IdentityDiscs
-- Drag from roster → drop into shift column → calls forge API
-- Visual feedback during drag (ghost card, drop target highlight)
-- URL-driven iteration selection (`/temporal/:iterationId` or query param) so refresh
-  doesn't lose context
-
-### Identity Ledger CRUD (`/identity`, `/identity/:discId`)
-Left panel shows disc list (working). Detail view needs full editing:
-- System prompt template (textarea with syntax highlighting or at least monospace)
-- Enabled tools (M2M to ToolDefinition — checkbox list or transfer list)
-- Addon phases (IDENTIFY, CONTEXT, HISTORY, TERMINAL — toggle/configure)
-- Hypothalamus AIModelSelectionFilter assignment
-- Budget constraints
-- Vector embedding visualization (optional, could be a sparkline or badge)
-- Create new disc, delete disc
-
 ### Hypothalamus (`/hypothalamus`)
-Model management dashboard. Backend APIs exist:
+Model management dashboard. The last major feature gap before release. Backend APIs exist:
+
 - `/api/v2/ai-models/` — model catalog
 - `/api/v2/model-providers/` — provider list (Ollama, OpenRouter, etc.)
+- `/api/v2/llm-providers/` — LLM provider reference
+- `/api/v2/model-categories/` — model categories
+- `/api/v2/model-modes/` — model modes
+- `/api/v2/model-families/` — model families
+- `/api/v2/model-pricing/` — pricing data
 - `/api/v2/usage-records/` — cost tracking
 - `/api/v2/model-ratings/` — ELO ratings
-
-**Note:** Frontend currently hits `/api/v2/model_registry/` which 404s. The correct
-endpoints are above.
+- `/api/v2/sync-status/` — sync status
+- `/api/v2/sync-logs/` — sync logs
 
 View should show: model cards with provider, cost, rating, circuit breaker status.
 Filter by provider, sort by rating/cost. Usage chart over time. Click → inspector with
 full model detail + recent usage records.
 
-### Hippocampus (`/hippocampus`)
-Engram browser. Backend APIs exist:
-- `/api/v2/engrams/` — vector-embedded memory records
-- `/api/v2/engram_tags/` — tag system
+Also gates Identity fields: AIModelSelectionFilter assignment and IdentityBudget
+constraints cannot be built until the Hypothalamus UI exists.
 
-View should show: searchable engram list, tag cloud or filter chips, timeline view of
-when engrams were created. Click → inspector showing full text, associated sessions/spikes,
-tags, vector similarity to selected engram.
+---
+
+## P1 — Remaining Gaps
+
+### Temporal Lobe — URL-Driven Iteration Selection
+Currently selecting an iteration/definition is local state only. Needs URL params
+(`/temporal?iteration={id}` or `/temporal?definition={id}`) so refresh preserves context.
+
+### Identity — Deferred Fields
+- Hypothalamus AIModelSelectionFilter assignment (blocked on Hypothalamus)
+- Budget constraints (blocked on Hypothalamus)
+- Vector embedding visualization (optional, could be a sparkline or badge)
 
 ---
 
@@ -163,9 +133,13 @@ by environment yet. Ensure: temporal, PFC, frontal, identity views all pass envi
 to their API calls.
 
 ### WebSocket Coverage Audit
-- ReasoningGraph3D still polls — replace with useDendrite
 - CNS dashboard may need live card updates when pathways run
 - Verify all views that show status use Dendrite, not polling
+
+### Backend URL Naming Standardization
+Most routes use hyphens (`identity-discs`, `tool-definitions`) but some use underscores
+(`engram_tags`, `reasoning_sessions`, `reasoning_turns`, `nerve_terminal_*`). Standardize
+to hyphens post-release. Coordinated frontend+backend sweep.
 
 ---
 
@@ -195,15 +169,15 @@ selection highlights. Document in a UI style guide.
 /cns/spiketrain/:spiketrainId      → CNSMonitorPage (live execution graph)
 /cns/spike/:spikeId                 → CNSSpikeForensics (dual terminal)
 /cns/spikeset?s1=uuid&s2=uuid      → CNSSpikeSet (raw terminals + correlated timeline)
-/pfc                                → PFCPage (agile board)
-/pfc/epic/:epicId                   → (TODO) Epic detail with child items
-/pfc/story/:storyId                 → (TODO) Story detail with child tasks
-/temporal                           → TemporalMatrix (iteration matrix)
-/identity                           → IdentityLedger (disc list + editor)
+/pfc                                → PFCPage (board/backlog toggle)
+/pfc/epic/:epicId                   → PFCDetailPage (epic with child items)
+/pfc/story/:storyId                 → PFCDetailPage (story with child tasks)
+/temporal                           → TemporalMatrix (definition editor + iteration board)
+/identity                           → IdentityLedger (disc list + IdentitySheet)
 /identity/:discId                   → IdentityDetail (disc configuration)
+/hippocampus                        → HippocampusPage (engram browser)
 /pns                                → PNSPage (fleet overview)
 /pns/monitor?w1=host&w2=host        → PNSMonitorPage (xterm grid)
 /hypothalamus                       → (TODO) Model management
-/hippocampus                        → (TODO) Engram browser
 /environments                       → EnvironmentEditor (CRUD)
 ```

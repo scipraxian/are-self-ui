@@ -172,9 +172,9 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                 setIsModelsLoading(true);
                 const [modelRes, toolRes, addonRes, tagRes] = await Promise.all([
                     apiFetch('/api/v2/ai-models/'),
-                    apiFetch('/api/v2/tool_definitions/'),
-                    apiFetch('/api/v2/identity_addons/'),
-                    apiFetch('/api/v2/identity_tags/'),
+                    apiFetch('/api/v2/tool-definitions/'),
+                    apiFetch('/api/v2/identity-addons/'),
+                    apiFetch('/api/v2/identity-tags/'),
                 ]);
                 if (modelRes.ok) {
                     const json = await modelRes.json();

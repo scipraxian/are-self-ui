@@ -145,14 +145,7 @@ export function IdentityStub() {
                     </div>
                 </div>
             }
-            right={
-                <>
-                    <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
-                    <div className="layout-placeholder font-mono text-sm">
-                        [Contextual Node Details]
-                    </div>
-                </>
-            }
+            right={null}
         />
     );
 }

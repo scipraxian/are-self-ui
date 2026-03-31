@@ -24,6 +24,8 @@ import { PNSMonitorPage } from './pages/PNSMonitorPage';
 import { CNSTrainTimeline } from './pages/CNSTrainTimeline';
 import { CNSSpikeForensics } from './pages/CNSSpikeForensics';
 import { EnvironmentEditor } from './pages/EnvironmentEditor';
+import { HippocampusPage } from './pages/HippocampusPage';
+import { HypothalamusPage } from './pages/HypothalamusPage';
 
 function App() {
     return (
@@ -61,6 +63,8 @@ function App() {
                                 <Route path="identity" element={<IdentityStub />} />
                                 <Route path="identity/:discId" element={<IdentityDetailStub />} />
                                 <Route path="environments" element={<EnvironmentEditor />} />
+                                <Route path="hippocampus" element={<HippocampusPage />} />
+                                <Route path="hypothalamus" element={<HypothalamusPage />} />
                                 <Route path="pns" element={<PNSPage />} />
                                 <Route path="pns/monitor" element={<PNSMonitorPage />} />
                             </Route>

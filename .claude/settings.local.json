@@ -4,7 +4,11 @@
       "Bash(npx tsc:*)",
       "Bash(npx vite:*)",
       "Bash(npx eslint:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(grep -r useDendrite /c/are-self-ui/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -r Hippocampus /c/are-self-ui/src --include=*.tsx --include=*.ts)",
+      "Bash(grep -r brain-region /c/are-self-ui/src --include=*.tsx -l)",
+      "Bash(ls C:/are-self-ui/src/pages/Hypothalamus*)"
     ],
     "allow_file_create": true,
     "allow_file_edit": true,

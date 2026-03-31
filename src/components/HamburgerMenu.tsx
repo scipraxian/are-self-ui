@@ -86,6 +86,21 @@ export const HamburgerMenu = () => {
                                 Peripheral Nervous System / Fleet
                             </Link>
                         </li>
+                        <li>
+                            <Link to="/hippocampus" onClick={() => setOpen(false)}>
+                                Hippocampus
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/hypothalamus" onClick={() => setOpen(false)}>
+                                Hypothalamus
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/environments" onClick={() => setOpen(false)}>
+                                Environments
+                            </Link>
+                        </li>
                     </ul>
                 </nav>
             )}

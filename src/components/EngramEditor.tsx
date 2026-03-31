@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Unlink, Loader2 } from 'lucide-react';
+import { Link2, Loader2, Plus, Search, Unlink, X } from 'lucide-react';
 import { apiFetch } from '../api';
 import './EngramEditor.css';
 
@@ -61,6 +61,13 @@ export const EngramEditor = ({ discId }: EngramEditorProps) => {
 
     // New tag input state per engram
     const [newTagInput, setNewTagInput] = useState<Record<string | number, string>>({});
+
+    // Attach existing engram state
+    const [showAttach, setShowAttach] = useState(false);
+    const [attachResults, setAttachResults] = useState<Engram[]>([]);
+    const [attachSearch, setAttachSearch] = useState('');
+    const [attachLoading, setAttachLoading] = useState(false);
+    const [attachingId, setAttachingId] = useState<string | number | null>(null);
 
     // Fetch full engrams for this disc + all tags
     useEffect(() => {
@@ -214,6 +221,51 @@ export const EngramEditor = ({ discId }: EngramEditorProps) => {
         }
     };
 
+    const handleOpenAttach = async () => {
+        setShowAttach(true);
+        setAttachSearch('');
+        setAttachLoading(true);
+        try {
+            const res = await apiFetch('/api/v2/engrams/');
+            if (!res.ok) return;
+            const data = await res.json();
+            const all: Engram[] = data.results ?? data;
+            const currentIds = new Set(engrams.map(e => String(e.id)));
+            setAttachResults(all.filter(e => !currentIds.has(String(e.id))));
+        } catch (err) {
+            console.error('Failed to fetch engrams for attach', err);
+        } finally {
+            setAttachLoading(false);
+        }
+    };
+
+    const handleAttach = async (engram: Engram) => {
+        setAttachingId(engram.id);
+        try {
+            const nextDiscs = [...engram.identity_discs, discId];
+            const res = await apiFetch(`/api/v2/engrams/${engram.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identity_discs: nextDiscs }),
+            });
+            if (!res.ok) throw new Error(`Attach failed (${res.status})`);
+            const updated: Engram = await res.json();
+            setEngrams(prev => [updated, ...prev]);
+            setAttachResults(prev => prev.filter(e => e.id !== engram.id));
+        } catch (err) {
+            console.error('Attach failed', err);
+        } finally {
+            setAttachingId(null);
+        }
+    };
+
+    const filteredAttachResults = attachSearch.trim()
+        ? attachResults.filter(e =>
+            e.name.toLowerCase().includes(attachSearch.toLowerCase()) ||
+            e.description?.toLowerCase().includes(attachSearch.toLowerCase())
+        )
+        : attachResults;
+
     const getSessionIds = (engram: Engram): string[] => {
         if (!engram.sessions?.length) return [];
         return engram.sessions.map(s => typeof s === 'string' ? s : s.id);
@@ -239,16 +291,81 @@ export const EngramEditor = ({ discId }: EngramEditorProps) => {
 
     return (
         <div className="engram-editor">
-            {/* Create form toggle */}
-            {!showCreate ? (
-                <button
-                    type="button"
-                    className="engram-create-toggle"
-                    onClick={() => setShowCreate(true)}
-                >
-                    <Plus size={14} /> New Memory
-                </button>
-            ) : (
+            {/* Action buttons */}
+            {!showCreate && !showAttach ? (
+                <div className="engram-action-bar">
+                    <button
+                        type="button"
+                        className="engram-create-toggle"
+                        onClick={() => setShowCreate(true)}
+                    >
+                        <Plus size={14} /> New Memory
+                    </button>
+                    <button
+                        type="button"
+                        className="engram-create-toggle engram-attach-toggle"
+                        onClick={handleOpenAttach}
+                    >
+                        <Link2 size={14} /> Attach Existing
+                    </button>
+                </div>
+            ) : showAttach ? (
+                <div className="engram-attach-panel">
+                    <div className="engram-attach-header">
+                        <div className="engram-attach-search-row">
+                            <Search size={14} />
+                            <input
+                                className="engram-create-input engram-attach-search"
+                                type="text"
+                                placeholder="Search engrams..."
+                                value={attachSearch}
+                                onChange={e => setAttachSearch(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            className="engram-attach-close"
+                            onClick={() => setShowAttach(false)}
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                    <div className="engram-attach-list">
+                        {attachLoading ? (
+                            <div className="engram-empty"><Loader2 className="animate-spin" size={16} /></div>
+                        ) : filteredAttachResults.length === 0 ? (
+                            <div className="engram-empty">No unlinked engrams found.</div>
+                        ) : (
+                            filteredAttachResults.map(engram => (
+                                <div key={engram.id} className="engram-attach-card">
+                                    <div className="engram-attach-card-info">
+                                        <span className="engram-attach-card-name">{engram.name || 'Untitled'}</span>
+                                        {engram.description && (
+                                            <span className="engram-attach-card-desc">{engram.description}</span>
+                                        )}
+                                        {engram.tags.length > 0 && (
+                                            <div className="engram-card-tags">
+                                                {engram.tags.map(t => (
+                                                    <span key={t.id} className="engram-tag-pill engram-tag-pill-active">{t.name}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="btn-primary engram-attach-btn"
+                                        onClick={() => handleAttach(engram)}
+                                        disabled={attachingId === engram.id}
+                                    >
+                                        {attachingId === engram.id ? <Loader2 className="animate-spin" size={12} /> : 'Attach'}
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            ) : showCreate ? (
                 <div className="engram-create-form">
                     <div>
                         <div className="engram-create-field-label">Name</div>
@@ -323,7 +440,7 @@ export const EngramEditor = ({ discId }: EngramEditorProps) => {
                         </button>
                     </div>
                 </div>
-            )}
+            ) : null}
 
             {/* Engram card list */}
             {displayEngrams.length === 0 ? (
