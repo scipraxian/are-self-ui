@@ -1,0 +1,64 @@
+.cns-monitor-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Right panel inspector */
+.cns-monitor-inspector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.cns-monitor-inspector-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.cns-monitor-inspector-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cns-monitor-inspector-btn {
+    margin-top: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--accent-blue);
+    color: #0f172a;
+    border: none;
+    text-align: center;
+}
+
+.cns-monitor-inspector-btn:hover {
+    background: #7dd3fc;
+}
+
+.cns-monitor-inspector-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+    line-height: 1.4;
+}
+
+.cns-monitor-inspector-train {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

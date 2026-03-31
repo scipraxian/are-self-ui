@@ -1,235 +1,308 @@
-.cnsinspector-ui-19 {
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  font-style: italic;
+.cns-inspector-admin-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #cc3333;
+    color: black;
+    font-family: Outfit, sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    text-decoration: none;
+    border-radius: 20px;
+    border: 2px solid #ef4444;
+    width: 80%;
+    text-transform: uppercase;
+    transition: transform 0.1s;
 }
 
-.cnsinspector-ui-20 {
-  position: relative;
+.cns-inspector-admin-link:hover {
+    transform: scale(1.02);
 }
 
-.cnsinspector-ui-21 {
-  background: transparent;
-  border: none;
-  color: #ef4444;
-  cursor: pointer;
-  padding: 0;
+.cns-inspector-admin-section {
+    margin-top: 20px;
+    text-align: center;
+    padding-bottom: 20px;
 }
 
-.cnsinspector-ui-22 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+.cns-inspector-empty-text {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-style: italic;
 }
 
-.cnsinspector-ui-23 {
-  background: transparent;
-  border: none;
-  color: #4ade80;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: bold;
+.cns-inspector-input-wrap {
+    position: relative;
 }
 
-.cnsinspector-ui-24 {
-  flex: 2;
-  padding: 8px;
-  text-align: center;
-  background: #38bdf8;
-  color: black;
-  font-weight: 800;
-  border-radius: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.cns-inspector-clear-btn {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0;
 }
 
-.cnsinspector-ui-25 {
-  padding: 4px 8px;
-  color: #ef4444;
-  border-color: rgba(239,68,68,0.3);
-  min-width: auto;
-  min-height: auto;
+.cns-inspector-source-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.cnsinspector-ui-26 {
-  margin: 0;
-  color: #f8fafc;
+.cns-inspector-var-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
-.cnsinspector-ui-27 {
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  font-style: italic;
+.cns-inspector-var-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-
-.cnsinspector-ui-1 {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #cc3333;
-  color: black;
-  font-family: Outfit, sans-serif;
-  font-weight: 800;
-  font-size: 1.2rem;
-  text-decoration: none;
-  border-radius: 20px;
-  border: 2px solid #ef4444;
-  width: 80%;
-  text-transform: uppercase;
-  transition: transform 0.1s;
+.cns-inspector-add-btn {
+    background: transparent;
+    border: none;
+    color: #4ade80;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: bold;
 }
 
-.cnsinspector-ui-2 {
-  margin-top: 20px;
-  text-align: center;
-  padding-bottom: 20px;
+.cns-inspector-description-box {
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    line-height: 1.5;
 }
 
-.cnsinspector-ui-3 {
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  font-style: italic;
+.cns-inspector-node-name {
+    flex: 2;
+    padding: 8px;
+    text-align: center;
+    background: #38bdf8;
+    color: black;
+    font-weight: 800;
+    border-radius: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.cnsinspector-ui-4 {
-  position: relative;
+.cns-inspector-node-id {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    background: #cc99cc;
+    color: black;
+    font-weight: 800;
+    border-radius: 20px;
 }
 
-.cnsinspector-ui-5 {
-  background: transparent;
-  border: none;
-  color: #ef4444;
-  cursor: pointer;
-  padding: 0;
+.cns-inspector-node-layout {
+    display: flex;
+    gap: 10px;
+    font-family: Outfit;
+    text-transform: uppercase;
 }
 
-.cnsinspector-ui-6 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.cns-inspector-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.cnsinspector-ui-7 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+.cns-inspector-delete-btn {
+    padding: 4px 8px;
+    color: #ef4444;
+    border-color: rgba(239,68,68,0.3);
+    min-width: auto;
+    min-height: auto;
 }
 
-.cnsinspector-ui-8 {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.cns-inspector-title {
+    margin: 0;
+    color: #f8fafc;
 }
 
-.cnsinspector-ui-9 {
-  background: transparent;
-  border: none;
-  color: #4ade80;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: bold;
+.cns-inspector-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
 }
 
-.cnsinspector-ui-10 {
-  background: rgba(0,0,0,0.3);
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-glass);
-  white-space: pre-wrap;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: #e2e8f0;
-  line-height: 1.5;
+.cns-inspector-body {
+    flex: 1;
 }
 
-.cnsinspector-ui-11 {
-  flex: 2;
-  padding: 8px;
-  text-align: center;
-  background: #38bdf8;
-  color: black;
-  font-weight: 800;
-  border-radius: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.cns-inspector-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
 }
 
-.cnsinspector-ui-12 {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  background: #cc99cc;
-  color: black;
-  font-weight: 800;
-  border-radius: 20px;
+.cns-inspector-loading {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-style: italic;
 }
 
-.cnsinspector-ui-13 {
-  display: flex;
-  gap: 10px;
-  font-family: Outfit;
-  text-transform: uppercase;
+.cns-inspector-empty-hint {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-style: italic;
+    margin-top: 10px;
 }
 
-.cnsinspector-ui-14 {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.cns-inspector-accordion-body {
+    padding: 12px;
 }
 
-.cnsinspector-ui-15 {
-  padding: 4px 8px;
-  color: #ef4444;
-  border-color: rgba(239,68,68,0.3);
-  min-width: auto;
-  min-height: auto;
+.cnsinspector-accordion {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    border: 1px solid rgba(74, 222, 128, 0.55);
 }
 
-.cnsinspector-ui-16 {
-  margin: 0;
-  color: #f8fafc;
+.cnsinspector-accordion--green {
+    border-color: rgba(74, 222, 128, 0.55);
+}
+.cnsinspector-accordion--blue {
+    border-color: rgba(56, 189, 248, 0.55);
+}
+.cnsinspector-accordion--yellow {
+    border-color: rgba(250, 204, 21, 0.55);
+}
+.cnsinspector-accordion--red {
+    border-color: rgba(239, 68, 68, 0.55);
 }
 
-.cnsinspector-ui-17 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+.cnsinspector-accordion-summary {
+    padding: 8px 15px;
+    font-family: Outfit, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.cnsinspector-ui-18 {
-  flex: 1;
+.cnsinspector-accordion--green .cnsinspector-accordion-summary {
+    background-color: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+.cnsinspector-accordion--blue .cnsinspector-accordion-summary {
+    background-color: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+}
+.cnsinspector-accordion--yellow .cnsinspector-accordion-summary {
+    background-color: rgba(250, 204, 21, 0.2);
+    color: #facc15;
+}
+.cnsinspector-accordion--red .cnsinspector-accordion-summary {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
 }
 
-.cnsinspector-ui-19 {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
+.cnsinspector-accordion-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.cnsinspector-ui-20 {
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  font-style: italic;
+.cnsinspector-context-row {
+    border: 1px solid rgba(74, 222, 128, 0.55);
+    border-radius: 4px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.3);
 }
 
-.cnsinspector-ui-21 {
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  font-style: italic;
-  margin-top: 10px;
+.cnsinspector-context-row--default {
+    border-color: rgba(74, 222, 128, 0.55);
 }
 
-.cnsinspector-ui-22 {
-  padding: 12px;
+.cnsinspector-context-row--override {
+    border-color: rgba(250, 204, 21, 0.55);
 }
 
+.cnsinspector-context-row--global {
+    border-color: rgba(56, 189, 248, 0.55);
+}
+
+.cnsinspector-context-key {
+    font-weight: 800;
+    font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+    font-size: 0.9rem;
+}
+
+.cnsinspector-context-key--default {
+    color: #4ade80;
+}
+.cnsinspector-context-key--override {
+    color: #facc15;
+}
+.cnsinspector-context-key--global {
+    color: #38bdf8;
+}
+
+.cnsinspector-context-source {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(74, 222, 128, 0.55);
+    color: #4ade80;
+}
+
+.cnsinspector-context-source--default {
+    border-color: rgba(74, 222, 128, 0.55);
+    color: #4ade80;
+}
+.cnsinspector-context-source--override {
+    border-color: rgba(250, 204, 21, 0.55);
+    color: #facc15;
+}
+.cnsinspector-context-source--global {
+    border-color: #475569;
+    color: #94a3b8;
+}
+
+.cnsinspector-context-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 8px;
+    color: #e2e8f0;
+    font-family: JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+    font-size: 0.8rem;
+    outline: none;
+}
+
+textarea.cnsinspector-context-input {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.cnsinspector-context-input--global {
+    border-color: rgba(56, 189, 248, 0.3);
+    color: #94a3b8;
+    cursor: not-allowed;
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { apiFetch } from '../api';
 import { useTerminal } from '../hooks/useTerminal';
 import { useSynapticCleft } from '../hooks/useSynapticCleft';
+import './SpikeStream.css';
 
 interface SpikeStreamProps {
     spikeId: string;
@@ -83,12 +84,7 @@ export const SpikeStream = ({ spikeId }: SpikeStreamProps) => {
     return (
         <div
             ref={containerRef}
-            style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: '#000000',
-                overflow: 'hidden',
-            }}
+            className="spikestream-root"
         />
     );
 };

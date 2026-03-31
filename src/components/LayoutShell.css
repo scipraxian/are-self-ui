@@ -1,0 +1,60 @@
+/* LayoutShell – root layout */
+
+.layout-shell {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-obsidian);
+}
+
+.layout-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.layout-bg--inactive {
+    pointer-events: none;
+}
+
+.layout-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Universal close button */
+.panel-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.panel-close-btn:hover {
+    color: var(--accent-red);
+}
+
+/* Placeholder / empty state */
+.layout-placeholder {
+    flex: 1;
+    border: 1px dashed var(--text-muted);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    margin-top: 16px;
+}

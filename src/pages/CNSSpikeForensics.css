@@ -1,0 +1,79 @@
+.spike-forensics {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 16px;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.spike-forensics-header {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.spike-forensics-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.spike-forensics-back-btn {
+    background: transparent;
+    border: 1px solid var(--border-glass);
+    color: #94a3b8;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.spike-forensics-back-btn:hover {
+    color: #e2e8f0;
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.spike-forensics-breadcrumb-sep {
+    color: #475569;
+}
+
+.spike-forensics-breadcrumb-name {
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+.spike-forensics-breadcrumb-hash {
+    color: #64748b;
+    font-family: var(--font-mono);
+}
+
+.spike-forensics-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.spike-forensics-terminals {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 12px;
+}
+
+.spike-forensics-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}

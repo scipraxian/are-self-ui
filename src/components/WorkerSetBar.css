@@ -1,0 +1,83 @@
+.workerset-bar {
+    position: relative;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(56, 189, 248, 0.1);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+    pointer-events: auto;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.workerset-bar-label {
+    color: #38bdf8;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.workerset-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 999px;
+    color: #e2e8f0;
+    white-space: nowrap;
+}
+
+.workerset-chip-remove {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 0.8rem;
+}
+
+.workerset-chip-remove:hover {
+    color: #ef4444;
+}
+
+.workerset-clear-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 2px 6px;
+}
+
+.workerset-clear-btn:hover {
+    color: #ef4444;
+}
+
+.workerset-monitor-btn {
+    margin-left: auto;
+    padding: 4px 16px;
+    background: rgba(56, 189, 248, 0.2);
+    border: 1px solid #38bdf8;
+    border-radius: 6px;
+    color: #38bdf8;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: background 120ms ease;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.workerset-monitor-btn:hover {
+    background: rgba(56, 189, 248, 0.35);
+}

@@ -1,13 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useGABA } from '../context/GABAProvider';
 import './HamburgerMenu.css';
 
 export const HamburgerMenu = () => {
     const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLDivElement>(null);
+    const { registerEscapeHandler } = useGABA();
+
+    // Close on click outside
+    useEffect(() => {
+        if (!open) return;
+
+        const handleMouseDown = (e: MouseEvent) => {
+            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleMouseDown);
+        return () => document.removeEventListener('mousedown', handleMouseDown);
+    }, [open]);
+
+    // ESC closes the nav drawer if open
+    useEffect(() => {
+        if (!open) return;
+
+        const unregister = registerEscapeHandler(() => {
+            setOpen(false);
+        });
+        return unregister;
+    }, [open, registerEscapeHandler]);
 
     return (
-        <div className="hamburger-root">
+        <div className="hamburger-root" ref={rootRef}>
             <div className="hamburger-logo">
                 <Link to="/" className="hamburger-logo-link">
                     ARE-SELF
@@ -26,7 +53,7 @@ export const HamburgerMenu = () => {
                     <ul className="hamburger-list">
                         <li>
                             <Link to="/" onClick={() => setOpen(false)}>
-                                Main Cortex Splash
+                                Cortex
                             </Link>
                         </li>
                         <li>
@@ -55,9 +82,9 @@ export const HamburgerMenu = () => {
                             </Link>
                         </li>
                         <li>
-                            <a href="/admin/" onClick={() => setOpen(false)}>
-                                Django Admin
-                            </a>
+                            <Link to="/pns" onClick={() => setOpen(false)}>
+                                Peripheral Nervous System / Fleet
+                            </Link>
                         </li>
                     </ul>
                 </nav>
@@ -65,4 +92,3 @@ export const HamburgerMenu = () => {
         </div>
     );
 };
-

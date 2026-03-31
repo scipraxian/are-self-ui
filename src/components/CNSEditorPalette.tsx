@@ -37,13 +37,13 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
                 e.dataTransfer.setData('application/reactflow-type', isSubGraph ? 'subgraph' : 'effector');
                 e.dataTransfer.effectAllowed = 'move';
             }}
-            className="cns-effector-drag-item cnseditorpalette-ui-18">
+            className="cns-effector-drag-item cns-palette-drag-item">
             {item.name}
         </div>
     );
 
     return (
-        <div className="cnseditorpalette-ui-17">
+        <div className="cns-palette-root">
             <div className="common-layout-3">
                 <h2 className="glass-panel-title common-layout-4">ACTION PALETTE</h2>
                 {onBack && (
@@ -52,16 +52,16 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
                     </button>
                 )}
             </div>
-            <div className="cnseditorpalette-ui-16">
+            <div className="cns-palette-scroll">
                 <div>
-                    <h3 className="glass-panel-title cnseditorpalette-ui-15">SPELLS</h3>
+                    <h3 className="glass-panel-title cns-palette-section-title--purple">Neurons</h3>
                     <div className="common-layout-6">
                         {spells.map(renderItem)}
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="glass-panel-title cnseditorpalette-ui-14">SUB-GRAPHS</h3>
+                    <h3 className="glass-panel-title cns-palette-section-title--blue">Pathways</h3>
                     <div className="common-layout-6">
                         {subGraphs.map(renderItem)}
                     </div>

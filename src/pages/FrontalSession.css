@@ -1,0 +1,109 @@
+/* FrontalSession – mode bar + stage layout */
+
+.frontal-session-center {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.frontal-session-mode-bar {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 2px;
+    padding: 8px 12px 0;
+}
+
+.frontal-session-mode-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: #64748b;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 120ms ease, background 120ms ease;
+}
+
+.frontal-session-mode-tab:hover {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.frontal-session-mode-tab--active {
+    color: #e2e8f0;
+    background: var(--bg-panel);
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.frontal-session-stage {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+.frontal-session-stage .thalamus-chat {
+    height: 100%;
+    border: none;
+    border-radius: 0;
+}
+
+/* Cortex stats bar — glassmorphic overlay above graph */
+.cortex-stats-bar {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 8px 24px;
+    background: var(--bg-panel, rgba(15, 23, 42, 0.7));
+    border: 1px solid var(--border-glass, rgba(148, 163, 184, 0.15));
+    border-radius: 999px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: none;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.8rem;
+}
+
+.cortex-stats-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cortex-stats-label {
+    color: var(--text-muted, #64748b);
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.cortex-stats-value {
+    color: var(--text-primary, #f8fafc);
+    font-weight: 800;
+}
+
+.cortex-stats-status {
+    color: #4ade80;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding-right: 12px;
+    border-right: 1px solid var(--border-glass, rgba(148, 163, 184, 0.15));
+}
+
+.cortex-stats-status--active {
+    color: #facc15;
+}

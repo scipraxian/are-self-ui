@@ -1,12 +1,12 @@
 import "./ReasoningGraph3D.css";
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import type {
     GraphLink,
     GraphNode,
+    ModelUsageRecord,
     ReasoningGoalData,
-    ReasoningMessageData,
     ReasoningSessionData,
     ReasoningTurnData,
     TalosEngramData,
@@ -15,33 +15,42 @@ import type {
 
 const MAX_THOUGHT_LENGTH = 140;
 
-const extractNodeThought = (node: GraphNode): string => {
-    if (node.type !== 'turn') return '';
+const extractThoughtFromUsageRecord = (record?: ModelUsageRecord): string => {
+    if (!record?.response_payload?.choices?.length) return '';
+    const message = record.response_payload.choices[0].message;
 
-    let thought = (node.thought_process as string || '').trim();
+    // 1. Direct assistant content
+    if (typeof message.content === 'string' && message.content.trim()) {
+        return message.content.trim();
+    }
 
-    if (!thought && Array.isArray(node.messages)) {
-        const assistantMsg = (node.messages as ReasoningMessageData[]).find((m: ReasoningMessageData) => {
-            const roleName = typeof m.role === 'string' ? m.role : m.role?.name;
-            return String(roleName).toLowerCase() === 'assistant' &&
-                typeof m.content === 'string' &&
-                m.content.toUpperCase().startsWith('THOUGHT:');
-        });
-        if (assistantMsg && assistantMsg.content) {
-            thought = assistantMsg.content;
+    // 2. Tool call: mcp_respond_to_user → parse arguments for "thought"
+    if (Array.isArray(message.tool_calls)) {
+        for (const tc of message.tool_calls) {
+            if (tc.function?.name === 'mcp_respond_to_user') {
+                try {
+                    const parsed = JSON.parse(tc.function.arguments);
+                    if (typeof parsed.thought === 'string' && parsed.thought.trim()) {
+                        return parsed.thought.trim();
+                    }
+                } catch { /* ignore parse errors */ }
+            }
         }
     }
 
+    return '';
+};
+
+const extractNodeThought = (node: GraphNode): string => {
+    if (node.type !== 'turn') return '';
+
+    const thought = extractThoughtFromUsageRecord(node.model_usage_record as ModelUsageRecord | undefined);
     if (!thought) return '';
 
-    const cleaned = thought.replace(/^(THOUGHT:\s*)+/i, '').trim();
-    if (!cleaned) return '';
-
-    if (cleaned.length > MAX_THOUGHT_LENGTH) {
-        return `${cleaned.slice(0, MAX_THOUGHT_LENGTH - 1)}…`;
+    if (thought.length > MAX_THOUGHT_LENGTH) {
+        return `${thought.slice(0, MAX_THOUGHT_LENGTH - 1)}…`;
     }
-
-    return cleaned;
+    return thought;
 };
 
 interface BubblePosition {
@@ -56,7 +65,11 @@ interface ReasoningGraphProps {
     onStatsUpdate: (stats: { level: number, focus: string, xp: number, status: string, latestThought: string }) => void;
 }
 
-export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: ReasoningGraphProps) => {
+export const ReasoningGraph3D = memo(function ReasoningGraph3D({
+    sessionId,
+    onNodeSelect,
+    onStatsUpdate,
+}: ReasoningGraphProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
@@ -86,31 +99,15 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
 
             if (data.turns && data.turns.length > 0) {
                 for (let i = data.turns.length - 1; i >= 0; i--) {
-                    const t = data.turns[i];
-
-                    // Prefer an explicit thought_process if present.
-                    let thought = (t.thought_process || '').trim();
-
-                    // Fallback: derive THOUGHT from the assistant messages in the new schema.
-                    if (!thought && Array.isArray(t.messages)) {
-                        const assistantMsg = t.messages.find((m: ReasoningMessageData) => {
-                            const roleName = typeof m.role === 'string' ? m.role : m.role?.name;
-                            return String(roleName).toLowerCase() === 'assistant' &&
-                                typeof m.content === 'string' &&
-                                m.content.toUpperCase().startsWith('THOUGHT:');
-                        });
-                        if (assistantMsg && assistantMsg.content) {
-                            thought = assistantMsg.content;
-                        }
-                    }
-
+                    const thought = extractThoughtFromUsageRecord(data.turns[i].model_usage_record);
                     if (thought) {
-                        latestThought = thought.replace(/^(THOUGHT:\s*)+/i, '').trim();
+                        latestThought = thought;
                         break;
                     }
                 }
                 data.turns.forEach((t: ReasoningTurnData) => {
-                    const sec = parseDuration(t.inference_time || t.delta);
+                    const timeStr = t.model_usage_record?.query_time || t.delta || '';
+                    const sec = parseDuration(timeStr);
                     if (sec > 0) {
                         totalSeconds += sec;
                         validTurnsCount++;
@@ -139,7 +136,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
                 data.turns.forEach((t: ReasoningTurnData, index: number) => {
                     const tId = `turn-${t.id}`;
 
-                    const sec = parseDuration(t.inference_time || t.delta);
+                    const sec = parseDuration(t.model_usage_record?.query_time || t.delta || '');
                     let ratio = sec / avgDelta;
                     if (isNaN(ratio) || ratio === 0) ratio = 1;
                     ratio = Math.max(0.3, Math.min(ratio, 4.0));
@@ -329,7 +326,7 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
     }, []);
 
     return (
-        <div className="reasoninggraph3d-ui-153">
+        <div className="reasoning-graph-container">
             <ForceGraph3D
                 ref={fgRef}
                 graphData={graphData}
@@ -392,4 +389,4 @@ export const ReasoningGraph3D = ({ sessionId, onNodeSelect, onStatsUpdate }: Rea
             </div>
         </div>
     );
-};
+});

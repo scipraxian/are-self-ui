@@ -1,0 +1,306 @@
+.pns-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    pointer-events: auto;
+    padding: 0 20px 20px;
+    gap: 16px;
+}
+
+/* ── Beat control bar ── */
+
+.pns-beat-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.pns-beat-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pns-beat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #64748b;
+    flex-shrink: 0;
+}
+
+.pns-beat-dot--active {
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+}
+
+.pns-beat-label {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pns-beat-pid {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #64748b;
+}
+
+.pns-beat-btn {
+    padding: 5px 18px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+
+.pns-beat-btn--start {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+}
+
+.pns-beat-btn--start:hover {
+    background: rgba(74, 222, 128, 0.3);
+}
+
+.pns-beat-btn--stop {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+}
+
+.pns-beat-btn--stop:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.pns-beat-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Card grid ── */
+
+.pns-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+.pns-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    backdrop-filter: blur(12px);
+    cursor: default;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pns-card:hover {
+    border-color: var(--border-glass-strong);
+}
+
+.pns-card--selected {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+}
+
+/* ── Card header ── */
+
+.pns-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pns-card-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.pns-card-dot--online {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+}
+
+.pns-card-dot--offline {
+    background: var(--accent-red);
+    box-shadow: 0 0 6px var(--accent-red);
+}
+
+.pns-card-hostname {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pns-card-version {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #64748b;
+}
+
+/* ── Stats row ── */
+
+.pns-card-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.pns-card-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.pns-card-stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.pns-card-stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* ── Current task ── */
+
+.pns-card-task {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(249, 159, 27, 0.08);
+    border: 1px solid rgba(249, 159, 27, 0.2);
+    border-radius: 6px;
+}
+
+.pns-card-task-name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent-orange);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pns-card-task-elapsed {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+/* ── Log preview ── */
+
+.pns-card-logs {
+    margin: 0;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    line-height: 1.5;
+    color: #94a3b8;
+    overflow: hidden;
+    max-height: 90px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* ── Hint ── */
+
+.pns-card-hint {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: #475569;
+    text-align: right;
+}
+
+/* ── Empty state ── */
+
+.pns-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #94a3b8;
+}
+
+.pns-empty-title {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pns-empty-text {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-align: center;
+    max-width: 420px;
+}
+
+.pns-empty-text code {
+    color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+.pns-empty-hint {
+    margin-top: 8px;
+}
+
+.pns-empty-hint code {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent-orange);
+    background: rgba(249, 159, 27, 0.1);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(249, 159, 27, 0.2);
+}

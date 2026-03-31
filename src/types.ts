@@ -40,7 +40,6 @@ export interface ToolCallData {
     arguments: string | Record<string, unknown>;
     result_payload: string;
     traceback: string;
-    // Older payloads may include a human-readable status name, newer ones often use a numeric `status` instead.
     status_name?: string;
     is_async: boolean;
 }
@@ -48,7 +47,6 @@ export interface ToolCallData {
 export interface ReasoningMessageRole {
     id?: number;
     name: string;
-    // Some backends also send a created timestamp on the role object; we ignore it in the UI.
     created?: string;
 }
 
@@ -61,24 +59,42 @@ export interface ReasoningMessageData {
     [key: string]: unknown;
 }
 
+export interface ModelUsageRecord {
+    id: number;
+    input_tokens: number;
+    output_tokens: number;
+    query_time: string;
+    estimated_cost: string;
+    request_payload: Array<{ role: string; content: string }>;
+    response_payload: {
+        choices?: Array<{
+            message: {
+                role: string;
+                content: string | null;
+                tool_calls?: Array<{
+                    id: string;
+                    type: string;
+                    function: { name: string; arguments: string };
+                }>;
+            };
+        }>;
+        usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    };
+    ai_model_provider?: {
+        ai_model: { name: string };
+        provider: { name: string };
+    };
+}
+
 export interface ReasoningTurnData {
     id: number;
     turn_number: number;
     status_name: string;
-    // Older sessions populated `thought_process` directly; newer ones often leave this empty
-    // and instead embed the THOUGHT content in the `messages` array. The UI code derives a
-    // displayable thought from either source.
-    thought_process: string;
-    // Legacy payloads used `request_payload.messages`; newer ones primarily rely on `messages` below.
-    request_payload: { messages?: { role: string; content: string }[] } | string | Record<string, unknown>;
-    // Newer schema: full message timeline for the turn.
-    messages?: ReasoningMessageData[];
-    tokens_input: number;
-    tokens_output: number;
-    inference_time: string;
+    status?: number;
     delta: string;
     created: string;
     tool_calls: ToolCallData[];
+    model_usage_record?: ModelUsageRecord;
 }
 
 export interface ReasoningGoalData {
@@ -115,7 +131,6 @@ export interface ReasoningSessionData {
     max_focus: number;
     total_xp: number;
     created: string;
-    // Goals may be absent on some sessions in the new schema.
     goals?: ReasoningGoalData[];
     turns: ReasoningTurnData[];
     engrams: TalosEngramData[];
@@ -137,6 +152,7 @@ export interface GraphLink {
     target: string | GraphNode;
     type: string;
 }
+
 // --- CNS GRAPH EDITOR TYPES ---
 
 export interface CNSEffector {
@@ -155,7 +171,7 @@ export interface CNSContextRow {
 }
 
 export interface CNSNeuron {
-    id: number | string; // string for 'temp_' nodes before DB sync
+    id: number | string;
     title: string;
     x: number;
     y: number;
@@ -163,7 +179,7 @@ export interface CNSNeuron {
     is_root: boolean;
     has_override: boolean;
     invoked_pathway_id?: string | null;
-    status_id?: number | string; // Used in monitor mode
+    status_id?: number | string;
 }
 
 export interface CNSWire {
@@ -172,8 +188,14 @@ export interface CNSWire {
     status_id: 'flow' | 'success' | 'fail';
 }
 
+/** Position data stored in neuron.ui_json */
+export interface NeuronPosition {
+    x: number;
+    y: number;
+}
+
 export interface Spike {
-    id: number;
+    id: string;
     status: number;
     status_name: string;
     neuron: number;
@@ -183,17 +205,29 @@ export interface Spike {
     modified: string;
     target_hostname: string | null;
     result_code: number | null;
+    delta?: string;
+    average_delta?: string | number;
+    spike_train?: string;
+    pathway?: string;
+    invoked_pathway?: string | null;
+    child_trains?: string[];
+    provenance?: string | null;
+    provenance_train?: string | null;
+    application_log?: string;
+    execution_log?: string;
+    blackboard?: Record<string, unknown>;
 }
 
 export interface SpikeTrain {
-    id: number;
+    id: string;
     status: number;
     status_name: string;
-    pathway: number;
+    pathway: string;
     pathway_name: string;
     created: string;
     modified: string;
     spikes: Spike[];
+    parent_spike?: string | null;
 }
 
 export interface CNSTag {
@@ -209,12 +243,12 @@ export interface Effector {
 }
 
 export interface NeuralPathway {
-    id: number;
+    id: string;
     name: string;
     description: string;
     is_favorite: boolean;
     tags: CNSTag[];
-    ui_json: any; // We'll type this strictly later if you use React Flow
+    ui_json: string | NeuronPosition | null;
 }
 
 export interface Neuron {
@@ -222,9 +256,9 @@ export interface Neuron {
     pathway: number;
     effector: number | null;
     effector_name: string | null;
-    invoked_pathway: number | null;
+    invoked_pathway: string | null;
     invoked_pathway_name: string | null;
-    ui_json: any;
+    ui_json: string | NeuronPosition | null;
     is_root: boolean;
 }
 
@@ -237,7 +271,6 @@ export interface Axon {
     type_name: string;
 }
 
-// Add this new interface above PFCAgileItem
 export interface PFCCommentData {
     id: string;
     text: string;
@@ -245,7 +278,6 @@ export interface PFCCommentData {
     user?: { id: number; username: string } | null;
 }
 
-// Update PFCAgileItem
 export interface PFCAgileItem {
     id: string;
     item_type: 'EPIC' | 'STORY' | 'TASK';
@@ -258,14 +290,51 @@ export interface PFCAgileItem {
     owning_disc: { id: number; name: string } | null;
     previous_owners?: { id: number; name: string }[];
     parent_name?: string;
+    parent_id?: string;
     environment?: { id: string; name: string } | null;
-    comments?: PFCCommentData[]; // <--- ADD THIS
-
-    // PFCTicketMixin Deep Fields
+    comments?: PFCCommentData[];
     perspective?: string;
     assertions?: string;
     outside?: string;
     dod_exceptions?: string;
     dependencies?: string;
     demo_specifics?: string;
+}
+
+// --- PNS (PERIPHERAL NERVOUS SYSTEM) TYPES ---
+
+export interface CeleryTask {
+    id: string;
+    name: string;
+    args: string;
+    kwargs: string;
+    time_start: number | null;
+    worker_pid?: number;
+}
+
+export interface CeleryWorker {
+    hostname: string;
+    active_tasks: CeleryTask[];
+    reserved_tasks: CeleryTask[];
+    pid: number | null;
+    pool: Record<string, unknown>;
+    total: Record<string, number>;
+}
+
+export interface NorepinephrineEvent {
+    receptor_class: string;
+    dendrite_id: string;
+    molecule: 'Norepinephrine';
+    activity: string;
+    vesicle: Record<string, unknown>;
+    timestamp: string;
+}
+
+export interface WorkerLogEntry {
+    logger: string;
+    level: string;
+    message: string;
+    funcName: string;
+    lineno: number;
+    timestamp: string;
 }

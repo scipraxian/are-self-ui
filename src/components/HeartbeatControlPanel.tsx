@@ -23,8 +23,12 @@ export const HeartbeatControlPanel: React.FC = () => {
             const res = await apiFetch(BEAT_STATUS_URL);
             if (!res.ok) throw new Error(`Status ${res.status}`);
             const data = await res.json();
-            setStatus({ running: !!data.running, pid: data.pid });
-            setError(null);
+            const next = { running: !!data.running, pid: data.pid as number | undefined };
+            setStatus((prev) => {
+                if (prev && prev.running === next.running && prev.pid === next.pid) return prev;
+                return next;
+            });
+            setError((prev) => (prev === null ? prev : null));
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to fetch status');
             setStatus(null);

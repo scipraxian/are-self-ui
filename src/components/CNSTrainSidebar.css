@@ -1,0 +1,114 @@
+.cns-train-sidebar {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 16px;
+}
+
+.cns-train-sidebar-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    transition: color 120ms ease, border-color 120ms ease;
+    align-self: flex-start;
+}
+
+.cns-train-sidebar-back:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass-strong);
+}
+
+.cns-train-sidebar-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.cns-train-sidebar-desc {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cns-train-sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cns-train-sidebar-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.cns-train-sidebar-action:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass-strong);
+    background: rgba(30, 41, 59, 0.65);
+}
+
+.cns-train-sidebar-action--launch {
+    color: #4ade80;
+}
+
+.cns-train-sidebar-action--launch:hover {
+    color: #86efac;
+    border-color: rgba(74, 222, 128, 0.4);
+}
+
+.cns-train-sidebar-stats {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cns-train-sidebar-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+}
+
+.cns-train-sidebar-stat-label {
+    color: var(--text-muted);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.cns-train-sidebar-stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}

@@ -44,7 +44,7 @@ const LobeSphere = ({ position, color, name, path, hoveredLobe, setHoveredLobe, 
             </Sphere>
             {isHovered && (
                 <Html className="brainsplash-ui-13" position={[0, -2.5, 0]} center>
-                    <div className="font-display heading-tracking" style={{ color, textShadow: '0 2px 10px rgba(0,0,0,0.9)', fontSize: '0.85rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                    <div className={`brainsplash-hover-label brainsplash-hover-label--${path}`}>
                         {name.toUpperCase()}
                     </div>
                 </Html>

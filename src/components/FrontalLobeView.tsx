@@ -18,13 +18,19 @@ export const FrontalLobeView = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
 
+    const signature = (items: ReasoningSession[]) =>
+        (items || [])
+            .map((s) => `${s.id}:${s.status_name}:${s.current_focus}:${s.current_level}:${s.total_xp}:${s.max_turns}`)
+            .join("|");
+
     const fetchSessions = async () => {
         try {
             // FIX: Added missing trailing slash for Django API
             const res = await fetch('/api/v1/reasoning_sessions/');
             if (res.ok) {
                 const data = await res.json();
-                setSessions(data.results || data);
+                const next = (data.results || data) as ReasoningSession[];
+                setSessions((prev) => (signature(prev) === signature(next) ? prev : next));
             } else {
                 console.error("API returned non-200 status:", res.status);
             }
@@ -72,29 +78,19 @@ export const FrontalLobeView = () => {
                     sessions.map(session => {
                         const isActive = ['Active', 'Pending'].includes(session.status_name);
                         return (
-                            <div key={session.id} style={{
-                                background: isActive ? 'rgba(168, 85, 247, 0.05)' : 'rgba(0,0,0,0.3)',
-                                border: `1px solid ${isActive ? 'rgba(168, 85, 247, 0.4)' : 'var(--border-glass)'}`,
-                                borderRadius: '12px',
-                                padding: '16px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
+                            <div
+                                key={session.id}
+                                className={`frontallobeview-thread ${isActive ? 'frontallobeview-thread--active' : 'frontallobeview-thread--inactive'}`}
                                  onClick={() => setSelectedThreadId(session.id)}
-                                 onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent-purple)'}
-                                 onMouseOut={(e) => e.currentTarget.style.borderColor = isActive ? 'rgba(168, 85, 247, 0.4)' : 'var(--border-glass)'}
                             >
                                 <div className="common-layout-18">
-                                    <span className="font-display text-sm" style={{ color: isActive ? '#a855f7' : '#94a3b8', fontWeight: 800, letterSpacing: '0.05em' }}>
+                                    <span className={`frontallobeview-thread-title ${isActive ? 'frontallobeview-thread-title--active' : 'frontallobeview-thread-title--inactive'}`}>
                                         {/* Nomenclature fix */}
                                         COGNITIVE THREAD // {session.id.split('-')[0].toUpperCase()}
                                     </span>
                                     <div className="common-layout-15">
                                         {isActive && <Activity size={14} color="#a855f7" className="pulse" />}
-                                        <span className="font-mono text-xs" style={{ textTransform: 'uppercase', color: isActive ? '#f8fafc' : '#64748b' }}>
+                                        <span className={`frontallobeview-thread-status ${isActive ? 'frontallobeview-thread-status--active' : 'frontallobeview-thread-status--inactive'}`}>
                                             {session.status_name}
                                         </span>
                                     </div>

@@ -61,7 +61,10 @@ export const FrontalLobeDetail = ({ sessionId, onBack }: FrontalLobeDetailProps)
                 <div>
                     <h3 className="font-display heading-tracking text-base m-0 text-primary">COGNITIVE STREAM</h3>
                     <div className="font-mono text-xs text-muted common-layout-27">
-                        ID: {sessionId.split('-')[0].toUpperCase()} | STATUS: <span style={{ color: isActive ? '#facc15' : '#4ade80' }}>{cortexData.status_name}</span>
+                        ID: {sessionId.split('-')[0].toUpperCase()} | STATUS:{' '}
+                        <span className={`frontallobedetail-status ${isActive ? 'frontallobedetail-status--active' : 'frontallobedetail-status--inactive'}`}>
+                            {cortexData.status_name}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -130,7 +133,10 @@ export const FrontalLobeDetail = ({ sessionId, onBack }: FrontalLobeDetailProps)
                         </div>
                         <div className="common-layout-6">
                             {cortexData.goals?.map((goal: any) => (
-                                <div key={goal.id} style={{ fontSize: '0.85rem', color: '#cbd5e1', paddingLeft: '8px', borderLeft: `2px solid ${goal.achieved ? '#4ade80' : '#facc15'}` }}>
+                                <div
+                                    key={goal.id}
+                                    className={`frontallobedetail-goal ${goal.achieved ? 'frontallobedetail-goal--achieved' : 'frontallobedetail-goal--pending'}`}
+                                >
                                     {goal.rendered_goal}
                                 </div>
                             ))}

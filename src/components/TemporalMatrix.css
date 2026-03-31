@@ -253,6 +253,7 @@
     width: 100%;
     overflow: hidden;
     background: var(--bg-root);
+    pointer-events: auto;
 }
 
 /* Sidebar */
