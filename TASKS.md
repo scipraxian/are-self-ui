@@ -58,6 +58,19 @@ URL-as-truth enforcement. /cns/edit/:pathwayId → /cns/pathway/:pathwayId/edit.
 sidebar (train IS the URL). All navigation links updated. SpikeSet compare button fixed
 (Lucide icon). Full breadcrumb chains with train→pathway lookup.
 
+### Step 13 — Environment Editor + Selector Fix ✅
+EnvironmentProvider upgraded: selectEnvironment() calls POST /select/ on backend, auto-detects
+active environment on load, refreshEnvironments() for mutations. NavBar uses selectEnvironment.
+Full CRUD EnvironmentEditor page at /environments: environment list, detail editor with
+auto-save on blur, context variable table with inline editing/add/delete, Set as Active button,
+new/delete environment actions.
+
+### Step 14 — Frontal Session Chat + Thalamus Bubble ✅
+Graph/Chat mode toggle on FrontalSession: tab bar switches between ReasoningGraph3D and
+SessionChat. ThalamusBubble: floating chat icon (bottom-right, every page) expands to 400×500
+glassmorphic panel with ThalamusChat. ThalamusChat cleaned: hardcoded URLs removed, Tailwind
+classes moved to CSS.
+
 ### Backend Fix — V2 SpikeTrainViewSet Filter ✅
 V2 viewset was missing filter_backends and filterset_class. Added DjangoFilterBackend +
 SpikeTrainFilter. ?pathway= filtering now works correctly.
@@ -79,6 +92,9 @@ Enables sub-graph drill-through and parent context navigation.
 - CNSMonitorPage: removed all `any` types, proper ReactFlow node typing, ESLint-compliant
   data fetching pattern (async inside effect, dendrite events as deps)
 - Sub-graph drill passes parent context via React Router navigation state for breadcrumbs
+- SessionChat endpoint fixed: /resume/ not /interact/, body key: reply not message
+- Backend environment endpoints added: context-variables, context-keys, environment-types,
+  environment-statuses (all CRUD)
 
 ## Known Bugs (Current)
 
@@ -159,9 +175,5 @@ Working stubs. Needs proper detail view with full disc configuration editing.
 /identity                           → IdentityStub
 /identity/:discId                   → IdentityDetailStub
 /pns                                → PNSStub (heartbeat)
+/environments                       → EnvironmentEditor (CRUD + context variables)
 ```
-
-
-
-User says we need:
-Environment switcher / editor

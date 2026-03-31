@@ -66,7 +66,7 @@ session concludes or yields → control returns up the spike chain.
 |-------|------|-------------------|
 | `/cns` | Pathway dashboard (sparkline cards) | "Which pathways are healthy?" |
 | `/cns/pathway/:pathwayId` | Train timeline (spike bars) | "What happened recently?" |
-| `/cns/spiketrain/:spiketrainId` | Live execution graph (ghost-to-color node overlays) | "How is this execution flowing?" |
+| `/cns/spiketrain/:spiketrainId` | Live graph (spike overlay on ReactFlow) | "How is this execution flowing?" |
 | `/cns/spike/:spikeId` | Dual-terminal forensics (xterm.js) | "What exactly did this spike do?" |
 | `/cns/spikeset?s1=&s2=` | Multi-spike comparison | "How do these streams compare?" |
 | `/frontal` | Session list | "What sessions exist?" |
@@ -100,6 +100,7 @@ Bookmarkable, refreshable, shareable. F5 returns exactly where you were.
 /identity                           → IdentityStub
 /identity/:discId                   → IdentityDetailStub
 /pns                                → PNSStub (heartbeat)
+/environments                       → EnvironmentEditor (CRUD + context variables)
 ```
 
 ### Breadcrumb Chain (Every Segment Clickable)
@@ -119,10 +120,18 @@ The `EnvironmentProvider` context manages environment selection. The selector li
 NavBar. All views consume `useEnvironment()` and pass the selected environment ID to API calls.
 Changing environment filters pathways, trains, iterations, tasks, sessions — everything.
 
+**Environment is server-side state.** Selecting an environment calls
+`POST /api/v2/environments/{id}/select/` which atomically sets `selected=True` on the backend.
+Only one environment can be selected at a time. The environment determines how executable paths
+resolve (via Django template rendering of context variables like `{{project_root}}`).
+
+The `EnvironmentEditor` page at `/environments` provides full CRUD for environments including
+inline context variable editing.
+
 ## Architecture
 
 ### Layout
-- `LayoutShell.tsx`: 3D background + NavBar + `<Outlet />`
+- `LayoutShell.tsx`: 3D background + NavBar + `<Outlet />` + ThalamusBubble
 - `NavBar.tsx`: 40px persistent bar — hamburger, logo, breadcrumbs, environment selector
 - `ThreePanel.tsx`: Layout primitive for most pages (left/center/right)
 - Some views own their layout: TemporalMatrix, CNSSpikeForensics, CNSSpikeSet
@@ -140,6 +149,16 @@ Changing environment filters pathways, trains, iterations, tasks, sessions — e
 ### Real-Time (Synaptic Cleft)
 - `useDendrite(receptorClass, dendriteId)` for event subscriptions. **Never use setInterval.**
 - Neurotransmitters: Dopamine (success), Cortisol (error), Acetylcholine (sync), Glutamate (streaming)
+
+### Chat Integration
+- **SessionChat** (`/frontal/:sessionId` in Chat mode): Scoped to a specific reasoning session.
+  Posts to `/api/v2/reasoning_sessions/{id}/resume/` with `{ reply: '...' }`. Messages queue
+  in `swarm_message_queue` on the session model and get injected at the next turn — works even
+  while the session is actively reasoning.
+- **ThalamusChat** (floating bubble, every page): Global standing session. Posts to
+  `/api/v2/thalamus/interact/`. Accessible via the floating chat bubble in bottom-right corner.
+- Both use `@assistant-ui/react` with `useLocalRuntime` and real-time sync via
+  `useDendrite('SynapseResponse', null)`.
 
 ## Style Rules (Non-Negotiable)
 
@@ -175,7 +194,8 @@ right panel scroll, not the inspector body.
 
 ### API Response Shapes
 - `Spike` returns: id, status, status_name, neuron, effector, effector_name, spike_train,
-  created, modified, target_hostname, result_code, application_log, execution_log, blackboard.
+  created, modified, target_hostname, result_code, application_log, execution_log, blackboard,
+  invoked_pathway, child_trains, provenance, provenance_train.
 - `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`.
 - `ReasoningTurn` has nested `model_usage_record` with response_payload deep inside.
 - Always verify fields by hitting the endpoint in browser before assuming.
@@ -191,23 +211,23 @@ const spikeEvent = useDendrite('Spike', null);
 const trainEvent = useDendrite('SpikeTrain', null);
 
 useEffect(() => {
-    if (!someId) return;
-    let cancelled = false;
+  if (!someId) return;
+  let cancelled = false;
 
-    const load = async () => {
-        try {
-            const res = await apiFetch(`/api/v2/endpoint/${someId}/`);
-            if (!res.ok || cancelled) return;
-            const data = await res.json();
-            if (cancelled) return;
-            setSomeState(data);  // OK: inside async function, not synchronous in effect body
-        } catch (err) {
-            console.error('Fetch failed', err);
-        }
-    };
+  const load = async () => {
+    try {
+      const res = await apiFetch(`/api/v2/endpoint/${someId}/`);
+      if (!res.ok || cancelled) return;
+      const data = await res.json();
+      if (cancelled) return;
+      setSomeState(data);  // OK: inside async function, not synchronous in effect body
+    } catch (err) {
+      console.error('Fetch failed', err);
+    }
+  };
 
-    load();
-    return () => { cancelled = true; };
+  load();
+  return () => { cancelled = true; };
 }, [someId, spikeEvent, trainEvent]);  // dendrite events as deps trigger refetch
 ```
 
@@ -228,11 +248,11 @@ context through React Router navigation state:
 
 ```tsx
 navigate(`/cns/spiketrain/${childTrainId}`, {
-    state: {
-        parentTrainId: currentTrainId,
-        parentPathwayName: pathway.name,
-        parentPathwayId: pathwayId,
-    }
+  state: {
+    parentTrainId: currentTrainId,
+    parentPathwayName: pathway.name,
+    parentPathwayId: pathwayId,
+  }
 });
 ```
 

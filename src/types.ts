@@ -300,3 +300,41 @@ export interface PFCAgileItem {
     dependencies?: string;
     demo_specifics?: string;
 }
+
+// --- PNS (PERIPHERAL NERVOUS SYSTEM) TYPES ---
+
+export interface CeleryTask {
+    id: string;
+    name: string;
+    args: string;
+    kwargs: string;
+    time_start: number | null;
+    worker_pid?: number;
+}
+
+export interface CeleryWorker {
+    hostname: string;
+    active_tasks: CeleryTask[];
+    reserved_tasks: CeleryTask[];
+    pid: number | null;
+    pool: Record<string, unknown>;
+    total: Record<string, number>;
+}
+
+export interface NorepinephrineEvent {
+    receptor_class: string;
+    dendrite_id: string;
+    molecule: 'Norepinephrine';
+    activity: string;
+    vesicle: Record<string, unknown>;
+    timestamp: string;
+}
+
+export interface WorkerLogEntry {
+    logger: string;
+    level: string;
+    message: string;
+    funcName: string;
+    lineno: number;
+    timestamp: string;
+}

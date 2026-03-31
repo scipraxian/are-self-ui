@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BackgroundCanvas } from './BackgroundCanvas';
 import { NavBar } from './NavBar';
 import { SpikeSetBar } from './SpikeSetBar';
+import { WorkerSetBar } from './WorkerSetBar';
 import { ThalamusBubble } from './ThalamusBubble';
 import { useGABA } from '../context/GABAProvider';
 import './LayoutShell.css';
@@ -52,6 +53,7 @@ export function LayoutShell() {
             <div className="layout-ui">
                 <NavBar />
                 <SpikeSetBar />
+                <WorkerSetBar />
 
                 {/* Lobe page content via React Router */}
                 <Outlet />
