@@ -47,7 +47,7 @@ export function SpikeCorrelatedTimeline({ spikeIds }: SpikeCorrelatedTimelinePro
         const load = async () => {
             setIsLoading(true);
             try {
-                const res = await apiFetch(`/api/v2/spikes/merge/?${mergeParams}`);
+                const res = await apiFetch(`/api/v2/spike-logs/merge/?${mergeParams}`);
                 if (!res.ok || cancelled) return;
                 const data: MergeResponse = await res.json();
                 if (cancelled) return;
@@ -78,7 +78,7 @@ export function SpikeCorrelatedTimeline({ spikeIds }: SpikeCorrelatedTimelinePro
         isFetchingDeltaRef.current = true;
 
         try {
-            const res = await apiFetch('/api/v2/spikes/merge-delta/', {
+            const res = await apiFetch('/api/v2/spike-logs/merge-delta/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -90,7 +90,7 @@ export function SpikeCorrelatedTimeline({ spikeIds }: SpikeCorrelatedTimelinePro
 
             if (!res.ok) {
                 // Fallback: full re-fetch
-                const fallback = await apiFetch(`/api/v2/spikes/merge/?${mergeParams}`);
+                const fallback = await apiFetch(`/api/v2/spike-logs/merge/?${mergeParams}`);
                 if (fallback.ok) {
                     const data: MergeResponse = await fallback.json();
                     setLabels(data.labels);
