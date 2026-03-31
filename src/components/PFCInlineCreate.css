@@ -1,0 +1,110 @@
+.pfc-inline-create-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.pfc-inline-create-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.pfc-inline-create-trigger--compact {
+    padding: 4px 8px;
+    font-size: 0.65rem;
+}
+
+.pfc-inline-create-trigger--epic:hover {
+    color: #a855f7;
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.pfc-inline-create-trigger--story:hover {
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.pfc-inline-create-trigger--task:hover {
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.3);
+}
+
+.pfc-inline-create-form {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    background: rgba(15, 15, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+}
+
+.pfc-inline-create-form--epic {
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.pfc-inline-create-form--story {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.pfc-inline-create-form--task {
+    border-color: rgba(74, 222, 128, 0.3);
+}
+
+.pfc-inline-create-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #f8fafc;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    outline: none;
+    min-width: 0;
+    padding: 4px 6px;
+}
+
+.pfc-inline-create-input::placeholder {
+    color: #475569;
+}
+
+.pfc-inline-create-submit {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: #020617;
+    flex-shrink: 0;
+}
+
+.pfc-inline-create-submit:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pfc-inline-create-submit--epic {
+    background: #a855f7;
+}
+
+.pfc-inline-create-submit--story {
+    background: #3b82f6;
+}
+
+.pfc-inline-create-submit--task {
+    background: #4ade80;
+}

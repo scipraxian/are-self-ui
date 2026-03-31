@@ -16,6 +16,7 @@ import { CNSMonitorPage } from './pages/CNSMonitorPage';
 import { CNSSpikeSet } from './pages/CNSSpikeSet';
 import { TemporalStub } from './pages/TemporalStub';
 import { PFCPage } from './pages/PFCPage';
+import { PFCDetailPage } from './pages/PFCDetailPage';
 import { IdentityStub } from './pages/IdentityStub';
 import { IdentityDetailStub } from './pages/IdentityDetailStub';
 import { PNSPage } from './pages/PNSPage';
@@ -50,7 +51,13 @@ function App() {
                                     <Route path="spikeset" element={<CNSSpikeSet />} />
                                 </Route>
                                 <Route path="temporal" element={<TemporalStub />} />
-                                <Route path="pfc" element={<PFCPage />} />
+                                <Route path="pfc">
+                                    <Route index element={<PFCPage />} />
+                                    <Route path="backlog" element={<PFCPage />} />
+                                    <Route path="epic/:epicId" element={<PFCDetailPage />} />
+                                    <Route path="story/:storyId" element={<PFCDetailPage />} />
+                                    <Route path="task/:taskId" element={<PFCDetailPage />} />
+                                </Route>
                                 <Route path="identity" element={<IdentityStub />} />
                                 <Route path="identity/:discId" element={<IdentityDetailStub />} />
                                 <Route path="environments" element={<EnvironmentEditor />} />

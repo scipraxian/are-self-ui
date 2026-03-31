@@ -1,54 +1,34 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { Loader2, ChevronLeft, ChevronRight, BrainCircuit, ChevronsUp, ChevronUp, Minus, ChevronDown, Cpu, History, Globe, Plus } from 'lucide-react';
-import './PrefrontalCortex.css';
+import { ChevronLeft, ChevronRight, BrainCircuit, ChevronsUp, ChevronUp, Minus, ChevronDown, Cpu, History, Globe } from 'lucide-react';
+import { PFCInlineCreate } from './PFCInlineCreate';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
+import './PrefrontalCortex.css';
 
-interface PrefrontalCortexProps {
-    onItemSelect?: (item: PFCAgileItem) => void;
-    selectedItemId?: string | null;
-    onItemsChange?: (items: PFCAgileItem[]) => void;
-    filterEpicId?: string | null;
-    createModalType?: 'EPIC' | 'STORY' | 'TASK' | null;
-    onCreateModalChange?: (type: 'EPIC' | 'STORY' | 'TASK' | null) => void;
-}
-
-interface PFCItemStatus {
+export interface PFCItemStatus {
     id: number;
     name: string;
 }
 
-interface RawEpic extends Partial<PFCAgileItem> {}
-interface RawStory extends Partial<PFCAgileItem> { epic?: { id: string; name: string } }
-interface RawTask extends Partial<PFCAgileItem> { story?: { id: string; name: string } }
+interface PrefrontalCortexProps {
+    items: PFCAgileItem[];
+    statuses: PFCItemStatus[];
+    selectedItemId?: string | null;
+    filterEpicId?: string | null;
+    filterStoryId?: string | null;
+    onItemSelect: (item: PFCAgileItem) => void;
+    onRefresh: () => void;
+    onCreateItem: (name: string, type: 'EPIC' | 'STORY' | 'TASK', parentId?: string, statusId?: number) => Promise<void>;
+}
 
-export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, filterEpicId, createModalType, onCreateModalChange }: PrefrontalCortexProps) => {
+export const PrefrontalCortex = ({
+    items, statuses, selectedItemId, filterEpicId, filterStoryId,
+    onItemSelect, onRefresh, onCreateItem
+}: PrefrontalCortexProps) => {
     const boardRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
-
-    const [statuses, setStatuses] = useState<PFCItemStatus[]>([]);
-    const [items, setItems] = useState<PFCAgileItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
     const [dragOverStatus, setDragOverStatus] = useState<number | null>(null);
-
-    // Creation Modal State (local only if not controlled from parent)
-    const [localCreateModalType, setLocalCreateModalType] = useState<'EPIC' | 'STORY' | 'TASK' | null>(null);
-    const [newItemName, setNewItemName] = useState("");
-    const [newItemParent, setNewItemParent] = useState("");
-
-    // Use controlled or local modal type
-    const activeModalType = createModalType !== undefined ? createModalType : localCreateModalType;
-    const setActiveModalType = onCreateModalChange || setLocalCreateModalType;
-
-    // Refs for stable closure access in fetchData
-    const selectedItemIdRef = useRef(selectedItemId);
-    selectedItemIdRef.current = selectedItemId;
-    const onItemSelectRef = useRef(onItemSelect);
-    onItemSelectRef.current = onItemSelect;
-    const onItemsChangeRef = useRef(onItemsChange);
-    onItemsChangeRef.current = onItemsChange;
 
     const checkScroll = () => {
         if (boardRef.current) {
@@ -64,67 +44,7 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, 
         }
     };
 
-    const fetchData = async (isInitial = false) => {
-        if (isInitial) setIsLoading(true);
-        try {
-            const [statusRes, epicRes, storyRes, taskRes] = await Promise.all([
-                fetch('/api/v2/pre-frontal-item-status/'),
-                fetch('/api/v2/pfc-epics/?full=true'),
-                fetch('/api/v2/pfc-stories/?full=true'),
-                fetch('/api/v2/pfc-tasks/?full=true')
-            ]);
-
-            if (statusRes.ok) {
-                const statusData = await statusRes.json();
-                setStatuses(statusData.results || statusData);
-            }
-
-            let allItems: PFCAgileItem[] = [];
-            if (epicRes.ok) {
-                const data = await epicRes.json();
-                const epics = (data.results || data).map((e: RawEpic) => ({ ...e, item_type: 'EPIC' })) as PFCAgileItem[];
-                allItems = [...allItems, ...epics];
-            }
-            if (storyRes.ok) {
-                const data = await storyRes.json();
-                const stories = (data.results || data).map((s: RawStory) => ({ ...s, item_type: 'STORY', parent_name: s.epic?.name, parent_id: s.epic?.id })) as PFCAgileItem[];
-                allItems = [...allItems, ...stories];
-            }
-            if (taskRes.ok) {
-                const data = await taskRes.json();
-                const tasks = (data.results || data).map((t: RawTask) => ({ ...t, item_type: 'TASK', parent_name: t.story?.name, parent_id: t.story?.id })) as PFCAgileItem[];
-                allItems = [...allItems, ...tasks];
-            }
-
-            setItems(allItems);
-            onItemsChangeRef.current?.(allItems);
-
-            if (selectedItemIdRef.current && onItemSelectRef.current) {
-                const updatedSelected = allItems.find(i => i.id === selectedItemIdRef.current);
-                if (updatedSelected) onItemSelectRef.current(updatedSelected);
-            }
-
-        } catch (err) {
-            console.error("Failed to fetch PFC data:", err);
-        } finally {
-            if (isInitial) setIsLoading(false);
-        }
-    };
-
-    // Initial fetch — runs once on mount
     useEffect(() => {
-        fetchData(true);
-    }, []);
-
-    // Refresh listener — no loading flash
-    useEffect(() => {
-        const handlePfcRefresh = () => fetchData(false);
-        window.addEventListener('pfc-refresh', handlePfcRefresh);
-        return () => window.removeEventListener('pfc-refresh', handlePfcRefresh);
-    }, []);
-
-    useEffect(() => {
-        // Wait for DOM to render before measuring scroll dimensions
         const raf = requestAnimationFrame(() => checkScroll());
         window.addEventListener('resize', checkScroll);
         return () => {
@@ -133,18 +53,26 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, 
         };
     }, [statuses, items]);
 
-    // Filter items by epic when filterEpicId is set
+    // Filter items by epic/story
     const displayItems = useMemo(() => {
-        if (!filterEpicId) return items;
-        const epicStoryIds = items
-            .filter(i => i.item_type === 'STORY' && i.parent_id === filterEpicId)
-            .map(s => s.id);
-        return items.filter(i =>
-            i.id === filterEpicId ||
-            i.parent_id === filterEpicId ||
-            (i.item_type === 'TASK' && epicStoryIds.includes(i.parent_id || ''))
-        );
-    }, [items, filterEpicId]);
+        if (filterStoryId) {
+            return items.filter(i =>
+                i.id === filterStoryId ||
+                (i.item_type === 'TASK' && i.parent_id === filterStoryId)
+            );
+        }
+        if (filterEpicId) {
+            const epicStoryIds = items
+                .filter(i => i.item_type === 'STORY' && i.parent_id === filterEpicId)
+                .map(s => s.id);
+            return items.filter(i =>
+                i.id === filterEpicId ||
+                i.parent_id === filterEpicId ||
+                (i.item_type === 'TASK' && epicStoryIds.includes(i.parent_id || ''))
+            );
+        }
+        return items;
+    }, [items, filterEpicId, filterStoryId]);
 
     const getPriorityIcon = (priority?: number) => {
         switch (priority) {
@@ -172,11 +100,8 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, 
         if (!payload.item_type) return;
 
         const { id, item_type } = payload;
-        const endpointMap = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
-        const endpoint = endpointMap[item_type as keyof typeof endpointMap];
-
-        const targetStatusObj = statuses.find(s => s.id === targetStatusId);
-        setItems(prev => prev.map(i => i.id === id ? { ...i, status: targetStatusObj || i.status } : i));
+        const endpointMap: Record<string, string> = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
+        const endpoint = endpointMap[item_type];
 
         try {
             await apiFetch(`/api/v2/${endpoint}/${id}/`, {
@@ -184,124 +109,31 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: targetStatusId })
             });
-            fetchData();
+            onRefresh();
         } catch (err) {
             console.error("Failed to update status", err);
-            fetchData();
+            onRefresh();
         }
     };
 
-    const handleCreateSubmit = async () => {
-        if (!newItemName.trim() || !activeModalType) return;
-
-        const endpointMap = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
-        const endpoint = endpointMap[activeModalType];
-        const backlogStatus = statuses.find(s => s.name.toLowerCase() === 'backlog') || statuses[0];
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const payload: any = {
-            name: newItemName.trim(),
-            status: backlogStatus?.id
-        };
-
-        if (activeModalType === 'STORY') payload.epic = newItemParent;
-        if (activeModalType === 'TASK') payload.story = newItemParent;
-
-        try {
-            const res = await apiFetch(`/api/v2/${endpoint}/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                const newItem = await res.json();
-                setActiveModalType(null);
-                setNewItemName("");
-                setNewItemParent("");
-                fetchData();
-                if (onItemSelect) {
-                    onItemSelect({ ...newItem, item_type: activeModalType, status: backlogStatus } as PFCAgileItem);
-                }
-            }
-        } catch (err) {
-            console.error(`Failed to create ${activeModalType}`, err);
+    // Determine the default parent for new tasks created in a column
+    const getDefaultParent = (): string | undefined => {
+        if (filterStoryId) return filterStoryId;
+        // If filtering by epic, pick the first story of that epic
+        if (filterEpicId) {
+            const firstStory = items.find(i => i.item_type === 'STORY' && i.parent_id === filterEpicId);
+            return firstStory?.id;
         }
+        return undefined;
     };
-
-    if (isLoading && items.length === 0) {
-        return (
-            <div className="pfc-container loader-container">
-                <Loader2 className="animate-spin text-muted" size={32} />
-            </div>
-        );
-    }
-
-    const typeClass = activeModalType?.toLowerCase() || '';
-    const isSubmitDisabled = !newItemName.trim() || (activeModalType !== 'EPIC' && !newItemParent);
 
     return (
         <div className="pfc-container">
-            {/* Create Modal Overlay */}
-            {activeModalType && (
-                <div className="pfc-modal-overlay">
-                    <div className={`pfc-modal-body pfc-modal-body--${typeClass}`}>
-                        <h3 className={`pfc-modal-title pfc-modal-title--${typeClass}`}>
-                            <Plus size={18} /> CREATE {activeModalType}
-                        </h3>
-
-                        <input className="pfc-modal-input"
-                            autoFocus
-                            placeholder={`Enter ${activeModalType} Name...`}
-                            value={newItemName}
-                            onChange={(e) => setNewItemName(e.target.value)}
-                        />
-
-                        {activeModalType === 'STORY' && (
-                            <select
-                                value={newItemParent}
-                                onChange={(e) => setNewItemParent(e.target.value)}
-                                className={`pfc-modal-select ${newItemParent ? 'pfc-modal-select--has-value' : ''}`}
-                            >
-                                <option value="" disabled>Select Parent Epic...</option>
-                                {items.filter(i => i.item_type === 'EPIC').map(epic => (
-                                    <option key={epic.id} value={epic.id}>{epic.name}</option>
-                                ))}
-                            </select>
-                        )}
-
-                        {activeModalType === 'TASK' && (
-                            <select
-                                value={newItemParent}
-                                onChange={(e) => setNewItemParent(e.target.value)}
-                                className={`pfc-modal-select ${newItemParent ? 'pfc-modal-select--has-value' : ''}`}
-                            >
-                                <option value="" disabled>Select Parent Story...</option>
-                                {items.filter(i => i.item_type === 'STORY').map(story => (
-                                    <option key={story.id} value={story.id}>{story.name} (from {story.parent_name})</option>
-                                ))}
-                            </select>
-                        )}
-
-                        <div className="pfc-modal-button-row">
-                            <button className="pfc-modal-cancel-btn" onClick={() => { setActiveModalType(null); setNewItemName(""); setNewItemParent(""); }}>Cancel</button>
-                            <button
-                                onClick={handleCreateSubmit}
-                                disabled={isSubmitDisabled}
-                                className={`pfc-modal-submit-btn pfc-modal-submit-btn--${typeClass}`}
-                            >
-                                Create Ticket
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="pfc-header">
                 <div className="pfc-header-content">
                     <h3 className="font-display heading-tracking text-base m-0 text-primary common-layout-15">
                         <BrainCircuit size={18} color="#ef4444" />
-                        PREFRONTAL CORTEX (AGILE BOARD)
+                        AGILE BOARD
                     </h3>
                 </div>
             </div>
@@ -338,7 +170,7 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, 
                                                 className={`pfc-card pfc-card--${itemTypeClass} ${isSelected ? 'pfc-card--selected' : ''}`}
                                                 draggable
                                                 onDragStart={(e) => handleDragStart(e, item)}
-                                                onClick={() => onItemSelect && onItemSelect(item)}
+                                                onClick={() => onItemSelect(item)}
                                             >
                                                 <div className="pfc-card-header">
                                                     <div>
@@ -393,6 +225,13 @@ export const PrefrontalCortex = ({ onItemSelect, selectedItemId, onItemsChange, 
                                         );
                                     })}
                                     <div className={`pfc-drop-zone ${isDragOver ? 'drag-over' : ''}`}></div>
+                                    <PFCInlineCreate
+                                        itemType="TASK"
+                                        parentId={getDefaultParent()}
+                                        statusId={status.id}
+                                        onSubmit={(name, parentId, statusId) => onCreateItem(name, 'TASK', parentId, statusId)}
+                                        compact
+                                    />
                                 </div>
                             </div>
                         );

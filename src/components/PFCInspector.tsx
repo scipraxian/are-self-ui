@@ -1,11 +1,16 @@
 import "./PFCInspector.css";
 import { useState, useEffect, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api';
+import { PFCStatusBadge } from './PFCStatusBadge';
 import type { PFCAgileItem } from '../types';
+import type { PFCItemStatus } from './PrefrontalCortex';
 import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu, Globe, MessageSquare, Trash2, Maximize2, Minimize2 } from 'lucide-react';
 
 interface PFCInspectorProps {
     item: PFCAgileItem;
+    allItems: PFCAgileItem[];
+    statuses: PFCItemStatus[];
     onUpdate: () => void;
     onDelete: () => void;
     isExpanded?: boolean;
@@ -34,21 +39,35 @@ const Accordion = ({ title, variant, icon, open = false, children }: AccordionPr
     );
 };
 
-export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExpand }: PFCInspectorProps) => {
+export const PFCInspector = ({ item, allItems, statuses, onUpdate, onDelete, isExpanded, onToggleExpand }: PFCInspectorProps) => {
+    const navigate = useNavigate();
     const [localData, setLocalData] = useState<PFCAgileItem>(item);
     const [environments, setEnvironments] = useState<{id: string, name: string}[]>([]);
-
+    const [identityDiscs, setIdentityDiscs] = useState<{id: number, name: string}[]>([]);
     const [newComment, setNewComment] = useState("");
     const [isPosting, setIsPosting] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
-        apiFetch('/api/v1/environments/')
-            .then(res => res.json())
-            .then(data => {
+
+        const loadEnvs = async () => {
+            try {
+                const res = await apiFetch('/api/v1/environments/');
+                const data = await res.json();
                 if (isMounted) setEnvironments(data.results || data);
-            })
-            .catch(console.error);
+            } catch (err) { console.error(err); }
+        };
+
+        const loadDiscs = async () => {
+            try {
+                const res = await apiFetch('/api/v2/identity-discs/');
+                const data = await res.json();
+                if (isMounted) setIdentityDiscs(data.results || data);
+            } catch (err) { console.error(err); }
+        };
+
+        loadEnvs();
+        loadDiscs();
         return () => { isMounted = false; };
     }, []);
 
@@ -56,12 +75,11 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
         setLocalData(item);
     }, [item]);
 
-    const endpointMap = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
+    const endpointMap: Record<string, string> = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
     const typeClass = item.item_type.toLowerCase() as 'epic' | 'story' | 'task';
 
     const handleSave = async (field: keyof PFCAgileItem, value: string | number | undefined) => {
         if (item[field] === value) return;
-
         try {
             const endpoint = endpointMap[item.item_type];
             const res = await apiFetch(`/api/v2/${endpoint}/${item.id}/`, {
@@ -69,24 +87,51 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [field]: value })
             });
-
-            if (res.ok) {
-                onUpdate();
-            }
+            if (res.ok) onUpdate();
         } catch (err) {
             console.error(`Failed to update ${field}:`, err);
         }
     };
 
-    const handleDeleteTicket = async () => {
-        if (!confirm(`WARNING: Are you sure you want to permanently delete this ${item.item_type}? This action cannot be undone.`)) return;
-
+    const handleStatusChange = async (statusId: string) => {
+        const numId = Number(statusId);
+        const statusObj = statuses.find(s => s.id === numId);
+        if (statusObj) {
+            setLocalData(prev => ({ ...prev, status: statusObj }));
+        }
         try {
             const endpoint = endpointMap[item.item_type];
             const res = await apiFetch(`/api/v2/${endpoint}/${item.id}/`, {
-                method: 'DELETE'
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: numId })
             });
+            if (res.ok) onUpdate();
+        } catch (err) {
+            console.error("Failed to update status:", err);
+        }
+    };
 
+    const handleAssigneeChange = async (discId: string) => {
+        const numId = discId ? Number(discId) : null;
+        try {
+            const endpoint = endpointMap[item.item_type];
+            const res = await apiFetch(`/api/v2/${endpoint}/${item.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ owning_disc: numId })
+            });
+            if (res.ok) onUpdate();
+        } catch (err) {
+            console.error("Failed to update assignee:", err);
+        }
+    };
+
+    const handleDeleteTicket = async () => {
+        if (!confirm(`WARNING: Are you sure you want to permanently delete this ${item.item_type}? This action cannot be undone.`)) return;
+        try {
+            const endpoint = endpointMap[item.item_type];
+            const res = await apiFetch(`/api/v2/${endpoint}/${item.id}/`, { method: 'DELETE' });
             if (res.ok || res.status === 204) {
                 onUpdate();
                 onDelete();
@@ -99,7 +144,6 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
     const handleEnvironmentChange = async (envId: string | null) => {
         const envObj = environments.find(env => env.id === envId) || null;
         setLocalData(prev => ({ ...prev, environment: envObj }));
-
         try {
             const res = await apiFetch(`/api/v2/pfc-epics/${item.id}/`, {
                 method: 'PATCH',
@@ -115,14 +159,11 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
     const handlePriorityChange = async (direction: 'up' | 'down') => {
         const current = localData.priority || 3;
         let next = current;
-
         if (direction === 'up' && current > 1) next = current - 1;
         if (direction === 'down' && current < 4) next = current + 1;
-
         if (next === current) return;
 
         setLocalData(prev => ({ ...prev, priority: next }));
-
         try {
             const endpoint = endpointMap[item.item_type];
             const res = await apiFetch(`/api/v2/${endpoint}/${item.id}/`, {
@@ -141,17 +182,11 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
         setIsPosting(true);
         try {
             const targetField = item.item_type.toLowerCase();
-            const payload = {
-                text: newComment,
-                [targetField]: item.id
-            };
-
             const res = await apiFetch(`/api/v2/pfc-comments/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ text: newComment, [targetField]: item.id })
             });
-
             if (res.ok) {
                 setNewComment("");
                 onUpdate();
@@ -182,9 +217,34 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
         />
     );
 
+    // Completion stats for epics and stories
+    const getChildStats = () => {
+        if (item.item_type === 'EPIC') {
+            const childStories = allItems.filter(i => i.item_type === 'STORY' && i.parent_id === item.id);
+            const storyIds = childStories.map(s => s.id);
+            const childTasks = allItems.filter(i => i.item_type === 'TASK' && storyIds.includes(i.parent_id || ''));
+            const done = childTasks.filter(t => t.status?.name?.toLowerCase() === 'done').length;
+            return { childCount: childStories.length, taskCount: childTasks.length, doneCount: done, label: 'stories' };
+        }
+        if (item.item_type === 'STORY') {
+            const childTasks = allItems.filter(i => i.item_type === 'TASK' && i.parent_id === item.id);
+            const done = childTasks.filter(t => t.status?.name?.toLowerCase() === 'done').length;
+            return { childCount: childTasks.length, taskCount: childTasks.length, doneCount: done, label: 'tasks' };
+        }
+        return null;
+    };
+
+    const childStats = getChildStats();
+    const completionPct = childStats && childStats.taskCount > 0
+        ? Math.round((childStats.doneCount / childStats.taskCount) * 100)
+        : 0;
+
+    // Parent breadcrumb for tasks/stories
+    const parentItem = item.parent_id ? allItems.find(i => i.id === item.parent_id) : null;
+    const grandparentItem = parentItem?.parent_id ? allItems.find(i => i.id === parentItem.parent_id) : null;
+
     return (
         <div className="pfc-inspector">
-            {/* Expand/Collapse toggle */}
             {onToggleExpand && (
                 <button
                     className="pfc-inspector-expand-btn"
@@ -195,9 +255,34 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                 </button>
             )}
 
-            {/* Header — sticky top */}
+            {/* Header */}
             <div className="pfc-inspector-header">
                 <div className="pfc-inspector-header-block">
+                    {/* Parent breadcrumb */}
+                    {(parentItem || grandparentItem) && (
+                        <div className="pfc-inspector-breadcrumb">
+                            {grandparentItem && (
+                                <>
+                                    <span
+                                        className="pfc-inspector-breadcrumb-link pfc-inspector-breadcrumb-link--epic"
+                                        onClick={() => navigate(`/pfc/epic/${grandparentItem.id}`)}
+                                    >
+                                        {grandparentItem.name}
+                                    </span>
+                                    <span className="pfc-inspector-breadcrumb-sep">/</span>
+                                </>
+                            )}
+                            {parentItem && (
+                                <span
+                                    className={`pfc-inspector-breadcrumb-link pfc-inspector-breadcrumb-link--${parentItem.item_type.toLowerCase()}`}
+                                    onClick={() => navigate(`/pfc/${parentItem.item_type.toLowerCase()}/${parentItem.id}`)}
+                                >
+                                    {parentItem.name}
+                                </span>
+                            )}
+                        </div>
+                    )}
+
                     <div className="pfc-inspector-header-row">
                         <div className="common-layout-15">
                             <span className={`pfcinspector-type-pill pfcinspector-type-pill--${typeClass}`}>
@@ -213,7 +298,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                                 type="button"
                                 className="pfcinspector-priority-btn"
                             >
-                                ▲
+                                &#9650;
                             </button>
                             <span className={`pfcinspector-priority-label pfcinspector-priority-label--${localData.priority || 3}`}>
                                 {getPriorityLabel(localData.priority)}
@@ -224,7 +309,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                                 type="button"
                                 className="pfcinspector-priority-btn"
                             >
-                                ▼
+                                &#9660;
                             </button>
                         </div>
                     </div>
@@ -234,10 +319,40 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                         onChange={(e) => setLocalData({ ...localData, name: e.target.value })}
                         onBlur={(e) => handleSave('name', e.target.value)}
                     />
+
+                    {/* Status dropdown */}
+                    <div className="pfc-inspector-field-inline">
+                        <span className="pfc-inspector-field-label--inline">STATUS:</span>
+                        <select
+                            className="pfc-inspector-status-select"
+                            value={localData.status?.id || ''}
+                            onChange={e => handleStatusChange(e.target.value)}
+                        >
+                            {statuses.map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* Body — scrollable */}
+            {/* Completion bar for epics/stories */}
+            {childStats && childStats.taskCount > 0 && (
+                <div className="pfc-inspector-completion">
+                    <div className="pfc-inspector-completion-header">
+                        <span>{childStats.childCount} {childStats.label}</span>
+                        <span>{childStats.doneCount}/{childStats.taskCount} tasks done ({completionPct}%)</span>
+                    </div>
+                    <div className="pfc-inspector-completion-bar">
+                        <div
+                            className="pfc-inspector-completion-fill"
+                            style={{ width: `${completionPct}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Body */}
             <div className="pfc-inspector-body">
                 {item.item_type === 'EPIC' && (
                     <div className="pfc-inspector-env-row">
@@ -255,24 +370,21 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                     </div>
                 )}
 
-                {/* Core Description */}
-                <div className="pfc-inspector-description-box">
-                    <div className="pfc-inspector-section-header">Description</div>
-                    {renderTextarea('description', 'Enter general description...')}
-                </div>
-
-                {/* ASSIGNMENT & HISTORY */}
+                {/* Assignee dropdown */}
                 <Accordion title="Assignment & Chain of Custody" variant={typeClass} icon={<Cpu size={14}/>} open>
                     <div className="pfc-inspector-assignment-body">
-                        <div className="common-layout-15">
+                        <div className="pfc-inspector-field-inline">
                             <span className="pfc-inspector-field-label--active">ACTIVE OWNER:</span>
-                            {item.owning_disc ? (
-                                <span className="pfc-inspector-owner-badge">
-                                    {item.owning_disc.name}
-                                </span>
-                            ) : (
-                                <span className="pfc-inspector-owner-unassigned">Unassigned / Backlog</span>
-                            )}
+                            <select
+                                className="pfc-inspector-assignee-select"
+                                value={localData.owning_disc?.id || ''}
+                                onChange={e => handleAssigneeChange(e.target.value)}
+                            >
+                                <option value="">Unassigned</option>
+                                {identityDiscs.map(disc => (
+                                    <option key={disc.id} value={disc.id}>{disc.name}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="pfc-inspector-field-row">
                             <span className="pfc-inspector-field-label">PREVIOUS:</span>
@@ -291,7 +403,13 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                     </div>
                 </Accordion>
 
-                {/* Definition of Ready / Done Data */}
+                {/* Core Description */}
+                <div className="pfc-inspector-description-box">
+                    <div className="pfc-inspector-section-header">Description</div>
+                    {renderTextarea('description', 'Enter general description...')}
+                </div>
+
+                {/* BDD Fields */}
                 <Accordion title="Perspective (The Why/Who)" variant={typeClass} icon={<Target size={14}/>} open>
                     {renderTextarea('perspective', 'e.g. As a User, I want to...')}
                 </Accordion>
@@ -316,7 +434,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                     {renderTextarea('demo_specifics', 'How will this be demonstrated at the end of the shift?')}
                 </Accordion>
 
-                {/* COMMENTS BLOCK */}
+                {/* Comments */}
                 <Accordion title={`Communication Log (${item.comments?.length || 0})`} variant={typeClass} icon={<MessageSquare size={14}/>} open>
                     <div className="pfc-inspector-comment-section">
                         <div className="pfc-inspector-comment-list">
@@ -358,7 +476,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                 </Accordion>
             </div>
 
-            {/* Actions — sticky bottom */}
+            {/* Actions */}
             <div className="pfc-inspector-actions">
                 <a
                     href={`/admin/prefrontal_cortex/pfc${item.item_type.toLowerCase()}/${item.id}/change/`}
@@ -366,7 +484,7 @@ export const PFCInspector = ({ item, onUpdate, onDelete, isExpanded, onToggleExp
                     rel="noopener noreferrer"
                     className={`pfcinspector-db-link pfcinspector-db-link--${typeClass}`}
                 >
-                    ADVANCED DB RECORD ↗
+                    ADVANCED DB RECORD &#8599;
                 </a>
                 <button className="pfc-inspector-delete-btn"
                     onClick={handleDeleteTicket}

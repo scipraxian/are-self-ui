@@ -352,6 +352,121 @@
     background-color: rgba(74, 222, 128, 0.12);
 }
 
+/* Status select */
+.pfc-inspector-status-select {
+    flex: 1;
+    background: var(--bg-obsidian);
+    border: 1px solid var(--border-glass);
+    color: #f8fafc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* Assignee select */
+.pfc-inspector-assignee-select {
+    flex: 1;
+    background: var(--bg-obsidian);
+    border: 1px solid var(--border-glass);
+    color: #f8fafc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* Inline field row */
+.pfc-inspector-field-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.pfc-inspector-field-label--inline {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+/* Completion bar */
+.pfc-inspector-completion {
+    margin: 0 0 8px 0;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+}
+
+.pfc-inspector-completion-header {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.pfc-inspector-completion-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.pfc-inspector-completion-fill {
+    height: 100%;
+    background: #4ade80;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Parent breadcrumb */
+.pfc-inspector-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.pfc-inspector-breadcrumb-link {
+    cursor: pointer;
+    transition: color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.pfc-inspector-breadcrumb-link--epic {
+    color: #a855f7;
+}
+
+.pfc-inspector-breadcrumb-link--epic:hover {
+    color: #c084fc;
+}
+
+.pfc-inspector-breadcrumb-link--story {
+    color: #3b82f6;
+}
+
+.pfc-inspector-breadcrumb-link--story:hover {
+    color: #60a5fa;
+}
+
+.pfc-inspector-breadcrumb-sep {
+    color: var(--text-muted);
+}
+
 /* Comment send button */
 .pfcinspector-comment-send {
     align-self: flex-end;

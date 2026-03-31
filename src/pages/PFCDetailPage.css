@@ -1,0 +1,186 @@
+.pfc-detail-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    pointer-events: auto;
+}
+
+.pfc-detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    pointer-events: auto;
+}
+
+.pfc-detail-back-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--accent-blue);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.pfc-detail-center {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.pfc-detail-center::-webkit-scrollbar {
+    display: none;
+}
+
+.pfc-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pfc-detail-name {
+    font-family: Outfit, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.pfc-detail-description {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+}
+
+.pfc-detail-completion {
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+}
+
+.pfc-detail-completion-text {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.pfc-detail-completion-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.pfc-detail-completion-fill {
+    height: 100%;
+    background: #4ade80;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.pfc-detail-children {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pfc-detail-children-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pfc-detail-children-title {
+    font-family: Outfit, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.pfc-detail-children-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pfc-detail-child-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(15, 15, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.pfc-detail-child-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pfc-detail-child-row--story {
+    border-left: 3px solid #3b82f6;
+}
+
+.pfc-detail-child-row--story:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+.pfc-detail-child-row--task {
+    border-left: 3px solid #4ade80;
+}
+
+.pfc-detail-child-row--task:hover {
+    border-color: rgba(74, 222, 128, 0.4);
+}
+
+.pfc-detail-child-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.pfc-detail-child-name {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pfc-detail-child-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
