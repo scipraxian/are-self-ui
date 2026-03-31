@@ -1,0 +1,163 @@
+.correlated-timeline {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.correlated-timeline-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(15, 23, 42, 0.8);
+    border-bottom: 1px solid var(--border-glass);
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+}
+
+.correlated-timeline-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+}
+
+.correlated-timeline-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #64748b;
+}
+
+.correlated-timeline-status-dot--active {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+    animation: correlated-pulse 2s ease-in-out infinite;
+}
+
+@keyframes correlated-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.correlated-timeline-autoscroll {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    color: #94a3b8;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    cursor: pointer;
+}
+
+.correlated-timeline-autoscroll:hover {
+    color: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.correlated-timeline-autoscroll--active {
+    color: var(--accent-green);
+    border-color: rgba(52, 211, 153, 0.4);
+}
+
+.correlated-timeline-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.correlated-timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.correlated-timeline-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.correlated-timeline-table th {
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid var(--border-glass);
+    font-family: var(--font-display), sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: left;
+}
+
+.correlated-timeline-table th.correlated-timeline-col-ts {
+    text-align: center;
+    width: 90px;
+    min-width: 90px;
+}
+
+.correlated-timeline-table td {
+    padding: 3px 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+    color: #cbd5e1;
+    vertical-align: top;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+.correlated-timeline-table td.correlated-timeline-cell-ts {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.68rem;
+    white-space: nowrap;
+}
+
+/* Color tints per spike column — up to 4 */
+.correlated-timeline-tint-0 { background: rgba(168, 85, 247, 0.04); }
+.correlated-timeline-tint-1 { background: rgba(56, 189, 248, 0.04); }
+.correlated-timeline-tint-2 { background: rgba(52, 211, 153, 0.04); }
+.correlated-timeline-tint-3 { background: rgba(251, 191, 36, 0.04); }
+
+/* Merged rows (multiple spikes have content) */
+.correlated-timeline-row--merged .correlated-timeline-tint-0 { background: rgba(168, 85, 247, 0.10); }
+.correlated-timeline-row--merged .correlated-timeline-tint-1 { background: rgba(56, 189, 248, 0.10); }
+.correlated-timeline-row--merged .correlated-timeline-tint-2 { background: rgba(52, 211, 153, 0.10); }
+.correlated-timeline-row--merged .correlated-timeline-tint-3 { background: rgba(251, 191, 36, 0.10); }
+
+.correlated-timeline-row--merged td.correlated-timeline-cell-ts {
+    color: #e2e8f0;
+    font-weight: 700;
+}
+
+.correlated-timeline-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #64748b;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.8rem;
+}
+
+.correlated-timeline-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #94a3b8;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.8rem;
+}

@@ -338,3 +338,18 @@ export interface WorkerLogEntry {
     lineno: number;
     timestamp: string;
 }
+
+// --- SPIKE MERGE (Correlated Timeline) TYPES ---
+
+export interface MergeRow {
+    timestamp: string;
+    full_ts: string;
+    columns: Record<string, string>;
+}
+
+export interface MergeResponse {
+    labels: string[];
+    rows: MergeRow[];
+    cursors: Record<string, number>;
+    any_active: boolean;
+}
