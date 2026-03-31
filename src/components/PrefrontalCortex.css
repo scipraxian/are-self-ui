@@ -1,16 +1,8 @@
 .pfc-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
-}
-
-.pfc-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-    padding-right: 32px;
+    flex: 1;
+    min-height: 0;
 }
 
 .pfc-board-wrapper {
@@ -68,6 +60,11 @@
     transform: scale(0.95);
 }
 
+.pfc-scroll-spacer {
+    width: 36px;
+    flex-shrink: 0;
+}
+
 .pfc-column {
     flex: 0 0 320px;
     background: rgba(0, 0, 0, 0.2);
@@ -77,7 +74,7 @@
     flex-direction: column;
     overflow: hidden;
     transition: border-color 0.2s;
-    max-height: 100%;
+    min-height: 0;
 }
 
 .pfc-column.active {
@@ -92,6 +89,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .pfc-column-title {
@@ -122,6 +120,7 @@
 .pfc-column-body {
     padding: 12px;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -324,11 +323,3 @@
     border-left: 1px solid var(--border-glass);
     padding-left: 16px;
 }
-
-.pfc-header-content {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-/* (Modal styles removed — replaced by PFCInlineCreate) */

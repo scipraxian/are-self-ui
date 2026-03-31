@@ -5,54 +5,15 @@
     min-height: 0;
 }
 
-.pfc-backlog-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border-glass);
+.pfc-backlog-count-bar {
+    padding: 6px 12px;
     flex-shrink: 0;
-}
-
-.pfc-backlog-filters {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.pfc-backlog-filter-select {
-    background: rgba(15, 15, 30, 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #e2e8f0;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    padding: 4px 8px;
-    border-radius: 4px;
-    outline: none;
-    cursor: pointer;
-}
-
-.pfc-backlog-filter-clear {
-    background: transparent;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
 }
 
 .pfc-backlog-count {
     font-family: var(--font-mono);
     font-size: 0.7rem;
     color: var(--text-muted);
-    flex-shrink: 0;
 }
 
 .pfc-backlog-table-wrap {

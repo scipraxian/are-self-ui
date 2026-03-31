@@ -10,20 +10,13 @@ interface PFCBacklogProps {
     items: PFCAgileItem[];
     statuses: PFCItemStatus[];
     selectedItemId?: string | null;
-    filterEpicId?: string | null;
-    filterStoryId?: string | null;
     onItemSelect: (item: PFCAgileItem) => void;
+    onItemDoubleClick: (item: PFCAgileItem) => void;
     onCreateItem: (name: string, type: 'EPIC' | 'STORY' | 'TASK', parentId?: string) => Promise<void>;
 }
 
 type SortField = 'name' | 'item_type' | 'status' | 'priority' | 'assignee' | 'parent';
 type SortDir = 'asc' | 'desc';
-
-interface FilterState {
-    type: string;
-    status: string;
-    priority: string;
-}
 
 const PRIORITY_ICONS: Record<number, React.ReactNode> = {
     1: <ChevronsUp size={12} color="#ef4444" />,
@@ -33,12 +26,11 @@ const PRIORITY_ICONS: Record<number, React.ReactNode> = {
 };
 
 export function PFCBacklog({
-    items, statuses, selectedItemId, filterEpicId, filterStoryId,
-    onItemSelect, onCreateItem
+    items, statuses, selectedItemId,
+    onItemSelect, onItemDoubleClick, onCreateItem
 }: PFCBacklogProps) {
     const [sortField, setSortField] = useState<SortField>('priority');
     const [sortDir, setSortDir] = useState<SortDir>('asc');
-    const [filters, setFilters] = useState<FilterState>({ type: '', status: '', priority: '' });
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -49,39 +41,8 @@ export function PFCBacklog({
         }
     };
 
-    // Apply nav tree filters first
-    const navFiltered = useMemo(() => {
-        if (filterStoryId) {
-            return items.filter(i =>
-                i.id === filterStoryId ||
-                (i.item_type === 'TASK' && i.parent_id === filterStoryId)
-            );
-        }
-        if (filterEpicId) {
-            const epicStoryIds = items
-                .filter(i => i.item_type === 'STORY' && i.parent_id === filterEpicId)
-                .map(s => s.id);
-            return items.filter(i =>
-                i.id === filterEpicId ||
-                i.parent_id === filterEpicId ||
-                (i.item_type === 'TASK' && epicStoryIds.includes(i.parent_id || ''))
-            );
-        }
-        return items;
-    }, [items, filterEpicId, filterStoryId]);
-
-    // Apply local filters
-    const filtered = useMemo(() => {
-        let result = navFiltered;
-        if (filters.type) result = result.filter(i => i.item_type === filters.type);
-        if (filters.status) result = result.filter(i => i.status?.name === filters.status);
-        if (filters.priority) result = result.filter(i => String(i.priority) === filters.priority);
-        return result;
-    }, [navFiltered, filters]);
-
-    // Sort
     const sorted = useMemo(() => {
-        const arr = [...filtered];
+        const arr = [...items];
         const dir = sortDir === 'asc' ? 1 : -1;
 
         arr.sort((a, b) => {
@@ -103,9 +64,8 @@ export function PFCBacklog({
             }
         });
         return arr;
-    }, [filtered, sortField, sortDir]);
+    }, [items, sortField, sortDir]);
 
-    const uniqueStatuses = [...new Set(items.map(i => i.status?.name).filter(Boolean))];
     const typeLabel = (t: string) => t === 'EPIC' ? 'E' : t === 'STORY' ? 'S' : 'T';
 
     const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
@@ -119,51 +79,8 @@ export function PFCBacklog({
 
     return (
         <div className="pfc-backlog">
-            <div className="pfc-backlog-toolbar">
-                <div className="pfc-backlog-filters">
-                    <select
-                        className="pfc-backlog-filter-select"
-                        value={filters.type}
-                        onChange={e => setFilters(f => ({ ...f, type: e.target.value }))}
-                    >
-                        <option value="">All Types</option>
-                        <option value="EPIC">Epics</option>
-                        <option value="STORY">Stories</option>
-                        <option value="TASK">Tasks</option>
-                    </select>
-                    <select
-                        className="pfc-backlog-filter-select"
-                        value={filters.status}
-                        onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
-                    >
-                        <option value="">All Statuses</option>
-                        {uniqueStatuses.map(s => (
-                            <option key={s} value={s}>{s}</option>
-                        ))}
-                    </select>
-                    <select
-                        className="pfc-backlog-filter-select"
-                        value={filters.priority}
-                        onChange={e => setFilters(f => ({ ...f, priority: e.target.value }))}
-                    >
-                        <option value="">All Priorities</option>
-                        <option value="1">P1: Critical</option>
-                        <option value="2">P2: High</option>
-                        <option value="3">P3: Normal</option>
-                        <option value="4">P4: Low</option>
-                    </select>
-                    {(filters.type || filters.status || filters.priority) && (
-                        <button
-                            className="pfc-backlog-filter-clear"
-                            onClick={() => setFilters({ type: '', status: '', priority: '' })}
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
-                <div className="pfc-backlog-count">
-                    {sorted.length} item{sorted.length !== 1 ? 's' : ''}
-                </div>
+            <div className="pfc-backlog-count-bar">
+                <span className="pfc-backlog-count">{sorted.length} item{sorted.length !== 1 ? 's' : ''}</span>
             </div>
 
             <div className="pfc-backlog-table-wrap">
@@ -188,6 +105,7 @@ export function PFCBacklog({
                                     key={item.id}
                                     className={`pfc-backlog-row pfc-backlog-row--${typeClass} ${isSelected ? 'pfc-backlog-row--selected' : ''}`}
                                     onClick={() => onItemSelect(item)}
+                                    onDoubleClick={() => onItemDoubleClick(item)}
                                 >
                                     <td className="pfc-backlog-td pfc-backlog-td--type">
                                         <span className={`pfc-backlog-type-badge pfc-backlog-type-badge--${typeClass}`}>

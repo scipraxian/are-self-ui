@@ -5,7 +5,7 @@ import { apiFetch } from '../api';
 import { PFCStatusBadge } from './PFCStatusBadge';
 import type { PFCAgileItem } from '../types';
 import type { PFCItemStatus } from './PrefrontalCortex';
-import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu, Globe, MessageSquare, Trash2, Maximize2, Minimize2 } from 'lucide-react';
+import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu, Globe, MessageSquare, Trash2, Maximize2, Minimize2, ExternalLink } from 'lucide-react';
 
 interface PFCInspectorProps {
     item: PFCAgileItem;
@@ -245,15 +245,24 @@ export const PFCInspector = ({ item, allItems, statuses, onUpdate, onDelete, isE
 
     return (
         <div className="pfc-inspector">
-            {onToggleExpand && (
+            <div className="pfc-inspector-toolbar">
                 <button
-                    className="pfc-inspector-expand-btn"
-                    onClick={onToggleExpand}
-                    title={isExpanded ? 'Collapse inspector' : 'Expand inspector'}
+                    className="pfc-inspector-fulledit-btn"
+                    onClick={() => navigate(`/pfc/${item.item_type.toLowerCase()}/${item.id}`)}
+                    title="Open full editor"
                 >
-                    {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    <ExternalLink size={14} />
                 </button>
-            )}
+                {onToggleExpand && (
+                    <button
+                        className="pfc-inspector-expand-btn"
+                        onClick={onToggleExpand}
+                        title={isExpanded ? 'Collapse inspector' : 'Expand inspector'}
+                    >
+                        {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                    </button>
+                )}
+            </div>
 
             {/* Header */}
             <div className="pfc-inspector-header">

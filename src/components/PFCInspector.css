@@ -32,11 +32,18 @@
     padding-bottom: 8px;
 }
 
-/* Expand toggle */
-.pfc-inspector-expand-btn {
+/* Inspector toolbar (top-right buttons) */
+.pfc-inspector-toolbar {
     position: absolute;
     top: 0;
     right: 0;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+}
+
+.pfc-inspector-fulledit-btn,
+.pfc-inspector-expand-btn {
     background: rgba(255,255,255,0.05);
     border: 1px solid var(--border-glass);
     color: var(--text-muted);
@@ -48,9 +55,9 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    z-index: 2;
 }
 
+.pfc-inspector-fulledit-btn:hover,
 .pfc-inspector-expand-btn:hover {
     background: rgba(255,255,255,0.1);
     color: var(--text-primary);

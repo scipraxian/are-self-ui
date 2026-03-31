@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, LayoutGrid, List } from 'lucide-react';
-import { ThreePanel } from '../components/ThreePanel';
 import { PrefrontalCortex } from '../components/PrefrontalCortex';
 import { PFCBacklog } from '../components/PFCBacklog';
 import { PFCInspector } from '../components/PFCInspector';
-import { PFCNavTree } from '../components/PFCNavTree';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { apiFetch } from '../api';
@@ -21,20 +19,20 @@ export function PFCPage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // Determine view from route
     const viewMode: ViewMode = location.pathname === '/pfc/backlog' ? 'backlog' : 'board';
 
     // URL-driven state
     const selectedId = searchParams.get('selected');
     const epicFilter = searchParams.get('epic');
-    const storyFilter = searchParams.get('story');
+    const statusFilter = searchParams.get('status');
+    const priorityFilter = searchParams.get('priority');
+    const assigneeFilter = searchParams.get('assignee');
 
     const [items, setItems] = useState<PFCAgileItem[]>([]);
     const [statuses, setStatuses] = useState<PFCItemStatus[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
 
-    // Real-time subscriptions
     const pfcEpicEvent = useDendrite('PFCEpic', null);
     const pfcStoryEvent = useDendrite('PFCStory', null);
     const pfcTaskEvent = useDendrite('PFCTask', null);
@@ -44,10 +42,8 @@ export function PFCPage() {
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
-    // Fetch all PFC data
     useEffect(() => {
         let cancelled = false;
-
         const fetchData = async () => {
             try {
                 const [statusRes, epicRes, storyRes, taskRes] = await Promise.all([
@@ -56,7 +52,6 @@ export function PFCPage() {
                     apiFetch('/api/v2/pfc-stories/?full=true'),
                     apiFetch('/api/v2/pfc-tasks/?full=true')
                 ]);
-
                 if (cancelled) return;
 
                 if (statusRes.ok) {
@@ -75,14 +70,16 @@ export function PFCPage() {
                     const data = await storyRes.json();
                     allItems = [...allItems, ...(data.results || data).map((s: any) => ({
                         ...s, item_type: 'STORY' as const,
-                        parent_name: s.epic?.name, parent_id: s.epic?.id
+                        parent_name: typeof s.epic === 'string' ? undefined : s.epic?.name,
+                        parent_id: typeof s.epic === 'string' ? s.epic : s.epic?.id
                     }))];
                 }
                 if (taskRes.ok) {
                     const data = await taskRes.json();
                     allItems = [...allItems, ...(data.results || data).map((t: any) => ({
                         ...t, item_type: 'TASK' as const,
-                        parent_name: t.story?.name, parent_id: t.story?.id
+                        parent_name: typeof t.story === 'string' ? undefined : t.story?.name,
+                        parent_id: typeof t.story === 'string' ? t.story : t.story?.id
                     }))];
                 }
 
@@ -95,20 +92,14 @@ export function PFCPage() {
                 if (!cancelled) setIsLoading(false);
             }
         };
-
         fetchData();
         return () => { cancelled = true; };
     }, [pfcEpicEvent, pfcStoryEvent, pfcTaskEvent]);
 
-    // URL update helpers
     const setUrlParam = useCallback((key: string, value: string | null) => {
         setSearchParams(prev => {
             const next = new URLSearchParams(prev);
-            if (value) {
-                next.set(key, value);
-            } else {
-                next.delete(key);
-            }
+            if (value) { next.set(key, value); } else { next.delete(key); }
             return next;
         }, { replace: true });
     }, [setSearchParams]);
@@ -117,44 +108,21 @@ export function PFCPage() {
         setUrlParam('selected', item.id);
     }, [setUrlParam]);
 
-    const handleFilterEpic = useCallback((epicId: string | null) => {
-        setSearchParams(prev => {
-            const next = new URLSearchParams(prev);
-            if (epicId) {
-                next.set('epic', epicId);
-            } else {
-                next.delete('epic');
-            }
-            next.delete('story');
-            return next;
-        }, { replace: true });
-    }, [setSearchParams]);
-
-    const handleFilterStory = useCallback((storyId: string | null) => {
-        setUrlParam('story', storyId);
-    }, [setUrlParam]);
+    const handleItemDoubleClick = useCallback((item: PFCAgileItem) => {
+        navigate(`/pfc/${item.item_type.toLowerCase()}/${item.id}`);
+    }, [navigate]);
 
     const handleRefresh = useCallback(() => {
-        // Force a refetch by triggering a synthetic state update.
-        // In practice, dendrite events handle real-time updates.
         setItems(prev => [...prev]);
     }, []);
 
     const handleCreateItem = useCallback(async (
-        name: string,
-        type: 'EPIC' | 'STORY' | 'TASK',
-        parentId?: string,
-        statusId?: number
+        name: string, type: 'EPIC' | 'STORY' | 'TASK', parentId?: string, statusId?: number
     ) => {
         const endpointMap: Record<string, string> = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
         const endpoint = endpointMap[type];
         const backlogStatus = statuses.find(s => s.name.toLowerCase() === 'backlog') || statuses[0];
-
-        const payload: Record<string, any> = {
-            name,
-            status: statusId || backlogStatus?.id
-        };
-
+        const payload: Record<string, any> = { name, status: statusId || backlogStatus?.id };
         if (type === 'STORY' && parentId) payload.epic = parentId;
         if (type === 'TASK' && parentId) payload.story = parentId;
 
@@ -163,11 +131,7 @@ export function PFCPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
         if (!res.ok) throw new Error('Create failed');
-
-        // The dendrite event will trigger a refetch automatically.
-        // But also manually refetch for immediate feedback.
         handleRefresh();
     }, [statuses, handleRefresh]);
 
@@ -179,6 +143,40 @@ export function PFCPage() {
         navigate(target + (params ? `?${params}` : ''), { replace: true });
     };
 
+    // Derived filter options
+    const epics = useMemo(() => items.filter(i => i.item_type === 'EPIC'), [items]);
+    const uniqueAssignees = useMemo(() => {
+        const map = new Map<string, string>();
+        items.forEach(i => {
+            if (i.owning_disc) map.set(String(i.owning_disc.id), i.owning_disc.name);
+        });
+        return Array.from(map, ([id, name]) => ({ id, name }));
+    }, [items]);
+    const uniqueStatusNames = useMemo(() =>
+        [...new Set(items.map(i => i.status?.name).filter(Boolean))] as string[]
+    , [items]);
+
+    // Apply URL-driven filters
+    const filteredItems = useMemo(() => {
+        let result = items;
+        if (epicFilter) {
+            const epicStoryIds = items
+                .filter(i => i.item_type === 'STORY' && i.parent_id === epicFilter)
+                .map(s => s.id);
+            result = result.filter(i =>
+                i.id === epicFilter ||
+                i.parent_id === epicFilter ||
+                (i.item_type === 'TASK' && epicStoryIds.includes(i.parent_id || ''))
+            );
+        }
+        if (statusFilter) result = result.filter(i => i.status?.name === statusFilter);
+        if (priorityFilter) result = result.filter(i => String(i.priority) === priorityFilter);
+        if (assigneeFilter) result = result.filter(i => String(i.owning_disc?.id) === assigneeFilter);
+        return result;
+    }, [items, epicFilter, statusFilter, priorityFilter, assigneeFilter]);
+
+    const hasFilters = !!(epicFilter || statusFilter || priorityFilter || assigneeFilter);
+
     if (isLoading && items.length === 0) {
         return (
             <div className="pfc-page-loader">
@@ -188,82 +186,95 @@ export function PFCPage() {
     }
 
     return (
-        <ThreePanel
-            left={
-                <PFCNavTree
-                    items={items}
-                    selectedItemId={selectedId}
-                    filterEpicId={epicFilter}
-                    filterStoryId={storyFilter}
-                    onItemSelect={handleItemSelect}
-                    onFilterEpic={handleFilterEpic}
-                    onFilterStory={handleFilterStory}
-                    onCreateItem={handleCreateItem}
-                />
-            }
-            center={
-                <div className="glass-panel three-panel-center-stage">
-                    <div className="pfc-page-mode-bar">
+        <div className="pfc-page">
+            <div className="pfc-filter-bar glass-surface">
+                <div className="pfc-filter-bar-group">
+                    <div className="pfc-view-toggle">
                         <button
-                            className={`pfc-page-mode-tab ${viewMode === 'board' ? 'pfc-page-mode-tab--active' : ''}`}
+                            className={`pfc-view-toggle-btn ${viewMode === 'board' ? 'pfc-view-toggle-btn--active' : ''}`}
                             onClick={() => handleViewChange('board')}
                         >
                             <LayoutGrid size={14} /> Board
                         </button>
                         <button
-                            className={`pfc-page-mode-tab ${viewMode === 'backlog' ? 'pfc-page-mode-tab--active' : ''}`}
+                            className={`pfc-view-toggle-btn ${viewMode === 'backlog' ? 'pfc-view-toggle-btn--active' : ''}`}
                             onClick={() => handleViewChange('backlog')}
                         >
                             <List size={14} /> Backlog
                         </button>
                     </div>
-                    <div className="pfc-page-stage">
-                        {viewMode === 'board' ? (
-                            <PrefrontalCortex
-                                items={items}
-                                statuses={statuses}
-                                selectedItemId={selectedId}
-                                filterEpicId={epicFilter}
-                                filterStoryId={storyFilter}
-                                onItemSelect={handleItemSelect}
-                                onRefresh={handleRefresh}
-                                onCreateItem={handleCreateItem}
-                            />
-                        ) : (
-                            <PFCBacklog
-                                items={items}
-                                statuses={statuses}
-                                selectedItemId={selectedId}
-                                filterEpicId={epicFilter}
-                                filterStoryId={storyFilter}
-                                onItemSelect={handleItemSelect}
-                                onCreateItem={handleCreateItem}
-                            />
-                        )}
-                    </div>
+                    <div className="pfc-filter-divider" />
+                    <select className="pfc-filter-select" value={statusFilter || ''} onChange={e => setUrlParam('status', e.target.value || null)}>
+                        <option value="">All Statuses</option>
+                        {uniqueStatusNames.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <select className="pfc-filter-select" value={priorityFilter || ''} onChange={e => setUrlParam('priority', e.target.value || null)}>
+                        <option value="">All Priorities</option>
+                        <option value="1">P1: Critical</option>
+                        <option value="2">P2: High</option>
+                        <option value="3">P3: Normal</option>
+                        <option value="4">P4: Low</option>
+                    </select>
+                    <select className="pfc-filter-select" value={epicFilter || ''} onChange={e => setUrlParam('epic', e.target.value || null)}>
+                        <option value="">All Epics</option>
+                        {epics.map(ep => <option key={ep.id} value={ep.id}>{ep.name}</option>)}
+                    </select>
+                    <select className="pfc-filter-select" value={assigneeFilter || ''} onChange={e => setUrlParam('assignee', e.target.value || null)}>
+                        <option value="">All Assignees</option>
+                        {uniqueAssignees.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    {hasFilters && (
+                        <button className="pfc-filter-clear" onClick={() => {
+                            setSearchParams(prev => {
+                                const next = new URLSearchParams(prev);
+                                next.delete('epic'); next.delete('status');
+                                next.delete('priority'); next.delete('assignee');
+                                return next;
+                            }, { replace: true });
+                        }}>
+                            Clear
+                        </button>
+                    )}
                 </div>
-            }
-            right={
-                selectedItem ? (
-                    <PFCInspector
-                        item={selectedItem}
-                        allItems={items}
-                        statuses={statuses}
-                        onUpdate={handleRefresh}
-                        onDelete={() => setUrlParam('selected', null)}
-                        isExpanded={isInspectorExpanded}
-                        onToggleExpand={() => setIsInspectorExpanded(prev => !prev)}
-                    />
-                ) : (
-                    <>
-                        <h2 className="glass-panel-title">TICKET INSPECTOR</h2>
-                        <div className="layout-placeholder font-mono text-sm">
-                            Select an Agile Ticket to view or edit its details.
-                        </div>
-                    </>
-                )
-            }
-            rightClassName={isInspectorExpanded ? 'three-panel-right--expanded' : undefined}
-        />
+            </div>
+
+            <div className="pfc-main">
+                <div className="pfc-stage">
+                    {viewMode === 'board' ? (
+                        <PrefrontalCortex
+                            items={filteredItems}
+                            statuses={statuses}
+                            selectedItemId={selectedId}
+                            onItemSelect={handleItemSelect}
+                            onItemDoubleClick={handleItemDoubleClick}
+                            onRefresh={handleRefresh}
+                            onCreateItem={handleCreateItem}
+                        />
+                    ) : (
+                        <PFCBacklog
+                            items={filteredItems}
+                            statuses={statuses}
+                            selectedItemId={selectedId}
+                            onItemSelect={handleItemSelect}
+                            onItemDoubleClick={handleItemDoubleClick}
+                            onCreateItem={handleCreateItem}
+                        />
+                    )}
+                </div>
+                {selectedItem && (
+                    <aside className={`pfc-inspector-panel glass-panel ${isInspectorExpanded ? 'pfc-inspector-panel--expanded' : ''}`}>
+                        <PFCInspector
+                            item={selectedItem}
+                            allItems={items}
+                            statuses={statuses}
+                            onUpdate={handleRefresh}
+                            onDelete={() => setUrlParam('selected', null)}
+                            isExpanded={isInspectorExpanded}
+                            onToggleExpand={() => setIsInspectorExpanded(prev => !prev)}
+                        />
+                    </aside>
+                )}
+            </div>
+        </div>
     );
 }

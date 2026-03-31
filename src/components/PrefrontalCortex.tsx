@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, BrainCircuit, ChevronsUp, ChevronUp, Minus, ChevronDown, Cpu, History, Globe } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, ChevronsUp, ChevronUp, Minus, ChevronDown, Cpu, History, Globe } from 'lucide-react';
 import { PFCInlineCreate } from './PFCInlineCreate';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
@@ -14,16 +14,15 @@ interface PrefrontalCortexProps {
     items: PFCAgileItem[];
     statuses: PFCItemStatus[];
     selectedItemId?: string | null;
-    filterEpicId?: string | null;
-    filterStoryId?: string | null;
     onItemSelect: (item: PFCAgileItem) => void;
+    onItemDoubleClick: (item: PFCAgileItem) => void;
     onRefresh: () => void;
     onCreateItem: (name: string, type: 'EPIC' | 'STORY' | 'TASK', parentId?: string, statusId?: number) => Promise<void>;
 }
 
 export const PrefrontalCortex = ({
-    items, statuses, selectedItemId, filterEpicId, filterStoryId,
-    onItemSelect, onRefresh, onCreateItem
+    items, statuses, selectedItemId,
+    onItemSelect, onItemDoubleClick, onRefresh, onCreateItem
 }: PrefrontalCortexProps) => {
     const boardRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -52,27 +51,6 @@ export const PrefrontalCortex = ({
             window.removeEventListener('resize', checkScroll);
         };
     }, [statuses, items]);
-
-    // Filter items by epic/story
-    const displayItems = useMemo(() => {
-        if (filterStoryId) {
-            return items.filter(i =>
-                i.id === filterStoryId ||
-                (i.item_type === 'TASK' && i.parent_id === filterStoryId)
-            );
-        }
-        if (filterEpicId) {
-            const epicStoryIds = items
-                .filter(i => i.item_type === 'STORY' && i.parent_id === filterEpicId)
-                .map(s => s.id);
-            return items.filter(i =>
-                i.id === filterEpicId ||
-                i.parent_id === filterEpicId ||
-                (i.item_type === 'TASK' && epicStoryIds.includes(i.parent_id || ''))
-            );
-        }
-        return items;
-    }, [items, filterEpicId, filterStoryId]);
 
     const getPriorityIcon = (priority?: number) => {
         switch (priority) {
@@ -116,34 +94,25 @@ export const PrefrontalCortex = ({
         }
     };
 
-    // Determine the default parent for new tasks created in a column
     const getDefaultParent = (): string | undefined => {
-        if (filterStoryId) return filterStoryId;
-        // If filtering by epic, pick the first story of that epic
-        if (filterEpicId) {
-            const firstStory = items.find(i => i.item_type === 'STORY' && i.parent_id === filterEpicId);
-            return firstStory?.id;
-        }
-        return undefined;
+        const firstStory = items.find(i => i.item_type === 'STORY');
+        return firstStory?.id;
     };
 
     return (
         <div className="pfc-container">
-            <div className="pfc-header">
-                <div className="pfc-header-content">
-                    <h3 className="font-display heading-tracking text-base m-0 text-primary common-layout-15">
-                        <BrainCircuit size={18} color="#ef4444" />
-                        AGILE BOARD
-                    </h3>
-                </div>
-            </div>
-
             <div className="pfc-board-wrapper">
-                {canScrollLeft ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('left')}><ChevronLeft size={24} /></button> : <div className="common-layout-31" />}
+                {canScrollLeft ? (
+                    <button className="pfc-scroll-btn" onClick={() => scrollBoard('left')}>
+                        <ChevronLeft size={24} />
+                    </button>
+                ) : (
+                    <div className="pfc-scroll-spacer" />
+                )}
 
                 <div className="pfc-board" ref={boardRef} onScroll={checkScroll}>
                     {statuses.map(status => {
-                        const columnItems = displayItems.filter(i => i.status && i.status.id === status.id);
+                        const columnItems = items.filter(i => i.status && i.status.id === status.id);
                         const isDragOver = dragOverStatus === status.id;
 
                         return (
@@ -171,6 +140,7 @@ export const PrefrontalCortex = ({
                                                 draggable
                                                 onDragStart={(e) => handleDragStart(e, item)}
                                                 onClick={() => onItemSelect(item)}
+                                                onDoubleClick={() => onItemDoubleClick(item)}
                                             >
                                                 <div className="pfc-card-header">
                                                     <div>
@@ -237,7 +207,14 @@ export const PrefrontalCortex = ({
                         );
                     })}
                 </div>
-                {canScrollRight ? <button className="pfc-scroll-btn" onClick={() => scrollBoard('right')}><ChevronRight size={24} /></button> : <div className="common-layout-31" />}
+
+                {canScrollRight ? (
+                    <button className="pfc-scroll-btn" onClick={() => scrollBoard('right')}>
+                        <ChevronRight size={24} />
+                    </button>
+                ) : (
+                    <div className="pfc-scroll-spacer" />
+                )}
             </div>
         </div>
     );

@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { ThreePanel } from '../components/ThreePanel';
-import { PFCInspector } from '../components/PFCInspector';
-import { PFCNavTree } from '../components/PFCNavTree';
 import { PFCStatusBadge } from '../components/PFCStatusBadge';
 import { PFCInlineCreate } from '../components/PFCInlineCreate';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
@@ -33,10 +30,7 @@ export function PFCDetailPage() {
     const [items, setItems] = useState<PFCAgileItem[]>([]);
     const [statuses, setStatuses] = useState<PFCItemStatus[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState<PFCAgileItem | null>(null);
-    const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
 
-    // Real-time subscriptions
     const pfcEpicEvent = useDendrite('PFCEpic', null);
     const pfcStoryEvent = useDendrite('PFCStory', null);
     const pfcTaskEvent = useDendrite('PFCTask', null);
@@ -53,7 +47,6 @@ export function PFCDetailPage() {
                     apiFetch('/api/v2/pfc-stories/?full=true'),
                     apiFetch('/api/v2/pfc-tasks/?full=true')
                 ]);
-
                 if (cancelled) return;
 
                 let allStatuses: PFCItemStatus[] = [];
@@ -70,23 +63,23 @@ export function PFCDetailPage() {
                 if (storyRes.ok) {
                     const data = await storyRes.json();
                     allItems = [...allItems, ...(data.results || data).map((s: any) => ({
-                        ...s, item_type: 'STORY', parent_name: s.epic?.name, parent_id: s.epic?.id
+                        ...s, item_type: 'STORY',
+                        parent_name: typeof s.epic === 'string' ? undefined : s.epic?.name,
+                        parent_id: typeof s.epic === 'string' ? s.epic : s.epic?.id
                     }))];
                 }
                 if (taskRes.ok) {
                     const data = await taskRes.json();
                     allItems = [...allItems, ...(data.results || data).map((t: any) => ({
-                        ...t, item_type: 'TASK', parent_name: t.story?.name, parent_id: t.story?.id
+                        ...t, item_type: 'TASK',
+                        parent_name: typeof t.story === 'string' ? undefined : t.story?.name,
+                        parent_id: typeof t.story === 'string' ? t.story : t.story?.id
                     }))];
                 }
 
                 if (cancelled) return;
                 setStatuses(allStatuses);
                 setItems(allItems);
-
-                const current = allItems.find(i => i.id === itemId);
-                if (current) setSelectedItem(current);
-
                 setIsLoading(false);
             } catch (err) {
                 console.error("Failed to fetch PFC data:", err);
@@ -111,7 +104,6 @@ export function PFCDetailPage() {
         if (detailType === 'epic') {
             crumbs.push({ label: currentItem.name, path: `/pfc/epic/${currentItem.id}` });
         } else if (detailType === 'story') {
-            // Find parent epic
             const parentEpic = items.find(i => i.id === currentItem.parent_id);
             if (parentEpic) {
                 crumbs.push({ label: parentEpic.name, path: `/pfc/epic/${parentEpic.id}` });
@@ -153,12 +145,6 @@ export function PFCDetailPage() {
         if (!res.ok) throw new Error('Create failed');
     };
 
-    const handleRefresh = () => {
-        // Trigger re-fetch by updating a dep — the dendrite events handle this naturally,
-        // but for manual saves we re-trigger via dummy state
-        setItems(prev => [...prev]);
-    };
-
     if (isLoading) {
         return (
             <div className="pfc-detail-loader">
@@ -169,18 +155,15 @@ export function PFCDetailPage() {
 
     if (!currentItem) {
         return (
-            <ThreePanel
-                left={<div className="pfc-detail-empty">Item not found.</div>}
-                center={<div className="glass-panel three-panel-center-stage pfc-detail-empty">
+            <div className="pfc-detail-page">
+                <div className="pfc-detail-not-found glass-surface">
                     The requested item could not be found.
                     <button className="pfc-detail-back-btn" onClick={() => navigate('/pfc')}>Back to Board</button>
-                </div>}
-                right={null}
-            />
+                </div>
+            </div>
         );
     }
 
-    // Render children based on type
     const renderChildren = () => {
         if (detailType === 'epic') {
             const childStories = items.filter(i => i.item_type === 'STORY' && i.parent_id === currentItem.id);
@@ -193,7 +176,6 @@ export function PFCDetailPage() {
                         {childStories.map(story => {
                             const taskCount = items.filter(i => i.item_type === 'TASK' && i.parent_id === story.id).length;
                             const doneCount = items.filter(i => i.item_type === 'TASK' && i.parent_id === story.id && i.status?.name?.toLowerCase() === 'done').length;
-
                             return (
                                 <div
                                     key={story.id}
@@ -260,11 +242,9 @@ export function PFCDetailPage() {
             );
         }
 
-        // Task detail — no children
         return null;
     };
 
-    // Completion stats
     const getCompletionBar = () => {
         let total = 0, done = 0;
         if (detailType === 'epic') {
@@ -290,59 +270,28 @@ export function PFCDetailPage() {
     };
 
     return (
-        <ThreePanel
-            left={
-                <PFCNavTree
-                    items={items}
-                    selectedItemId={itemId}
-                    filterEpicId={null}
-                    filterStoryId={null}
-                    onItemSelect={(item) => {
-                        const path = `/pfc/${item.item_type.toLowerCase()}/${item.id}`;
-                        navigate(path);
-                    }}
-                    onFilterEpic={() => {}}
-                    onFilterStory={() => {}}
-                    onCreateItem={handleCreateItem}
-                />
-            }
-            center={
-                <div className="glass-panel three-panel-center-stage">
-                    <div className="pfc-detail-center">
-                        <div className="pfc-detail-header">
-                            <span className={`pfcinspector-type-pill pfcinspector-type-pill--${detailType}`}>
-                                {currentItem.item_type}
-                            </span>
-                            <span className="font-mono text-xs text-muted">
-                                {currentItem.id.split('-')[0]}
-                            </span>
-                        </div>
-
-                        <h1 className="pfc-detail-name">{currentItem.name}</h1>
-
-                        {currentItem.description && (
-                            <div className="pfc-detail-description">{currentItem.description}</div>
-                        )}
-
-                        {getCompletionBar()}
-                        {renderChildren()}
+        <div className="pfc-detail-page">
+            <div className="pfc-detail-content glass-surface">
+                <div className="pfc-detail-center">
+                    <div className="pfc-detail-header">
+                        <span className={`pfcinspector-type-pill pfcinspector-type-pill--${detailType}`}>
+                            {currentItem.item_type}
+                        </span>
+                        <span className="font-mono text-xs text-muted">
+                            {currentItem.id.split('-')[0]}
+                        </span>
                     </div>
+
+                    <h1 className="pfc-detail-name">{currentItem.name}</h1>
+
+                    {currentItem.description && (
+                        <div className="pfc-detail-description">{currentItem.description}</div>
+                    )}
+
+                    {getCompletionBar()}
+                    {renderChildren()}
                 </div>
-            }
-            right={
-                selectedItem || currentItem ? (
-                    <PFCInspector
-                        item={selectedItem || currentItem}
-                        allItems={items}
-                        statuses={statuses}
-                        onUpdate={handleRefresh}
-                        onDelete={() => navigate('/pfc')}
-                        isExpanded={isInspectorExpanded}
-                        onToggleExpand={() => setIsInspectorExpanded(prev => !prev)}
-                    />
-                ) : null
-            }
-            rightClassName={isInspectorExpanded ? 'three-panel-right--expanded' : undefined}
-        />
+            </div>
+        </div>
     );
 }
