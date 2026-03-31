@@ -440,6 +440,9 @@
     overflow: hidden;
     position: relative;
     padding: 24px;
+    background: rgba(15, 15, 30, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .initiate-btn:disabled {

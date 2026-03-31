@@ -278,7 +278,7 @@ export function EnvironmentEditor() {
     );
 
     const center = editingEnv ? (
-        <div className="env-editor-detail">
+        <div className="env-editor-detail glass-surface">
             <div className="env-editor-detail-header">
                 <h2 className="env-editor-detail-title">{editingEnv.name}</h2>
                 {!editingEnv.selected ? (
