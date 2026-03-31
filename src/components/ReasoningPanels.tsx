@@ -1,6 +1,7 @@
 import "./ReasoningPanels.css";
 import { type ReactNode, useEffect, useState } from 'react';
 import { Power, RefreshCw, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';
+import { useDendrite } from './SynapticCleft';
 import type {
     GraphNode,
     ModelUsageRecord,
@@ -67,12 +68,24 @@ interface ReasoningSidebarProps {
 
 export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleChat }: ReasoningSidebarProps) => {
     const [sessions, setSessions] = useState<ReasoningSessionData[]>([]);
+    const sessionEvent = useDendrite('ReasoningSession', null);
 
     useEffect(() => {
-        fetch('/api/v1/reasoning_sessions/')
-            .then(res => res.json())
-            .then(data => setSessions(data.results || data));
-    }, []);
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const res = await fetch('/api/v1/reasoning_sessions/');
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setSessions(data.results || data);
+            } catch (err) {
+                console.error('Failed to fetch sessions', err);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [sessionEvent]);
 
     const handleAction = async (action: string) => {
         if (!confirm(`Are you sure you want to ${action} this session?`)) return;
@@ -189,7 +202,7 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
     const renderMessages = (messages: Array<{ role: string; content: string }>) => {
         return messages.map((msg, i: number) => {
             const roleStr = String(msg.role).toUpperCase();
-            let roleColor =
+            const roleColor =
                 msg.role === 'system' ? '#cc99cc' :
                     msg.role === 'user' ? '#99ccff' :
                         '#4ade80';

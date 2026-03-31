@@ -1,5 +1,5 @@
 import './CNSTrainTimeline.css';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThreePanel } from '../components/ThreePanel';
 import { CNSTrainSidebar } from '../components/CNSTrainSidebar';
@@ -18,41 +18,71 @@ export function CNSTrainTimeline() {
     const [pathway, setPathway] = useState<NeuralPathway | null>(null);
     const [trains, setTrains] = useState<SpikeTrain[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const lastFetchRef = useRef<number>(0);
 
-    const fetchPathway = useCallback(async () => {
+    // Fetch pathway detail (only when pathwayId changes)
+    useEffect(() => {
         if (!pathwayId) return;
-        try {
-            const res = await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/`);
-            if (!res.ok) return;
-            const data = await res.json();
-            setPathway(data);
-        } catch (err) {
-            console.error('Failed to fetch pathway', err);
-        }
+        let cancelled = false;
+
+        const load = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/`);
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setPathway(data);
+            } catch (err) {
+                console.error('Failed to fetch pathway', err);
+            }
+        };
+
+        load();
+        return () => { cancelled = true; };
     }, [pathwayId]);
 
-    const fetchTrains = useCallback(async () => {
-        if (!pathwayId) return;
-        try {
-            let url = `/api/v2/spiketrains/?pathway=${encodeURIComponent(pathwayId)}&ordering=-created&limit=30`;
-            if (selectedEnvironmentId) {
-                url += `&environment=${encodeURIComponent(selectedEnvironmentId)}`;
-            }
-            const res = await apiFetch(url);
-            if (!res.ok) return;
-            const data = await res.json();
-            setTrains(Array.isArray(data) ? data : data.results ?? []);
-        } catch (err) {
-            console.error('Failed to fetch spike trains', err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [pathwayId, selectedEnvironmentId]);
+    // Fetch trains with 500ms debounce on dendrite events
+    const spikeTrainEvent = useDendrite('SpikeTrain', null);
 
     useEffect(() => {
-        fetchPathway();
-        fetchTrains();
-    }, [fetchPathway, fetchTrains]);
+        if (!pathwayId) return;
+        let cancelled = false;
+
+        const loadTrains = async () => {
+            try {
+                let url = `/api/v2/spiketrains/?pathway=${encodeURIComponent(pathwayId)}&ordering=-created&limit=30`;
+                if (selectedEnvironmentId) {
+                    url += `&environment=${encodeURIComponent(selectedEnvironmentId)}`;
+                }
+                const res = await apiFetch(url);
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setTrains(Array.isArray(data) ? data : data.results ?? []);
+            } catch (err) {
+                console.error('Failed to fetch spike trains', err);
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        };
+
+        const now = Date.now();
+        const elapsed = now - lastFetchRef.current;
+
+        if (elapsed < 500) {
+            const timer = setTimeout(() => {
+                if (!cancelled) {
+                    lastFetchRef.current = Date.now();
+                    loadTrains();
+                }
+            }, 500 - elapsed);
+            return () => { cancelled = true; clearTimeout(timer); };
+        }
+
+        lastFetchRef.current = now;
+        loadTrains();
+        return () => { cancelled = true; };
+    }, [pathwayId, selectedEnvironmentId, spikeTrainEvent]);
 
     // Breadcrumbs
     useEffect(() => {
@@ -64,18 +94,6 @@ export function CNSTrainTimeline() {
         }
         return () => setCrumbs([]);
     }, [pathway, pathwayId, setCrumbs]);
-
-    // Real-time updates
-    const spikeTrainEvent = useDendrite('SpikeTrain', null);
-    const spikeEvent = useDendrite('Spike', null);
-
-    useEffect(() => {
-        if (spikeTrainEvent) fetchTrains();
-    }, [spikeTrainEvent, fetchTrains]);
-
-    useEffect(() => {
-        if (spikeEvent) fetchTrains();
-    }, [spikeEvent, fetchTrains]);
 
     // ESC → back to dashboard
     useEffect(() => {
