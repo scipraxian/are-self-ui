@@ -470,6 +470,18 @@
     padding: 8px 10px;
 }
 
+.session-item-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.session-item-link:hover {
+    border-color: var(--accent-blue);
+}
+
 .session-header {
     display: flex;
     justify-content: space-between;

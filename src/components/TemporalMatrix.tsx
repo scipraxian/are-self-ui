@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
-import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2 } from 'lucide-react';
+import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2, X } from 'lucide-react';
 import { apiFetch } from '../api';
+import { useDendrite } from './SynapticCleft';
 import { IdentityRoster } from './IdentityRoster';
 import './TemporalMatrix.css';
 
@@ -39,6 +40,12 @@ interface IterationData {
 interface BlueprintData {
     id: number;
     name: string;
+}
+
+interface ShiftType {
+    id: number;
+    name: string;
+    default_turn_limit: number;
 }
 
 // Iteration definition detail (from IterationDefinitionSerializer)
@@ -80,6 +87,7 @@ function DefinitionEditor({
     definition,
     environments,
     selectedEnvironmentId,
+    shiftTypes,
     onEnvironmentChange,
     onNameSave,
     onDelete,
@@ -87,12 +95,15 @@ function DefinitionEditor({
     onSlotDisc,
     onIncept,
     onTurnLimitChange,
+    onRemoveShift,
+    onAddShift,
     onClose,
     isGestating
 }: {
     definition: IterationDefinitionDetail;
     environments: { id: string; name: string }[];
     selectedEnvironmentId: string;
+    shiftTypes: ShiftType[];
     onEnvironmentChange: (id: string) => void;
     onNameSave: (name: string) => void;
     onDelete: () => void;
@@ -102,9 +113,12 @@ function DefinitionEditor({
     onClose: () => void;
     isGestating: boolean;
     onTurnLimitChange: (shiftDefinitionId: number, turnLimit: number) => void;
+    onRemoveShift: (shiftDefinitionId: number) => void;
+    onAddShift: (shiftId: number, order: number) => void;
 }) {
     const [editingName, setEditingName] = useState(definition.name);
     const [dragOverShiftId, setDragOverShiftId] = useState<number | null>(null);
+    const [addShiftOpen, setAddShiftOpen] = useState(false);
     const boardRef = useRef<HTMLDivElement | null>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -149,6 +163,9 @@ function DefinitionEditor({
     }, [definition.id, definition.shift_definitions]);
 
     const sortedShifts = [...(definition.shift_definitions || [])].sort((a, b) => a.order - b.order);
+    const usedShiftIds = new Set(sortedShifts.map(sd => sd.shift.id));
+    const availableShiftTypes = shiftTypes.filter(st => !usedShiftIds.has(st.id));
+    const maxOrder = sortedShifts.length > 0 ? Math.max(...sortedShifts.map(sd => sd.order)) : 0;
 
     return (
         <div className="temporal-matrix-container active-matrix definition-editor">
@@ -201,22 +218,31 @@ function DefinitionEditor({
                         <div key={shiftDef.id} className="matrix-column">
                             <div className="matrix-column-header">
                                 <span className="matrix-column-title">{shiftDef.shift?.name || `Shift ${index + 1}`}</span>
-                                <div className="matrix-column-stats definition-turn-editor">
-                                    <span className="definition-turn-label">Turns</span>
-                                    <input
-                                        key={shiftDef.turn_limit}
-                                        className="definition-turn-input"
-                                        type="number"
-                                        min={1}
-                                        defaultValue={shiftDef.turn_limit}
-                                        onBlur={(e) => {
-                                            const raw = e.target.value;
-                                            const parsed = parseInt(raw, 10);
-                                            if (!Number.isNaN(parsed) && parsed !== shiftDef.turn_limit) {
-                                                onTurnLimitChange(shiftDef.id, parsed);
-                                            }
-                                        }}
-                                    />
+                                <div className="definition-column-actions">
+                                    <div className="matrix-column-stats definition-turn-editor">
+                                        <span className="definition-turn-label">Turns</span>
+                                        <input
+                                            key={shiftDef.turn_limit}
+                                            className="definition-turn-input"
+                                            type="number"
+                                            min={1}
+                                            defaultValue={shiftDef.turn_limit}
+                                            onBlur={(e) => {
+                                                const raw = e.target.value;
+                                                const parsed = parseInt(raw, 10);
+                                                if (!Number.isNaN(parsed) && parsed !== shiftDef.turn_limit) {
+                                                    onTurnLimitChange(shiftDef.id, parsed);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        className="definition-remove-shift-btn"
+                                        onClick={() => onRemoveShift(shiftDef.id)}
+                                        title="Remove shift column"
+                                    >
+                                        <X size={14} />
+                                    </button>
                                 </div>
                             </div>
                             <div
@@ -243,6 +269,39 @@ function DefinitionEditor({
                             </div>
                         </div>
                     ))}
+                    {availableShiftTypes.length > 0 && (
+                        <div className="definition-add-shift-column">
+                            {addShiftOpen ? (
+                                <div className="definition-add-shift-dropdown">
+                                    <span className="definition-add-shift-title font-mono text-xs">Add Shift</span>
+                                    {availableShiftTypes.map(st => (
+                                        <button
+                                            key={st.id}
+                                            className="definition-add-shift-option"
+                                            onClick={() => { onAddShift(st.id, maxOrder + 1); setAddShiftOpen(false); }}
+                                        >
+                                            {st.name}
+                                        </button>
+                                    ))}
+                                    <button
+                                        className="definition-add-shift-option definition-add-shift-cancel"
+                                        onClick={() => setAddShiftOpen(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    className="definition-add-shift-btn"
+                                    onClick={() => setAddShiftOpen(true)}
+                                    title="Add shift column"
+                                >
+                                    <Plus size={20} />
+                                    <span className="font-mono text-xs">Shift</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
                 {canScrollRight ? (
                     <button className="matrix-scroll-btn" onClick={() => scrollBoard('right')}>
@@ -272,11 +331,14 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     const [definitionDetail, setDefinitionDetail] = useState<IterationDefinitionDetail | null>(null);
     const [definitionDetailLoading, setDefinitionDetailLoading] = useState(false);
     const [blueprints, setBlueprints] = useState<BlueprintData[]>([]);
+    const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([]);
     const [environments, setEnvironments] = useState<{ id: string, name: string }[]>([]);
     const [selectedGestationEnvironmentId, setSelectedGestationEnvironmentId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [isGestating, setIsGestating] = useState(false);
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
+
+    const iterationEvent = useDendrite('Iteration', null);
 
     const iteration = iterations.find(it => it.id === selectedIterationId) || null;
     const hasSelection = selectedIterationId !== null || selectedDefinitionId !== null;
@@ -308,15 +370,17 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
 
         const load = async () => {
             try {
-                const [iterRes, defRes, envRes] = await Promise.all([
+                const [iterRes, defRes, envRes, shiftRes] = await Promise.all([
                     apiFetch('/api/v2/iterations/'),
                     apiFetch('/api/v2/iteration-definitions/'),
-                    apiFetch('/api/v1/environments/')
+                    apiFetch('/api/v1/environments/'),
+                    apiFetch('/api/v2/shifts/')
                 ]);
                 if (cancelled) return;
                 const iterData = await iterRes.json();
                 const defData = await defRes.json();
                 const envData = await envRes.json();
+                const shiftData = await shiftRes.json();
                 if (cancelled) return;
 
                 const results: IterationData[] = iterData.results || iterData;
@@ -325,6 +389,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                     setSelectedIterationId(results[0].id);
                 }
                 setBlueprints(defData.results || defData);
+                setShiftTypes(shiftData.results || shiftData);
                 setEnvironments(envData.results || envData);
             } catch (err) {
                 console.error("Temporal fetch failed:", err);
@@ -382,42 +447,26 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         return () => window.removeEventListener('resize', checkScroll);
     }, [iteration]);
 
-    // Poll selected iteration so status/board update while running
+    // Refetch selected iteration when dendrite fires an Iteration event
     useEffect(() => {
         if (!selectedIterationId) return;
         let cancelled = false;
-        let intervalId: number | null = null;
 
-        const poll = async () => {
+        const load = async () => {
             try {
                 const res = await apiFetch(`/api/v2/iterations/${selectedIterationId}/`);
-                if (!res.ok) return;
+                if (!res.ok || cancelled) return;
                 const data: IterationData = await res.json();
                 if (cancelled) return;
                 updateIterationState(data);
-                // Stop polling when status is Finished (3), Cancelled (4), or Error (6)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const statusId = (data as any).status as number | undefined;
-                if (statusId === 3 || statusId === 4 || statusId === 6) {
-                    if (intervalId !== null) {
-                        window.clearInterval(intervalId);
-                    }
-                    cancelled = true;
-                }
             } catch {
                 // ignore transient errors
             }
         };
 
-        poll();
-        intervalId = window.setInterval(poll, 5000);
-        return () => {
-            cancelled = true;
-            if (intervalId !== null) {
-                window.clearInterval(intervalId);
-            }
-        };
-    }, [selectedIterationId]);
+        load();
+        return () => { cancelled = true; };
+    }, [selectedIterationId, iterationEvent]);
 
     const handleIncept = async (definitionId: number) => {
         setIsGestating(true);
@@ -629,6 +678,45 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         }
     };
 
+    const definitionRemoveShift = async (shiftDefinitionId: number) => {
+        if (!selectedDefinitionId) return;
+        try {
+            const res = await apiFetch(`/api/v2/iteration-shift-definitions/${shiftDefinitionId}/`, { method: 'DELETE' });
+            if (res.ok) {
+                const defRes = await apiFetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`);
+                if (defRes.ok) {
+                    const defData: IterationDefinitionDetail = await defRes.json();
+                    setDefinitionDetail(defData);
+                }
+            } else {
+                console.error('Failed to remove shift definition');
+            }
+        } catch (err) {
+            console.error('Remove shift definition failed:', err);
+        }
+    };
+
+    const definitionAddShift = async (definitionId: number, shiftId: number, order: number) => {
+        try {
+            const res = await apiFetch('/api/v2/iteration-shift-definitions/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ definition: definitionId, shift: shiftId, order, turn_limit: 1 })
+            });
+            if (res.ok) {
+                const defRes = await apiFetch(`/api/v2/iteration-definitions/${definitionId}/`);
+                if (defRes.ok) {
+                    const defData: IterationDefinitionDetail = await defRes.json();
+                    setDefinitionDetail(defData);
+                }
+            } else {
+                console.error('Failed to add shift definition');
+            }
+        } catch (err) {
+            console.error('Add shift definition failed:', err);
+        }
+    };
+
     const definitionIncept = async (definitionId: number, environmentId: string, customName?: string) => {
         setIsGestating(true);
         try {
@@ -724,6 +812,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                         definition={definitionDetail}
                         environments={environments}
                         selectedEnvironmentId={selectedGestationEnvironmentId}
+                        shiftTypes={shiftTypes}
                         onEnvironmentChange={setSelectedGestationEnvironmentId}
                         onNameSave={(name) => patchDefinitionName(definitionDetail.id, name)}
                         onDelete={() => deleteDefinition(definitionDetail.id)}
@@ -731,6 +820,8 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                         onSlotDisc={(shiftDefId, payload) => definitionSlotDisc(definitionDetail.id, shiftDefId, payload)}
                         onIncept={(envId, customName) => definitionIncept(definitionDetail.id, envId, customName)}
                         onTurnLimitChange={(shiftDefId, turnLimit) => updateShiftDefinitionTurnLimit(shiftDefId, turnLimit)}
+                        onRemoveShift={(shiftDefId) => definitionRemoveShift(shiftDefId)}
+                        onAddShift={(shiftId, order) => definitionAddShift(definitionDetail.id, shiftId, order)}
                         onClose={() => { setSelectedDefinitionId(null); setDefinitionDetail(null); }}
                         isGestating={isGestating}
                     />

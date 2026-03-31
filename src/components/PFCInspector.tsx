@@ -2,7 +2,6 @@ import "./PFCInspector.css";
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api';
-import { PFCStatusBadge } from './PFCStatusBadge';
 import type { PFCAgileItem } from '../types';
 import type { PFCItemStatus } from './PrefrontalCortex';
 import { Target, ListChecks, ShieldAlert, Zap, AlertTriangle, Link2, Cpu, Globe, MessageSquare, Trash2, Maximize2, Minimize2, ExternalLink } from 'lucide-react';

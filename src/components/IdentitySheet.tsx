@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2 } from 'lucide-react';
 import { apiFetch } from '../api';
 import { EngramEditor } from './EngramEditor';
@@ -99,6 +99,10 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     const [models, setModels] = useState<OutlierData[]>([]);
     const [isModelsLoading, setIsModelsLoading] = useState(false);
 
+    const [allTools, setAllTools] = useState<OutlierData[]>([]);
+    const [allAddons, setAllAddons] = useState<OutlierData[]>([]);
+    const [allIdentityTags, setAllIdentityTags] = useState<OutlierData[]>([]);
+
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
     const baseData: BaseIdentityData | null = data as BaseIdentityData | null;
@@ -163,20 +167,38 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     }, [fetchData]);
 
     useEffect(() => {
-        const loadModels = async () => {
+        const loadCatalogs = async () => {
             try {
                 setIsModelsLoading(true);
-                const res = await apiFetch('/api/v2/ai-models/');
-                if (!res.ok) return;
-                const json = await res.json();
-                setModels(json.results ?? json);
+                const [modelRes, toolRes, addonRes, tagRes] = await Promise.all([
+                    apiFetch('/api/v2/ai-models/'),
+                    apiFetch('/api/v2/tool_definitions/'),
+                    apiFetch('/api/v2/identity_addons/'),
+                    apiFetch('/api/v2/identity_tags/'),
+                ]);
+                if (modelRes.ok) {
+                    const json = await modelRes.json();
+                    setModels(json.results ?? json);
+                }
+                if (toolRes.ok) {
+                    const json = await toolRes.json();
+                    setAllTools(json.results ?? json);
+                }
+                if (addonRes.ok) {
+                    const json = await addonRes.json();
+                    setAllAddons(json.results ?? json);
+                }
+                if (tagRes.ok) {
+                    const json = await tagRes.json();
+                    setAllIdentityTags(json.results ?? json);
+                }
             } catch (err) {
-                console.error('Model registry fetch failed', err);
+                console.error('Catalog fetch failed', err);
             } finally {
                 setIsModelsLoading(false);
             }
         };
-        loadModels();
+        loadCatalogs();
     }, []);
 
     const toggleIdInList = (list: (string | number)[], value: string | number) => {
@@ -516,28 +538,30 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                             <Wrench size={14} /> Enabled Tools
                         </h3>
                         <div className="badge-container">
-                            {baseData?.enabled_tools?.length ? (
-                                baseData.enabled_tools.map(tool => {
+                            {isEditMode ? (
+                                allTools.length ? allTools.map(tool => {
                                     const checked = !!formState?.enabled_tool_ids.includes(tool.id);
                                     return (
                                         <button
                                             key={`tool-${tool.id}`}
                                             type="button"
-                                            className={`badge badge-tool ${isEditMode && checked ? 'badge-selected' : ''}`}
-                                            onClick={() => isEditMode && setFormState(prev => prev ? ({
+                                            className={`badge badge-tool ${checked ? 'badge-selected' : ''}`}
+                                            onClick={() => setFormState(prev => prev ? ({
                                                 ...prev,
                                                 enabled_tool_ids: toggleIdInList(prev.enabled_tool_ids, tool.id),
                                             }) : prev)}
                                         >
-                                            {isEditMode && (
-                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            )}
+                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
                                             {tool.name}
                                         </button>
                                     );
-                                })
+                                }) : <span className="font-mono text-xs text-muted">No tools available.</span>
                             ) : (
-                                <span className="font-mono text-xs text-muted">No tools configured.</span>
+                                baseData?.enabled_tools?.length ? baseData.enabled_tools.map(tool => (
+                                    <button key={`tool-${tool.id}`} type="button" className="badge badge-tool">
+                                        {tool.name}
+                                    </button>
+                                )) : <span className="font-mono text-xs text-muted">No tools configured.</span>
                             )}
                         </div>
                     </div>
@@ -547,28 +571,30 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                             <Zap size={14} /> Neural Addons
                         </h3>
                         <div className="badge-container">
-                            {baseData?.addons?.length ? (
-                                baseData.addons.map(addon => {
+                            {isEditMode ? (
+                                allAddons.length ? allAddons.map(addon => {
                                     const checked = !!formState?.addon_ids.includes(addon.id);
                                     return (
                                         <button
                                             key={`addon-${addon.id}`}
                                             type="button"
-                                            className={`badge badge-addon ${isEditMode && checked ? 'badge-selected' : ''}`}
-                                            onClick={() => isEditMode && setFormState(prev => prev ? ({
+                                            className={`badge badge-addon ${checked ? 'badge-selected' : ''}`}
+                                            onClick={() => setFormState(prev => prev ? ({
                                                 ...prev,
                                                 addon_ids: toggleIdInList(prev.addon_ids, addon.id),
                                             }) : prev)}
                                         >
-                                            {isEditMode && (
-                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            )}
+                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
                                             {addon.name}
                                         </button>
                                     );
-                                })
+                                }) : <span className="font-mono text-xs text-muted">No addons available.</span>
                             ) : (
-                                <span className="font-mono text-xs text-muted">No addons active.</span>
+                                baseData?.addons?.length ? baseData.addons.map(addon => (
+                                    <button key={`addon-${addon.id}`} type="button" className="badge badge-addon">
+                                        {addon.name}
+                                    </button>
+                                )) : <span className="font-mono text-xs text-muted">No addons active.</span>
                             )}
                         </div>
                     </div>
@@ -578,28 +604,30 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                             <Database size={14} /> Taxonomy Tags
                         </h3>
                         <div className="badge-container">
-                            {baseData?.tags?.length ? (
-                                baseData.tags.map(tag => {
+                            {isEditMode ? (
+                                allIdentityTags.length ? allIdentityTags.map(tag => {
                                     const checked = !!formState?.tag_ids.includes(tag.id);
                                     return (
                                         <button
                                             key={`tag-${tag.id}`}
                                             type="button"
-                                            className={`badge badge-tag ${isEditMode && checked ? 'badge-selected' : ''}`}
-                                            onClick={() => isEditMode && setFormState(prev => prev ? ({
+                                            className={`badge badge-tag ${checked ? 'badge-selected' : ''}`}
+                                            onClick={() => setFormState(prev => prev ? ({
                                                 ...prev,
                                                 tag_ids: toggleIdInList(prev.tag_ids, tag.id),
                                             }) : prev)}
                                         >
-                                            {isEditMode && (
-                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            )}
+                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
                                             {tag.name}
                                         </button>
                                     );
-                                })
+                                }) : <span className="font-mono text-xs text-muted">No tags available.</span>
                             ) : (
-                                <span className="font-mono text-xs text-muted">Uncategorized.</span>
+                                baseData?.tags?.length ? baseData.tags.map(tag => (
+                                    <button key={`tag-${tag.id}`} type="button" className="badge badge-tag">
+                                        {tag.name}
+                                    </button>
+                                )) : <span className="font-mono text-xs text-muted">Uncategorized.</span>
                             )}
                         </div>
                     </div>
@@ -662,7 +690,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                     {sessions.map(session => {
                                         const sessionClassId = safeCssIdent(session.id);
                                         return (
-                                            <div key={session.id} className="session-item">
+                                            <Link key={session.id} to={`/frontal/${session.id}`} className="session-item session-item-link">
                                                 <div className="session-header">
                                                     <span className="font-mono text-xs">Session {session.id}</span>
                                                     <span className="session-status">{session.status?.name}</span>
@@ -682,7 +710,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                                         </span>
                                                     )}
                                                 </div>
-                                            </div>
+                                            </Link>
                                         );
                                     })}
                                 </div>

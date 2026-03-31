@@ -432,6 +432,116 @@
     gap: 6px;
 }
 
+/* Definition column header actions */
+.definition-column-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.definition-remove-shift-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: var(--text-muted);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.5;
+}
+
+.definition-remove-shift-btn:hover {
+    color: var(--accent-red);
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Add shift column placeholder */
+.definition-add-shift-column {
+    flex: 0 0 200px;
+    display: flex;
+    align-items: stretch;
+    min-height: 200px;
+}
+
+.definition-add-shift-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed var(--border-glass);
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.definition-add-shift-btn:hover {
+    background: rgba(56, 189, 248, 0.05);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.definition-add-shift-dropdown {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-glass-strong);
+    border-radius: 12px;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.definition-add-shift-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-glass);
+    margin-bottom: 4px;
+}
+
+.definition-add-shift-option {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.definition-add-shift-option:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-blue);
+}
+
+.definition-add-shift-cancel {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.definition-add-shift-cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-glass-strong);
+    color: var(--text-secondary);
+}
+
 /* Main Area */
 .temporal-matrix-main {
     flex: 1;
