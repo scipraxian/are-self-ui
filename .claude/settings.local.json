@@ -1,11 +1,8 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(npm run:*)",
-      "Bash(npx vitest:*)",
-      "Bash(git stash:*)",
-      "Bash(npm install:*)",
-      "Bash(npx tsc:*)"
-    ]
+    "allow_file_create": true,
+    "allow_file_edit": true,
+    "allow_file_delete": true,
+    "allow_bash": true
   }
 }
