@@ -15,11 +15,11 @@ type NameOrString = string | { name: string; id?: number | string };
 interface AIModel {
     id: string;
     name: string;
-    description: string;
+    description: string | null;
+    current_description: string | null;
     enabled: boolean;
-    creator_name: string;
-    family: string | null;
-    family_name: string;
+    creator: { id: number; name: string; description?: string } | null;
+    family: { id: number | string; name: string; slug?: string; parent?: number | null } | null;
     parameter_size: string;
     context_length: number;
     mode: string;
@@ -32,7 +32,7 @@ interface AIModel {
 
 interface ModelProvider {
     id: number;
-    ai_model: string;
+    ai_model: string | { id: string; name: string; [key: string]: unknown };
     provider: { id: number; name: string; key: string };
     provider_unique_model_id: string;
     is_enabled: boolean;
@@ -47,29 +47,37 @@ interface ModelFamily {
     name: string;
 }
 
+interface FailoverStrategy {
+    id: number | string;
+    name: string;
+    steps: FailoverStep[];
+}
+
+interface NestedProvider {
+    id: number;
+    ai_model: { id: string; name: string; [key: string]: unknown } | null;
+    provider: { id: number; name: string; key: string };
+    [key: string]: unknown;
+}
+
 interface SelectionFilter {
     id: number | string;
     name: string;
-    failover_strategy: number | string | null;
-    failover_strategy_name: string;
-    preferred_model: string | null;
-    preferred_model_name: string;
-    local_failover_model: string | null;
-    local_failover_model_name: string;
+    failover_strategy: FailoverStrategy | null;
+    preferred_model: NestedProvider | null;
+    local_failover: NestedProvider | null;
     required_capabilities: NameOrString[];
     banned_providers: (number | string)[];
     banned_provider_names: string[];
     preferred_categories: NameOrString[];
     preferred_tags: NameOrString[];
     preferred_roles: NameOrString[];
-    steps: FailoverStep[];
 }
 
 interface FailoverStep {
     id: number | string;
     order: number;
-    failover_type_name: string;
-    failover_type_description: string;
+    failover_type: { id: number | string; name: string; description?: string };
 }
 
 interface IdentityBudget {
@@ -252,7 +260,8 @@ export function HypothalamusPage() {
     const providerByModel = useMemo(() => {
         const map = new Map<string, ModelProvider>();
         for (const p of providers) {
-            map.set(p.ai_model, p);
+            const modelId = typeof p.ai_model === 'object' ? p.ai_model.id : p.ai_model;
+            map.set(modelId, p);
         }
         return map;
     }, [providers]);
@@ -261,7 +270,7 @@ export function HypothalamusPage() {
     const familyCounts = useMemo(() => {
         const counts = new Map<string, number>();
         for (const m of models) {
-            const fam = m.family_name || 'Other';
+            const fam = m.family?.name || 'Other';
             counts.set(fam, (counts.get(fam) ?? 0) + 1);
         }
         return counts;
@@ -293,8 +302,8 @@ export function HypothalamusPage() {
             const q = search.toLowerCase();
             list = list.filter(m =>
                 m.name.toLowerCase().includes(q) ||
-                m.description?.toLowerCase().includes(q) ||
-                m.creator_name?.toLowerCase().includes(q)
+                m.current_description?.toLowerCase().includes(q) ||
+                m.creator?.name?.toLowerCase().includes(q)
             );
         }
 
@@ -313,7 +322,7 @@ export function HypothalamusPage() {
 
         // Family filter
         if (selectedFamilyIds.size > 0) {
-            list = list.filter(m => selectedFamilyIds.has(m.family_name));
+            list = list.filter(m => selectedFamilyIds.has(m.family?.name ?? ''));
         }
 
         // Capability filter
@@ -342,7 +351,7 @@ export function HypothalamusPage() {
                 case 'name':
                     return a.name.localeCompare(b.name);
                 case 'family':
-                    return (a.family_name || '').localeCompare(b.family_name || '') || a.name.localeCompare(b.name);
+                    return (a.family?.name || '').localeCompare(b.family?.name || '') || a.name.localeCompare(b.name);
                 case 'size': {
                     const aS = parseFloat(a.parameter_size) || 0;
                     const bS = parseFloat(b.parameter_size) || 0;
@@ -593,7 +602,7 @@ export function HypothalamusPage() {
                         >
                             <span className="hypothalamus-side-item-name">{f.name}</span>
                             <span className="hypothalamus-side-item-meta">
-                                {f.failover_strategy_name || 'No strategy'}
+                                {f.failover_strategy?.name || 'No strategy'}
                             </span>
                         </div>
                     ))}
@@ -653,7 +662,7 @@ export function HypothalamusPage() {
                 <div className="hypothalamus-card-name">{model.name}</div>
 
                 <div className="hypothalamus-card-subtitle">
-                    {[model.creator_name, model.family_name, model.parameter_size, formatCtx(model.context_length)]
+                    {[model.creator?.name, model.family?.name, model.parameter_size, formatCtx(model.context_length)]
                         .filter(Boolean).join(' · ')}
                 </div>
 
@@ -750,8 +759,8 @@ export function HypothalamusPage() {
                 onClick={() => selectModel(model.id)}
             >
                 <span className="hypothalamus-row-name">{model.name}</span>
-                <span className="hypothalamus-row-family">{model.family_name || '—'}</span>
-                <span className="hypothalamus-row-creator">{model.creator_name || '—'}</span>
+                <span className="hypothalamus-row-family">{model.family?.name || '—'}</span>
+                <span className="hypothalamus-row-creator">{model.creator?.name || '—'}</span>
                 <span className="hypothalamus-row-size">{model.parameter_size || '—'}</span>
                 <span className="hypothalamus-row-status">
                     {pulling ? (
@@ -869,16 +878,16 @@ export function HypothalamusPage() {
                             >
                                 <div className="hypothalamus-card-name">{f.name}</div>
                                 <div className="hypothalamus-card-subtitle">
-                                    {f.failover_strategy_name || 'No strategy'}
+                                    {f.failover_strategy?.name || 'No strategy'}
                                 </div>
-                                {f.preferred_model_name && (
+                                {f.preferred_model?.ai_model?.name && (
                                     <div className="hypothalamus-card-subtitle">
-                                        Preferred: {f.preferred_model_name}
+                                        Preferred: {f.preferred_model.ai_model.name}
                                     </div>
                                 )}
-                                {f.local_failover_model_name && (
+                                {f.local_failover?.ai_model?.name && (
                                     <div className="hypothalamus-card-subtitle">
-                                        Local failover: {f.local_failover_model_name}
+                                        Local failover: {f.local_failover.ai_model.name}
                                     </div>
                                 )}
                                 {f.required_capabilities?.length > 0 && (
@@ -949,7 +958,7 @@ export function HypothalamusPage() {
                 <div className="hypothalamus-inspector-header">
                     <span className="hypothalamus-inspector-name">{model.name}</span>
                     <span className="hypothalamus-inspector-subtitle">
-                        {[model.creator_name, model.family_name].filter(Boolean).join(' · ')}
+                        {[model.creator?.name, model.family?.name].filter(Boolean).join(' · ')}
                     </span>
                 </div>
 
@@ -964,10 +973,10 @@ export function HypothalamusPage() {
                     </button>
                 </div>
 
-                {model.description && (
+                {model.current_description && (
                     <div className="hypothalamus-inspector-section">
                         <span className="hypothalamus-inspector-section-title">Description</span>
-                        <span className="hypothalamus-inspector-subtitle">{model.description}</span>
+                        <span className="hypothalamus-inspector-subtitle">{model.current_description}</span>
                     </div>
                 )}
 
@@ -1130,21 +1139,21 @@ export function HypothalamusPage() {
                 <span className="hypothalamus-inspector-name">{filter.name}</span>
             </div>
 
-            {filter.failover_strategy_name && (
+            {filter.failover_strategy && (
                 <div className="hypothalamus-inspector-section">
                     <span className="hypothalamus-inspector-section-title">Failover Strategy</span>
-                    <span className="hypothalamus-inspector-subtitle">{filter.failover_strategy_name}</span>
-                    {filter.steps?.length > 0 && (
+                    <span className="hypothalamus-inspector-subtitle">{filter.failover_strategy.name}</span>
+                    {filter.failover_strategy.steps?.length > 0 && (
                         <div className="hypothalamus-step-chain">
-                            {filter.steps
+                            {[...filter.failover_strategy.steps]
                                 .sort((a, b) => a.order - b.order)
                                 .map((step, i) => (
                                     <div key={step.id}>
                                         <div className="hypothalamus-step">
                                             <span className="hypothalamus-step-number">{i + 1}</span>
-                                            <span>{step.failover_type_name}</span>
+                                            <span>{step.failover_type.name}</span>
                                         </div>
-                                        {i < filter.steps.length - 1 && (
+                                        {i < filter.failover_strategy!.steps.length - 1 && (
                                             <span className="hypothalamus-step-arrow">↓</span>
                                         )}
                                     </div>
@@ -1159,13 +1168,13 @@ export function HypothalamusPage() {
                 <div className="hypothalamus-provider-row">
                     <span>Preferred model</span>
                     <span className="hypothalamus-provider-value">
-                        {filter.preferred_model_name || 'None (vector search)'}
+                        {filter.preferred_model?.ai_model?.name || 'None (vector search)'}
                     </span>
                 </div>
                 <div className="hypothalamus-provider-row">
                     <span>Local failover</span>
                     <span className="hypothalamus-provider-value">
-                        {filter.local_failover_model_name || 'None'}
+                        {filter.local_failover?.ai_model?.name || 'None'}
                     </span>
                 </div>
             </div>

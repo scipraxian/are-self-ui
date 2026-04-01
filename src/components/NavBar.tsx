@@ -98,6 +98,12 @@ export const NavBar = () => {
                     <Link to="/frontal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         Frontal Lobe / Reasoning
                     </Link>
+                    <Link to="/hippocampus" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Hippocampus
+                    </Link>
+                    <Link to="/hypothalamus" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        Hypothalamus
+                    </Link>
                     <Link to="/identity" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         Identity Ledger
                     </Link>
