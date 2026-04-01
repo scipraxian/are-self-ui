@@ -197,6 +197,20 @@ for all M2M fields.
 ### Prefrontal Cortex - Double clicking drill
 Double clicking on a ticket brings you to partial edit, should be full edit.
 
+
+### Dynamic Environment
+The environment variables need to resolve from places like settings.py.
+This is a new feature of the render environment functions but should be really easy.
+
+### MOVE ROOT
+I want to move the entire app inside my user folder because cowork won't use my root folders.
+Destination name should change from talos to are-self.
+GIT Repo will require name change as well.
+
+### DOCUMENTATION
+We need real readmes, we need all the documentation possible.
+Videos, tutorials, and comprehensive guides.
+
 ---
 
 ## P1 — Remaining Gaps
@@ -265,6 +279,11 @@ to their API calls.
 Most routes use hyphens (`identity-discs`, `tool-definitions`) but some use underscores
 (`engram_tags`, `reasoning_sessions`, `reasoning_turns`, `nerve_terminal_*`). Standardize
 to hyphens post-release. Coordinated frontend+backend sweep.
+
+
+### tool details in chat views
+
+
 
 ---
 
