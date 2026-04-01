@@ -196,8 +196,8 @@ export function HypothalamusModelInspector({
         const load = async () => {
             try {
                 const [tagRes, catRes] = await Promise.all([
-                    apiFetch('/api/v2/ai-model-tags/'),
-                    apiFetch('/api/v2/ai-model-categories/'),
+                    apiFetch('/api/v2/model-tags/'),
+                    apiFetch('/api/v2/model-categories/'),
                 ]);
                 if (cancelled) return;
                 if (tagRes.ok) {

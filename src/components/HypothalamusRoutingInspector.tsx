@@ -61,10 +61,6 @@ export interface RoutingInspectorProps {
 
 /* ── Helpers ──────────────────────────────────────── */
 
-function label(v: NameOrString): string {
-    if (typeof v === 'string') return v;
-    return v.name ?? String(v);
-}
 
 function labelId(v: NameOrString): number | string {
     if (typeof v === 'string') return v;
@@ -134,11 +130,11 @@ export function HypothalamusRoutingInspector({ filter, onClose, onFilterUpdate }
                 const [stratRes, provRes, capRes, providerListRes, catRes, tagRes, roleRes] = await Promise.all([
                     apiFetch('/api/v2/failover-strategies/'),
                     apiFetch('/api/v2/model-providers/'),
-                    apiFetch('/api/v2/ai-model-capabilities/'),
-                    apiFetch('/api/v2/ai-providers/'),
-                    apiFetch('/api/v2/ai-model-categories/'),
-                    apiFetch('/api/v2/ai-model-tags/'),
-                    apiFetch('/api/v2/ai-model-roles/'),
+                    apiFetch('/api/v2/model-capabilities/'),
+                    apiFetch('/api/v2/llm-providers/'),
+                    apiFetch('/api/v2/model-categories/'),
+                    apiFetch('/api/v2/model-tags/'),
+                    apiFetch('/api/v2/model-roles/'),
                 ]);
                 if (cancelled) return;
 
