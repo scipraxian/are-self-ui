@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { List, LayoutGrid } from 'lucide-react';
+import { List, LayoutGrid, RefreshCw, Download } from 'lucide-react';
 
 import { ThreePanel } from '../components/ThreePanel';
+import { HypothalamusModelInspector } from '../components/HypothalamusModelInspector';
+import { HypothalamusRoutingInspector } from '../components/HypothalamusRoutingInspector';
 import { useDendrite } from '../components/SynapticCleft';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { apiFetch } from '../api';
@@ -171,6 +173,9 @@ export function HypothalamusPage() {
     const [sortMode, setSortMode] = useState<SortMode>('installed');
     const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
     const [pullingModels, setPullingModels] = useState<Set<string>>(new Set());
+    const [syncing, setSyncing] = useState(false);
+    const [fetching, setFetching] = useState(false);
+    const [actionMessage, setActionMessage] = useState<string | null>(null);
 
     // Breadcrumbs
     useEffect(() => {
@@ -479,6 +484,57 @@ export function HypothalamusPage() {
             if (!res.ok) console.error('Reset breaker failed', res.status);
         } catch (err) {
             console.error('Reset breaker failed', err);
+        }
+    };
+
+    const handleSyncLocal = async () => {
+        setSyncing(true);
+        setActionMessage(null);
+        try {
+            const res = await apiFetch('/api/v2/ai-models/sync_local/', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                const count = data.count ?? data.synced ?? Object.keys(data).length;
+                setActionMessage(`Synced ${count} models`);
+            } else {
+                setActionMessage('Sync failed');
+            }
+        } catch (err) {
+            console.error('Sync local failed', err);
+            setActionMessage('Sync failed');
+        } finally {
+            setSyncing(false);
+            setTimeout(() => setActionMessage(null), 4000);
+        }
+    };
+
+    const handleFetchCatalog = async () => {
+        setFetching(true);
+        setActionMessage(null);
+        try {
+            const res = await apiFetch('/api/v2/ai-models/fetch_catalog/', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                const count = data.count ?? data.fetched ?? Object.keys(data).length;
+                setActionMessage(`Fetched ${count} models from Ollama library`);
+            } else {
+                setActionMessage('Fetch catalog failed');
+            }
+        } catch (err) {
+            console.error('Fetch catalog failed', err);
+            setActionMessage('Fetch catalog failed');
+        } finally {
+            setFetching(false);
+            setTimeout(() => setActionMessage(null), 4000);
+        }
+    };
+
+    const handleToggleProviderEnabled = async (providerId: number) => {
+        try {
+            const res = await apiFetch(`/api/v2/model-providers/${providerId}/toggle_enabled/`, { method: 'POST' });
+            if (!res.ok) console.error('Toggle provider failed', res.status);
+        } catch (err) {
+            console.error('Toggle provider failed', err);
         }
     };
 
@@ -821,6 +877,24 @@ export function HypothalamusPage() {
                 </span>
                 {tab === 'catalog' && (
                     <div className="hypothalamus-center-controls">
+                        <button
+                            type="button"
+                            className="hypothalamus-header-action hypothalamus-header-action-sync"
+                            onClick={handleSyncLocal}
+                            disabled={syncing}
+                        >
+                            {syncing ? <span className="hypothalamus-spinner" /> : <RefreshCw size={13} />}
+                            <span>Sync Local</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="hypothalamus-header-action hypothalamus-header-action-fetch"
+                            onClick={handleFetchCatalog}
+                            disabled={fetching}
+                        >
+                            {fetching ? <span className="hypothalamus-spinner" /> : <Download size={13} />}
+                            <span>Fetch Catalog</span>
+                        </button>
                         <select
                             className="hypothalamus-sort-select"
                             value={sortMode}
@@ -846,6 +920,9 @@ export function HypothalamusPage() {
                             <LayoutGrid size={14} />
                         </button>
                     </div>
+                )}
+                {actionMessage && (
+                    <span className="hypothalamus-action-message">{actionMessage}</span>
                 )}
             </div>
 
@@ -942,299 +1019,7 @@ export function HypothalamusPage() {
         </div>
     );
 
-    /* ── RIGHT PANEL: Model Inspector ────────────── */
-
-    const renderModelInspector = (model: AIModel) => {
-        const prov = providerByModel.get(model.id);
-        const status = getModelStatus(model);
-        const pulling = pullingModels.has(model.id);
-
-        return (
-            <div className="hypothalamus-inspector">
-                <button type="button" className="hypothalamus-inspector-close" onClick={clearSelection}>
-                    ✕
-                </button>
-
-                <div className="hypothalamus-inspector-header">
-                    <span className="hypothalamus-inspector-name">{model.name}</span>
-                    <span className="hypothalamus-inspector-subtitle">
-                        {[model.creator?.name, model.family?.name].filter(Boolean).join(' · ')}
-                    </span>
-                </div>
-
-                <div className="hypothalamus-inspector-toggle-row">
-                    <span className="hypothalamus-inspector-label">Enabled</span>
-                    <button
-                        type="button"
-                        className={`hypothalamus-toggle ${model.enabled ? 'hypothalamus-toggle-active' : ''}`}
-                        onClick={() => handleToggleEnabled(model.id)}
-                    >
-                        <span className="hypothalamus-toggle-knob" />
-                    </button>
-                </div>
-
-                {model.current_description && (
-                    <div className="hypothalamus-inspector-section">
-                        <span className="hypothalamus-inspector-section-title">Description</span>
-                        <span className="hypothalamus-inspector-subtitle">{model.current_description}</span>
-                    </div>
-                )}
-
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Stats</span>
-                    <div className="hypothalamus-stats-grid">
-                        <div className="hypothalamus-stat-item">
-                            <span className="hypothalamus-stat-value">{model.parameter_size || '—'}</span>
-                            <span className="hypothalamus-stat-label">Parameters</span>
-                        </div>
-                        <div className="hypothalamus-stat-item">
-                            <span className="hypothalamus-stat-value">{formatCtx(model.context_length)}</span>
-                            <span className="hypothalamus-stat-label">Context</span>
-                        </div>
-                        <div className="hypothalamus-stat-item">
-                            <span className="hypothalamus-stat-value">{model.mode || '—'}</span>
-                            <span className="hypothalamus-stat-label">Mode</span>
-                        </div>
-                    </div>
-                </div>
-
-                {(model.capabilities?.length > 0 || model.roles?.length > 0 || model.quantizations?.length > 0) && (
-                    <div className="hypothalamus-inspector-section">
-                        <span className="hypothalamus-inspector-section-title">Capabilities & Roles</span>
-                        <div className="hypothalamus-inspector-pills">
-                            {model.capabilities?.map(c => (
-                                <span key={labelKey(c)} className="hypothalamus-pill">{label(c).replace('_', ' ')}</span>
-                            ))}
-                            {model.roles?.map(r => (
-                                <span key={labelKey(r)} className="hypothalamus-pill hypothalamus-pill-role">{label(r)}</span>
-                            ))}
-                            {model.quantizations?.map(q => (
-                                <span key={labelKey(q)} className="hypothalamus-pill">{label(q)}</span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Provider</span>
-                    <div className="hypothalamus-provider-status">
-                        {prov ? (
-                            <>
-                                <div className="hypothalamus-provider-row">
-                                    <span>Status</span>
-                                    <span className="hypothalamus-provider-value">
-                                        <span className={`hypothalamus-status-dot hypothalamus-dot-${status}`}
-                                              style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} />
-                                        {status === 'installed' && 'Active'}
-                                        {status === 'breaker' && 'Circuit breaker tripped'}
-                                        {status === 'disabled' && 'Disabled'}
-                                        {status === 'available' && 'Removed'}
-                                    </span>
-                                </div>
-                                <div className="hypothalamus-provider-row">
-                                    <span>Model ID</span>
-                                    <span className="hypothalamus-provider-value">{prov.provider_unique_model_id}</span>
-                                </div>
-                                <div className="hypothalamus-provider-row">
-                                    <span>Provider</span>
-                                    <span className="hypothalamus-provider-value">{prov.provider.name}</span>
-                                </div>
-
-                                {(prov.rate_limit_counter > 0 || prov.total_failures > 0) && (
-                                    <div className="hypothalamus-breaker-panel">
-                                        <span className="hypothalamus-breaker-title">Circuit Breaker</span>
-                                        <div className="hypothalamus-breaker-row">
-                                            <span>Failures</span>
-                                            <span className="hypothalamus-breaker-value">{prov.total_failures}</span>
-                                        </div>
-                                        <div className="hypothalamus-breaker-row">
-                                            <span>Rate limit counter</span>
-                                            <span className="hypothalamus-breaker-value">{prov.rate_limit_counter}</span>
-                                        </div>
-                                        {prov.last_failure_time && (
-                                            <div className="hypothalamus-breaker-row">
-                                                <span>Last failure</span>
-                                                <span className="hypothalamus-breaker-value">
-                                                    {new Date(prov.last_failure_time).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {prov.rate_limit_reset_time && isBreakerTripped(prov) && (
-                                            <div className="hypothalamus-breaker-row">
-                                                <span>Resets at</span>
-                                                <span className="hypothalamus-breaker-value">
-                                                    {new Date(prov.rate_limit_reset_time).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <button
-                                            type="button"
-                                            className="hypothalamus-action-btn hypothalamus-action-btn-reset"
-                                            onClick={() => handleResetBreaker(prov.id)}
-                                        >
-                                            Reset Circuit Breaker
-                                        </button>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="hypothalamus-provider-row">
-                                <span>Not installed</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Pricing</span>
-                    {isFree(model) ? (
-                        <span className="hypothalamus-free-badge">FREE</span>
-                    ) : (
-                        <>
-                            <div className="hypothalamus-pricing-row">
-                                <span>Input</span>
-                                <span className="hypothalamus-pricing-value">{formatCost(model.input_cost_per_token)}</span>
-                            </div>
-                            <div className="hypothalamus-pricing-row">
-                                <span>Output</span>
-                                <span className="hypothalamus-pricing-value">{formatCost(model.output_cost_per_token)}</span>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                <div className="hypothalamus-inspector-section">
-                    {status === 'available' || !prov ? (
-                        <button
-                            type="button"
-                            className="hypothalamus-inspector-action hypothalamus-inspector-action-pull"
-                            onClick={() => handlePull(model.id)}
-                            disabled={pulling}
-                        >
-                            {pulling ? 'Pulling...' : 'Pull Model'}
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className="hypothalamus-inspector-action hypothalamus-inspector-action-remove"
-                            onClick={() => handleRemove(model.id)}
-                        >
-                            Remove Model
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    /* ── RIGHT PANEL: Routing Inspector ──────────── */
-
-    const renderRoutingInspector = (filter: SelectionFilter) => (
-        <div className="hypothalamus-inspector">
-            <button type="button" className="hypothalamus-inspector-close" onClick={clearSelection}>
-                ✕
-            </button>
-
-            <div className="hypothalamus-inspector-header">
-                <span className="hypothalamus-inspector-name">{filter.name}</span>
-            </div>
-
-            {filter.failover_strategy && (
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Failover Strategy</span>
-                    <span className="hypothalamus-inspector-subtitle">{filter.failover_strategy.name}</span>
-                    {filter.failover_strategy.steps?.length > 0 && (
-                        <div className="hypothalamus-step-chain">
-                            {[...filter.failover_strategy.steps]
-                                .sort((a, b) => a.order - b.order)
-                                .map((step, i) => (
-                                    <div key={step.id}>
-                                        <div className="hypothalamus-step">
-                                            <span className="hypothalamus-step-number">{i + 1}</span>
-                                            <span>{step.failover_type.name}</span>
-                                        </div>
-                                        {i < filter.failover_strategy!.steps.length - 1 && (
-                                            <span className="hypothalamus-step-arrow">↓</span>
-                                        )}
-                                    </div>
-                                ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <div className="hypothalamus-inspector-section">
-                <span className="hypothalamus-inspector-section-title">Model Preferences</span>
-                <div className="hypothalamus-provider-row">
-                    <span>Preferred model</span>
-                    <span className="hypothalamus-provider-value">
-                        {filter.preferred_model?.ai_model?.name || 'None (vector search)'}
-                    </span>
-                </div>
-                <div className="hypothalamus-provider-row">
-                    <span>Local failover</span>
-                    <span className="hypothalamus-provider-value">
-                        {filter.local_failover?.ai_model?.name || 'None'}
-                    </span>
-                </div>
-            </div>
-
-            {filter.required_capabilities?.length > 0 && (
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Required Capabilities</span>
-                    <div className="hypothalamus-inspector-pills">
-                        {filter.required_capabilities.map(c => (
-                            <span key={labelKey(c)} className="hypothalamus-pill">{label(c).replace('_', ' ')}</span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {filter.banned_provider_names?.length > 0 && (
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Banned Providers</span>
-                    <div className="hypothalamus-inspector-pills">
-                        {filter.banned_provider_names.map(p => (
-                            <span key={p} className="hypothalamus-pill">{p}</span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {filter.preferred_roles?.length > 0 && (
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Preferred Roles</span>
-                    <div className="hypothalamus-inspector-pills">
-                        {filter.preferred_roles.map(r => (
-                            <span key={labelKey(r)} className="hypothalamus-pill hypothalamus-pill-role">{label(r)}</span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {filter.preferred_categories?.length > 0 && (
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Preferred Categories</span>
-                    <div className="hypothalamus-inspector-pills">
-                        {filter.preferred_categories.map(c => (
-                            <span key={labelKey(c)} className="hypothalamus-pill">{label(c)}</span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {filter.preferred_tags?.length > 0 && (
-                <div className="hypothalamus-inspector-section">
-                    <span className="hypothalamus-inspector-section-title">Preferred Tags</span>
-                    <div className="hypothalamus-inspector-pills">
-                        {filter.preferred_tags.map(t => (
-                            <span key={labelKey(t)} className="hypothalamus-pill">{label(t)}</span>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    /* ── Inline inspectors removed — now using extracted components ── */
 
     /* ── RIGHT PANEL: Budget Inspector ───────────── */
 
@@ -1328,10 +1113,34 @@ export function HypothalamusPage() {
 
     let rightPanel: React.ReactNode = null;
 
+    const handleFilterUpdate = (updated: SelectionFilter) => {
+        setFilters(prev => prev.map(f => f.id === updated.id ? updated : f));
+    };
+
     if (tab === 'catalog' && selectedModel) {
-        rightPanel = renderModelInspector(selectedModel);
+        rightPanel = (
+            <HypothalamusModelInspector
+                model={selectedModel}
+                provider={providerByModel.get(selectedModel.id) ?? null}
+                models={models}
+                families={families}
+                pulling={pullingModels.has(selectedModel.id)}
+                onClose={clearSelection}
+                onToggleEnabled={handleToggleEnabled}
+                onPull={handlePull}
+                onRemove={handleRemove}
+                onResetBreaker={handleResetBreaker}
+                onToggleProviderEnabled={handleToggleProviderEnabled}
+            />
+        );
     } else if (tab === 'routing' && selectedFilter) {
-        rightPanel = renderRoutingInspector(selectedFilter);
+        rightPanel = (
+            <HypothalamusRoutingInspector
+                filter={selectedFilter}
+                onClose={clearSelection}
+                onFilterUpdate={handleFilterUpdate}
+            />
+        );
     } else if (tab === 'budgets' && selectedBudget) {
         rightPanel = renderBudgetInspector(selectedBudget);
     } else {

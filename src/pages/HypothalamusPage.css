@@ -913,3 +913,404 @@
     color: var(--accent-green);
     border: 1px solid rgba(52, 211, 153, 0.25);
 }
+
+/* --- Header Action Buttons (Sync Local / Fetch Catalog) --- */
+
+.hypothalamus-header-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 120ms ease;
+    white-space: nowrap;
+}
+
+.hypothalamus-header-action:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-glass-strong);
+}
+
+.hypothalamus-header-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.hypothalamus-header-action-sync {
+    border-color: rgba(56, 189, 248, 0.4);
+    color: var(--accent-blue);
+}
+
+.hypothalamus-header-action-sync:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.08);
+}
+
+.hypothalamus-header-action-fetch {
+    border-color: rgba(139, 92, 246, 0.4);
+    color: rgb(167, 139, 250);
+}
+
+.hypothalamus-header-action-fetch:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.hypothalamus-action-message {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent-green);
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+/* --- Inspector Section Header (Edit button inline) --- */
+
+.hypothalamus-inspector-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.hypothalamus-inline-btn {
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-inline-btn:hover {
+    border-color: var(--border-glass-strong);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.hypothalamus-inline-btn-save {
+    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--accent-green);
+}
+
+.hypothalamus-inline-btn-save:hover {
+    background: rgba(52, 211, 153, 0.08);
+}
+
+.hypothalamus-inline-btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Description Editing --- */
+
+.hypothalamus-desc-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hypothalamus-desc-textarea {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.hypothalamus-desc-textarea:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.5);
+}
+
+.hypothalamus-desc-edit-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.hypothalamus-desc-source {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* --- Collapsible Toggle --- */
+
+.hypothalamus-collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+
+.hypothalamus-collapse-toggle:hover {
+    color: var(--text-primary);
+}
+
+/* --- Description Relationships Panel --- */
+
+.hypothalamus-relationships {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.hypothalamus-rel-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hypothalamus-rel-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.hypothalamus-rel-pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.hypothalamus-rel-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.hypothalamus-rel-pill-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 120ms ease;
+    line-height: 1;
+}
+
+.hypothalamus-rel-pill-remove:hover {
+    color: rgb(248, 113, 113);
+}
+
+.hypothalamus-rel-add-wrap {
+    position: relative;
+}
+
+.hypothalamus-rel-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px dashed var(--border-glass);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-rel-add-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.hypothalamus-rel-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    min-width: 200px;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass-strong);
+    background: rgba(15, 23, 42, 0.98);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+}
+
+.hypothalamus-rel-dropdown-search {
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.hypothalamus-rel-dropdown-search:focus {
+    outline: none;
+}
+
+.hypothalamus-rel-dropdown-search::placeholder {
+    color: var(--text-muted);
+}
+
+.hypothalamus-rel-dropdown-item {
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 80ms ease;
+}
+
+.hypothalamus-rel-dropdown-item:hover {
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--text-primary);
+}
+
+.hypothalamus-rel-dropdown-empty {
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* --- Edit Select (Routing Inspector dropdowns) --- */
+
+.hypothalamus-edit-select {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.hypothalamus-edit-select:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.5);
+}
+
+/* --- Toggleable Pills (Routing Inspector) --- */
+
+.hypothalamus-toggle-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.hypothalamus-toggle-pill {
+    display: inline-flex;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    background: rgba(139, 92, 246, 0.06);
+    color: var(--text-muted);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-toggle-pill:hover {
+    background: rgba(139, 92, 246, 0.12);
+}
+
+.hypothalamus-toggle-pill-active {
+    background: rgba(139, 92, 246, 0.18);
+    color: rgb(167, 139, 250);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.15);
+}
+
+.hypothalamus-toggle-pill-role {
+    background: rgba(56, 189, 248, 0.06);
+    border-color: rgba(56, 189, 248, 0.12);
+}
+
+.hypothalamus-toggle-pill-role:hover {
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.hypothalamus-toggle-pill-role-active {
+    background: rgba(56, 189, 248, 0.18);
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
+}
+
+.hypothalamus-toggle-pill-ban {
+    background: rgba(248, 113, 113, 0.04);
+    border-color: rgba(248, 113, 113, 0.1);
+}
+
+.hypothalamus-toggle-pill-ban:hover {
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.hypothalamus-toggle-pill-ban-active {
+    background: rgba(248, 113, 113, 0.12);
+    color: rgba(248, 113, 113, 0.9);
+    border-color: rgba(248, 113, 113, 0.35);
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.15);
+}
+
+/* --- Save Action (Routing Inspector) --- */
+
+.hypothalamus-inspector-action-save {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--accent-green);
+}
+
+.hypothalamus-inspector-action-save:hover {
+    background: rgba(52, 211, 153, 0.08);
+}
