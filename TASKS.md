@@ -1,6 +1,6 @@
 # Are-Self UI — Task List
 
-Current state of the React frontend + backend. Updated 2026-04-01.
+Current state of the React frontend + backend. Updated 2026-04-01 (evening).
 
 ---
 
@@ -93,19 +93,41 @@ via Norepinephrine through Synaptic Cleft. Live only — no historical view.
 - Editable failover strategy, preferred/local model dropdowns, toggleable M2M pills.
 - Saves via PATCH to `/api/v2/selection-filters/{id}/`.
 
-**Backend — Hypothalamus (2026-04-01):**
-- AIModelViewSet: pull, remove, toggle_enabled, sync_local actions
+**Backend — Hypothalamus Semantic Parser (2026-04-01):**
+- Standalone parser at
+  `hypothalamus/parsing_tools/llm_provider_parser/model_semantic_parser.py`
+  Django-free, MIT-licensed. 83 tests passing.
+- `FAMILY_PATTERNS` now 3-tuples: `(family, parent_family | None, [slugs])`.
+  Sub-families ordered before parents (Qwen Coder before Qwen, CodeLlama before Llama, etc).
+- `AIModelSemanticParseResult` dataclass returns `parent_family` field.
+- Sub-families with parents: Qwen Coder→Qwen, Qwen VL→Qwen, QwQ→Qwen,
+  DeepSeek Coder→DeepSeek, CodeLlama→Llama, CodeGemma→Gemma,
+  Codestral→Mistral, Devstral→Mistral, Magistral→Mistral, Ministral→Mistral,
+  Mixtral→Mistral.
+- `FAMILY_TO_CREATOR` updated with sub-family entries.
+
+**Backend — Hypothalamus Resolver & Sync (2026-04-01):**
+- `_enrich_from_parser(ai_model, parsed)` accepts `AIModelSemanticParseResult`
+  (not a string). Uses `get_or_create` on all reference tables (family, creator,
+  version, roles, quantizations, tags). Wires `parent_family` to
+  `AIModelFamily.parent` FK. Batches scalar saves.
+- `sync_local` stores Ollama's raw name as canonical (no `:latest` stripping).
+  Parses once, passes result to `_enrich_from_parser`. Ollama's `details.parameter_size`
+  overrides parser's name-extracted value (more precise: 27.2B vs 27B).
+- `_process_catalog_entry` parses once with `ollama/` prefix, passes result.
+- `fetch_catalog` uses regex scraper (`scrape_ollama_library`), processes via
+  `_process_catalog_entry`, fires Acetylcholine.
+- 83 tests passing (up from 75 before parser/resolver work).
+
+**Backend — Hypothalamus (prior 2026-04-01):**
+- AIModelViewSet: pull, remove, toggle_enabled, sync_local, fetch_catalog actions
 - AIModelProviderViewSet: reset_circuit_breaker, toggle_enabled actions
-- FailoverTypeViewSet, FailoverStrategyViewSet, AIModelSelectionFilterViewSet (new)
-- AIModelDescriptionViewSet with full M2M CRUD (new)
-- BudgetPeriodViewSet, IdentityBudgetViewSet in identity app (new)
+- FailoverTypeViewSet, FailoverStrategyViewSet, AIModelSelectionFilterViewSet
+- AIModelDescriptionViewSet with full M2M CRUD
+- BudgetPeriodViewSet, IdentityBudgetViewSet in identity app
 - AIModelCreatorSerializer nested on AIModelSerializer
 - `current_description` SerializerMethodField — resolves model-specific → family fallback
 - `parent` FK on AIModelFamily (migration 0015) for subfamily support
-- 28+ new tests across test_api.py, test_description_and_family.py, test_sync.py
-- Standalone model semantic parser at
-  `hypothalamus/parsing_tools/llm_provider_parser/model_semantic_parser.py`
-  (1121 lines, 98.4% accuracy on 2863 models, Django-free, MIT-licensed)
 
 **Fixtures — Hypothalamus (2026-04-01):**
 - `hypothalamus/fixtures/initial_data.json` — 167 entries. Pre-seeded catalog.
@@ -136,12 +158,19 @@ IterationShiftDefinition FK write fix (shift_id PrimaryKeyRelatedField).
 
 ## In Progress
 
-### Hypothalamus — fetch_catalog Rewrite
-The fetch_catalog backend action needs rewriting. The current OllamaLibraryParser
-(HTMLParser subclass) was REJECTED for poor code quality (nested class, untestable).
-Must be replaced with: simple regex-based HTML scraping + enrichment via the standalone
-parser at `hypothalamus/parsing_tools/llm_provider_parser/model_semantic_parser.py`.
-Prompt is ready. sync_local works and is committed.
+### Hypothalamus — Dendrite Refresh Bug (BLOCKING UX)
+Sync Local, Fetch Catalog, and Pull actions do not auto-refresh the page. Backend fires
+`Acetylcholine(receptor_class='AIModel', dendrite_id='hypothalamus')` — frontend subscribes
+`useDendrite('Acetylcholine', 'hypothalamus')`. On paper this matches, but the page does
+not update. Need to trace the full path: fire_neurotransmitter → Channels consumer →
+WebSocket → useDendrite hook → useEffect trigger. Feed the next session:
+`SynapticCleft.tsx`, `synaptic_cleft/consumers.py`, and `HypothalamusPage.tsx`.
+
+### Hypothalamus — Fixture Initial State
+The 4 fixture AIModelProvider records have `is_enabled: true`, making them show as
+"Installed" before sync_local runs. They should either default to `is_enabled: false`
+(Available until confirmed by sync) or not exist in fixtures at all (created by sync_local
+on first run). Needs fixture edit + DB re-seed.
 
 ### Navigation + Identity Layout + Engram Attach
 - Hamburger menu: Hippocampus + Hypothalamus added (4/1). Remaining brain regions TBD.
@@ -159,18 +188,41 @@ The `selection_filter` FK already exists on IdentityFields (abstract base).
 Budget assignment goes through `IdentityBudgetAssignment` junction model.
 Unblocked now that Hypothalamus page exists with browsable reference data.
 
-### 3D Engram Relationship Graph
+### Hypothalamus — Routing Tab POST Bugs
+Changing failover strategies does not POST. Capability pill changes do not POST.
+Need to verify the PATCH call in HypothalamusRoutingInspector.tsx is wired correctly
+for all M2M fields.
+
+
+### Prefrontal Cortex - Double clicking drill
+Double clicking on a ticket brings you to partial edit, should be full edit.
 
 ---
 
 ## P1 — Remaining Gaps
 
+
 ### Temporal Lobe — URL-Driven Iteration Selection
 Currently selecting an iteration/definition is local state only. Needs URL params
 (`/temporal?iteration={id}` or `/temporal?definition={id}`) so refresh preserves context.
 
+### Hypothalamus — Family Filter Sort + Zero-Count Hiding
+Family chips in the filter panel need alphabetical sort. Consider hiding families with
+zero models to reduce clutter on first load (44 chips, 4 models).
+
+### Hypothalamus — Budgets Tab Editing
+Currently read-only. Need inline editing for budget periods, cost gates, spend limits.
+
+### Hypothalamus — Standalone Family/Tag/Category CRUD
+No dedicated CRUD for families, tags, or categories as standalone entities. Currently
+only manageable via description relationship pills. May need dedicated management UI
+or at minimum an admin-accessible list view.
+
 ### Identity — Deferred Fields
 - Vector embedding visualization (optional, could be a sparkline or badge)
+
+### 3D Engram Relationship Graph
+
 
 ### Hypothalamus — Vectorization After First Sync
 After sync_local detects installed models, they need vectors generated for semantic routing.
@@ -179,9 +231,17 @@ The `AIModel.update_vector()` method exists and uses the AIModelDescription fall
 Requires Ollama running with nomic-embed-text installed.
 
 ### Hypothalamus — Subfamily Routing
-The `parent` FK on AIModelFamily exists (migration 0015). The failover engine in
-`hypothalamus.py` (`pick_optimal_model`) needs updating to prefer same-subfamily
-first, then parent-family, then vector search. Post-release enhancement.
+The `parent` FK on AIModelFamily now populated by the parser/resolver. The failover engine
+in `hypothalamus.py` (`pick_optimal_model`) needs updating to prefer same-subfamily first,
+then parent-family, then vector search. Post-release enhancement.
+
+### Hypothalamus — OpenRouter Sync (Coming Soon)
+`hypothalamus.py` has `Hypothalamus.enrich_model_semantics_from_openrouter()` and
+`_process_openrouter_model()` — uses the OLD `_get_or_create_enriched_model` which
+assigns parser strings directly to FK fields (BROKEN — same bug that was just fixed in
+api.py). Needs rewrite to use the new `_enrich_from_parser(ai_model, parsed)` pattern.
+No frontend button yet. Deferred to post-release. When ready, adds full cloud model
+catalog with real pricing.
 
 ---
 
@@ -205,12 +265,6 @@ to their API calls.
 Most routes use hyphens (`identity-discs`, `tool-definitions`) but some use underscores
 (`engram_tags`, `reasoning_sessions`, `reasoning_turns`, `nerve_terminal_*`). Standardize
 to hyphens post-release. Coordinated frontend+backend sweep.
-
-### Hypothalamus — Standalone Parser Integration
-Integrate the standalone `model_semantic_parser.py` into the Django sync pipeline
-(`hypothalamus.py`). Replace the old DB-driven parser. Run against all models to
-populate family, creator, roles, quantizations. Would improve vector quality for the
-full cloud catalog (OpenRouter sync). Deferred until after local-first release.
 
 ---
 
