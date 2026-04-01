@@ -37,8 +37,20 @@ doesn't work until forged into a disc.
 
 ### 2. Model Configuration → `/hypothalamus`
 The **Hypothalamus** manages AI models: catalog, budget constraints, circuit breakers, failover
-strategies. The AIModelSelectionFilter on each Identity determines model routing via
-vector-similarity matching, cost filters, provider preferences.
+strategies. The user browses the model catalog (Ollama local + remote library), pulls/removes
+models, edits descriptions, and configures routing profiles. The AIModelSelectionFilter on
+each Identity determines model routing via vector-similarity matching, cost filters, provider
+preferences.
+
+**Key architecture:** `AIModelDescription` is the canonical description source (NOT
+`AIModel.description`, which is null/deprecated). Descriptions link via M2M to models AND
+families. Resolution chain: model-specific `AIModelDescription` first → family-level fallback.
+Descriptions + tags + categories feed into `update_vector()` for semantic routing.
+
+**Standalone parser:** `hypothalamus/parsing_tools/llm_provider_parser/model_semantic_parser.py`
+(1121 lines, 98.4% accuracy, Django-free, MIT-licensed). Parses model identifier strings into
+family, creator, roles, quantizations, sizes. Must be imported and used — never reinvent
+model string parsing.
 
 ### 3. Iteration Setup → `/temporal`
 The user creates an **Iteration** from a definition (blueprint) tied to an **Environment**.
@@ -83,6 +95,7 @@ session concludes or yields → control returns up the spike chain.
 | `/frontal/:sessionId` | 3D graph or chat view | "What did this session think/do?" |
 | `/pfc` | Agile board | "What's assigned? In progress?" |
 | `/temporal` | Iteration matrix | "Who's in which shift?" |
+| `/hypothalamus` | Model catalog + routing + budgets | "What models are available? What's the routing policy?" |
 | `/pns` | Fleet status | "What's ticking?" |
 | `/hippocampus` | Engram browser | "What does the swarm remember?" |
 | `/identity` | Identity ledger | "Who are the workers?" |
@@ -117,9 +130,9 @@ Bookmarkable, refreshable, shareable. F5 returns exactly where you were.
 /identity                           → IdentityLedger (disc list + IdentitySheet)
 /identity/:discId                   → IdentityDetail (disc configuration)
 /hippocampus                        → HippocampusPage (engram browser)
+/hypothalamus                       → HypothalamusPage (model catalog + routing + budgets)
 /pns                                → PNSPage (fleet overview)
 /pns/monitor?w1=host&w2=host        → PNSMonitorPage (xterm grid)
-/hypothalamus                       → (TODO) Model management
 /environments                       → EnvironmentEditor (CRUD + context variables)
 ```
 
@@ -167,9 +180,20 @@ inline context variable editing.
 - **Never hardcode 127.0.0.1.**
 
 ### Real-Time (Synaptic Cleft)
-- `useDendrite(receptorClass, dendriteId)` for event subscriptions. **Never use setInterval.**
-- Neurotransmitters: Dopamine (success), Cortisol (error), Acetylcholine (sync),
-  Glutamate (streaming), Norepinephrine (PNS worker monitoring/alertness)
+
+The backend fires typed **neurotransmitter** events through Django Channels (WebSocket).
+The frontend subscribes with `useDendrite(receptorClass, dendriteId)`. When an event
+fires, the hook returns a new ref. That ref goes into `useEffect` dependency arrays,
+causing automatic refetch of the relevant data. **This is why the dendrite pattern
+appears throughout the codebase — it replaces polling entirely.** No `setInterval`
+anywhere in the system.
+
+Neurotransmitters:
+- **Dopamine** — success states (task completed, session concluded)
+- **Cortisol** — errors/halts (spike failed, circuit breaker tripped)
+- **Acetylcholine** — data sync (model refreshed, new turn recorded, catalog updated)
+- **Glutamate** — streaming data (log lines, execution output)
+- **Norepinephrine** — alertness/monitoring (worker heartbeats, orchestration narrative)
 
 ### Chat Integration
 - **SessionChat** (`/frontal/:sessionId` in Chat mode): Scoped to a specific reasoning session.
@@ -187,8 +211,111 @@ inline context variable editing.
 - **No Tailwind mixed with CSS files.** Project uses `.css` files.
 - **Semantic CSS class names.** `{component}-{element}` convention. Never auto-generated.
 - **Biological naming.** No "Mission Control", "Battle Station", "Spellbook", or military jargon.
-- **Component structure:** `.tsx` + `.css` per component. Pages in `src/pages/`, components in `src/components/`, hooks in `src/hooks/`, contexts in `src/context/`.
+- **No nested classes.** Ever. In Python: flat module-level functions, not inner classes or
+  nested class definitions. In TypeScript: flat component functions, not classes inside classes.
+  Mixins and inheritance are fine. Functions are functions, methods are methods (methods need
+  `self` in Python). Follow the Google Python Style Guide. If code needs to be organized,
+  use separate modules — not nesting.
+- **Component structure:** `.tsx` + `.css` per component. Pages in `src/pages/`, components in
+  `src/components/`, hooks in `src/hooks/`, contexts in `src/context/`.
 - **Imports:** React/stdlib → third-party → project. Alphabetical within groups.
+
+### Extracted Components (Hypothalamus)
+- `HypothalamusModelInspector.tsx` — editable model detail with description CRUD,
+  AIModelDescription relationship management (M2M pills), provider controls, circuit
+  breaker reset, enable/disable toggles.
+- `HypothalamusRoutingInspector.tsx` — editable SelectionFilter with failover strategy
+  dropdown, preferred/local model dropdowns, toggleable M2M pills for capabilities,
+  providers, categories, tags, roles. Explicit save button.
+
+## Backend API — Complete Endpoint List
+
+All endpoints are at `/api/v2/`. Verify against the live API root before assuming any URL.
+Most use **hyphens**; a few legacy routes use underscores. Do not "fix" casing — use what
+the backend serves.
+
+```
+# CNS
+spiketrains, spikes, neuralpathways, neurons, axons, effectors
+
+# Temporal Lobe
+iterations, iteration-definitions, iteration-shift-definitions, shifts
+
+# Identity
+identities, identity-discs, identity-addons, identity-tags, identity-types
+budget-periods, identity-budgets
+
+# Prefrontal Cortex
+pre-frontal-item-status, pfc-tags, pfc-epics, pfc-stories, pfc-tasks, pfc-comments
+
+# Hippocampus
+engram_tags, engrams
+
+# Frontal Lobe
+reasoning_sessions, reasoning_turns
+
+# Parietal Lobe (Tools)
+tool-parameter-types, tool-use-types, tool-definitions, tool-parameters
+tool-parameter-assignments, parameter-enums, tool-calls
+
+# PNS
+celery-workers
+
+# Nerve Terminals (legacy naming)
+nerve_terminal_statuses, nerve_terminal_registry
+nerve_terminal_telemetry, nerve_terminal_events
+
+# Hypothalamus
+llm-providers, model-categories, model-modes, model-families
+ai-models, model-providers, model-pricing, model-descriptions
+usage-records, sync-status, sync-logs, model-ratings
+failover-types, failover-strategies, selection-filters
+
+# Hypothalamus Custom Actions
+POST ai-models/{uuid}/pull/              → download model via Ollama
+POST ai-models/{uuid}/remove/            → uninstall from Ollama (keeps DB record)
+POST ai-models/{uuid}/toggle_enabled/    → flip AIModel.enabled
+POST ai-models/sync_local/              → detect local Ollama models
+POST ai-models/fetch_catalog/           → scrape ollama.com/library
+POST model-providers/{pk}/reset_circuit_breaker/  → reset scar tissue
+POST model-providers/{pk}/toggle_enabled/         → flip is_enabled
+
+# Environments
+environments, executables, context-variables, context-keys
+environment-types, environment-statuses
+```
+
+## API Response Shapes
+
+- `AIModel` returns: id (UUID), name, description (null — deprecated), `current_description`
+  (resolved from AIModelDescription: model-specific first, family fallback second),
+  parameter_size, context_length, enabled, deprecation_date, creator (nested: {id, name,
+  description}), family (nested: {id, name, slug, description, parent}), version,
+  roles (nested: [{id, name, description}]), capabilities (nested: [{id, name}]),
+  quantizations (nested), categories (nested).
+- `AIModelDescription` returns: id, description, is_current, created, modified,
+  ai_models (nested), families (nested), categories (nested), tags (nested).
+  Write via: `ai_model_ids`, `family_ids`, `category_ids`, `tag_ids`.
+- `AIModelProvider` returns: id, ai_model (nested full AIModel), provider (nested
+  LLMProvider), mode (nested), is_enabled, provider_unique_model_id, rate_limited_on,
+  rate_limit_reset_time, rate_limit_counter, rate_limit_total_failures, max_tokens,
+  max_input_tokens, max_output_tokens, disabled_capabilities.
+- `AIModelSelectionFilter` returns: id, name, failover_strategy (nested with steps array,
+  each step has nested failover_type), preferred_model (nested AIModelProvider or null),
+  local_failover (nested AIModelProvider or null), required_capabilities (nested),
+  banned_providers (nested), preferred_categories/tags/roles (nested).
+  Write via: `failover_strategy_id`, `preferred_model_id`, `local_failover_id`,
+  `required_capabilities_ids`, `banned_providers_ids`, `preferred_categories_ids`,
+  `preferred_tags_ids`, `preferred_roles_ids`.
+- `Spike` returns: id, status, status_name, neuron, effector, effector_name, spike_train,
+  created, modified, target_hostname, result_code, application_log, execution_log, blackboard,
+  invoked_pathway, child_trains, provenance, provenance_train.
+- `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`.
+- `ReasoningTurn` has nested `model_usage_record` with response_payload deep inside.
+- `Engram` returns: id, name, description, is_active, relevance_score, tags (nested),
+  sessions (ID list), source_turns (ID list), spikes (ID list), creator (nested or null),
+  identity_discs (ID list), vector (null on read), created, modified.
+- Always verify fields by hitting the endpoint in browser before assuming.
 
 ## Common Pitfalls
 
@@ -232,29 +359,23 @@ enabled_tool_ids = serializers.PrimaryKeyRelatedField(
     many=True, write_only=True, required=False
 )
 ```
-This pattern is already applied on Identity and Temporal serializers. **Check for it any
-time you add a new nested serializer.**
-
-### API Response Shapes
-- `Spike` returns: id, status, status_name, neuron, effector, effector_name, spike_train,
-  created, modified, target_hostname, result_code, application_log, execution_log, blackboard,
-  invoked_pathway, child_trains, provenance, provenance_train.
-- `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`.
-- `ReasoningTurn` has nested `model_usage_record` with response_payload deep inside.
-- `Engram` returns: id, name, description, is_active, relevance_score, tags (nested),
-  sessions (ID list), source_turns (ID list), spikes (ID list), creator (nested or null),
-  identity_discs (ID list), vector (null on read), created, modified.
-- Always verify fields by hitting the endpoint in browser before assuming.
+This pattern is already applied on Identity, Temporal, Hypothalamus SelectionFilter, and
+AIModelDescription serializers. **Check for it any time you add a new nested serializer.**
 
 ### ESLint / Data Fetching Pattern
+
 The project uses `eslint-plugin-react-hooks` with `react-hooks/set-state-in-effect` enabled.
-**You cannot call setState synchronously inside a useEffect body.** The correct data-fetching
-pattern is:
+**You cannot call setState synchronously inside a useEffect body.** The pattern below is how
+ALL data fetching works in this codebase. It exists because the Synaptic Cleft (WebSocket)
+fires typed events when data changes, and the dendrite hook turns those events into React
+dependency-array triggers. This eliminates polling entirely — data refetches automatically
+when the backend says something changed.
 
 ```tsx
-// Dendrite events return new refs when events fire — use them as deps directly
-const spikeEvent = useDendrite('Spike', null);
-const trainEvent = useDendrite('SpikeTrain', null);
+// Dendrite hooks subscribe to WebSocket events. When an event fires,
+// the hook returns a new object ref. That ref change triggers useEffect.
+const aceEvent = useDendrite('Acetylcholine', 'hypothalamus');
+const cortEvent = useDendrite('Cortisol', 'hypothalamus');
 
 useEffect(() => {
   if (!someId) return;
@@ -274,7 +395,7 @@ useEffect(() => {
 
   load();
   return () => { cancelled = true; };
-}, [someId, spikeEvent, trainEvent]);  // dendrite events as deps trigger refetch
+}, [someId, aceEvent, cortEvent]);  // dendrite events as deps trigger refetch
 ```
 
 **Do NOT:**
@@ -326,3 +447,8 @@ When opened fresh (no navigation state), show the shorter breadcrumb — that's 
 - Do not introduce auto-generated CSS class names.
 - Do not assume API URL casing — verify against the live API root.
 - Do not add `read_only=True` nested serializers without a write-only counterpart if the field needs to be writable.
+- Do not nest classes inside other classes. Ever. Use flat module-level functions and separate files.
+- Do not reinvent model string parsing — import and use the standalone parser.
+- Do not read `AIModel.description` — it is null/deprecated. Use `current_description` (resolved from AIModelDescription).
+- Do not delete AIModel or AIModelProvider records — disable them instead (enabled=False, is_enabled=False).
+- Do not mix fixture data across apps — each Django app has its own `fixtures/initial_data.json`.

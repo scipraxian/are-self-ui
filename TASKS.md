@@ -1,15 +1,16 @@
 # Are-Self UI — Task List
 
-Current state of the React frontend. Updated 2026-03-31.
+Current state of the React frontend + backend. Updated 2026-04-01.
 
 ---
 
 ## What's Done
 
 **Layout & Navigation** — LayoutShell, ThreePanel, NavBar with breadcrumbs + environment
-selector, BreadcrumbProvider (explicit setCrumbs per page), GABAProvider (ESC navigation),
-EnvironmentProvider (global context, server-side selection). All URL-driven, all bookmarkable.
-Glassmorphic `.glass-surface` utility class applied to all form containers.
+selector + hamburger menu (Hippocampus + Hypothalamus links added 4/1), BreadcrumbProvider
+(explicit setCrumbs per page), GABAProvider (ESC navigation), EnvironmentProvider (global
+context, server-side selection). All URL-driven, all bookmarkable. Glassmorphic
+`.glass-surface` utility class applied to all form containers.
 
 **CNS (Central Nervous System)** — Complete drill chain: pathway dashboard with D3 sparklines
 → train timeline with spike bars (500ms debounced refetch via useDendrite) → live execution
@@ -58,7 +59,68 @@ Auto-save on blur.
 controls, WorkerSetProvider for multi-select, xterm monitor grid at /pns/monitor. Real-time
 via Norepinephrine through Synaptic Cleft. Live only — no historical view.
 
-**Backend (recent)** — Norepinephrine neurotransmitter + celery_signals.py (in-process),
+**Hypothalamus (`/hypothalamus`)** — ThreePanel model catalog with three tabs:
+
+*Catalog tab (default):*
+- Model cards in grid or list view (toggle in header). Cards show: Ollama badge, model
+  name, creator, family, parameter size, context length, capability/role pills, status
+  dot (Installed/Available/Disabled/Breaker), Pull/Remove buttons, Free badge.
+- Filter panel: search, status filter (All/Installed/Available), family chips with counts,
+  capability chips, role chips.
+- Sort: Name, Family, Size, Installed First (default).
+- Sync Local button — hits local Ollama /api/tags, creates/enables models.
+- Fetch Catalog button — scrapes ollama.com/library for available models.
+- URL-driven selection: `/hypothalamus?model={uuid}`.
+
+*Routing tab (`?tab=routing`):*
+- SelectionFilter list + cards. Inspector with editable: failover strategy dropdown,
+  preferred model dropdown, local failover dropdown, toggleable pills for required
+  capabilities, banned providers, preferred categories/tags/roles. Explicit save button.
+
+*Budgets tab (`?tab=budgets`):*
+- IdentityBudget list + cards. Inspector shows period, cost gates, spend limits. Read-only v1.
+
+*Model Inspector (extracted: HypothalamusModelInspector.tsx):*
+- Editable description (textarea + save, creates/updates AIModelDescription records).
+- Description relationships panel: M2M pill management for linked models, families, tags,
+  categories with add/remove.
+- Provider status with enable/disable toggle.
+- Circuit breaker panel with reset button.
+- Model enable/disable toggle.
+- Pricing display.
+
+*Routing Inspector (extracted: HypothalamusRoutingInspector.tsx):*
+- Editable failover strategy, preferred/local model dropdowns, toggleable M2M pills.
+- Saves via PATCH to `/api/v2/selection-filters/{id}/`.
+
+**Backend — Hypothalamus (2026-04-01):**
+- AIModelViewSet: pull, remove, toggle_enabled, sync_local actions
+- AIModelProviderViewSet: reset_circuit_breaker, toggle_enabled actions
+- FailoverTypeViewSet, FailoverStrategyViewSet, AIModelSelectionFilterViewSet (new)
+- AIModelDescriptionViewSet with full M2M CRUD (new)
+- BudgetPeriodViewSet, IdentityBudgetViewSet in identity app (new)
+- AIModelCreatorSerializer nested on AIModelSerializer
+- `current_description` SerializerMethodField — resolves model-specific → family fallback
+- `parent` FK on AIModelFamily (migration 0015) for subfamily support
+- 28+ new tests across test_api.py, test_description_and_family.py, test_sync.py
+- Standalone model semantic parser at
+  `hypothalamus/parsing_tools/llm_provider_parser/model_semantic_parser.py`
+  (1121 lines, 98.4% accuracy on 2863 models, Django-free, MIT-licensed)
+
+**Fixtures — Hypothalamus (2026-04-01):**
+- `hypothalamus/fixtures/initial_data.json` — 167 entries. Pre-seeded catalog.
+  4 starter models (nomic-embed-text, llama3.2:3b, qwen2.5-coder:7b, gemma3:4b) with
+  providers + $0 pricing as baseline. 44 families with descriptions. 35 creators.
+  48 AIModelDescription records (44 family-level fallbacks + 4 model-specific). Full
+  routing engine (3 strategies, 4 failover types, 8 steps, 3 selection filters wired to
+  starter models). AIModel.description is null — canonical source is AIModelDescription.
+  User clicks "Sync Local" to detect actual installed models; "Fetch Catalog" to browse
+  the full Ollama library.
+- `hypothalamus/fixtures/ollama_popular.json` — 39 additional models (tier 2 catalog).
+- `hypothalamus/fixtures/ollama_complete.json` — 74 additional models (tier 3 catalog).
+- Identity budgets already in `identity/fixtures/initial_data.json` (3 periods, 4 budgets).
+
+**Backend (prior):** — Norepinephrine neurotransmitter + celery_signals.py (in-process),
 NorepinephrineHandler (log streaming with async/sync detection), CeleryWorkerViewSet,
 NeuroMuscularJunction rename + quality pass (f-string loggers fixed, lingering "Caster"
 removed), N-way spike log merge API with cursor-based delta updates,
@@ -74,8 +136,15 @@ IterationShiftDefinition FK write fix (shift_id PrimaryKeyRelatedField).
 
 ## In Progress
 
+### Hypothalamus — fetch_catalog Rewrite
+The fetch_catalog backend action needs rewriting. The current OllamaLibraryParser
+(HTMLParser subclass) was REJECTED for poor code quality (nested class, untestable).
+Must be replaced with: simple regex-based HTML scraping + enrichment via the standalone
+parser at `hypothalamus/parsing_tools/llm_provider_parser/model_semantic_parser.py`.
+Prompt is ready. sync_local works and is committed.
+
 ### Navigation + Identity Layout + Engram Attach
-- Hamburger menu + 3D sphere clickthroughs for all brain regions
+- Hamburger menu: Hippocampus + Hypothalamus added (4/1). Remaining brain regions TBD.
 - Identity ledger: remove always-open empty right panel when nothing selected
 - EngramEditor: "Attach Existing" flow to link existing engrams to a disc
 
@@ -83,29 +152,14 @@ IterationShiftDefinition FK write fix (shift_id PrimaryKeyRelatedField).
 
 ## P0 — Ship-Blocking
 
-### Hypothalamus (`/hypothalamus`)
-Model management dashboard. The last major feature gap before release. Backend APIs exist:
+### Identity — SelectionFilter + Budget Dropdowns
+Add SelectionFilter dropdown and Budget dropdown to the Identity Loadout tab.
+Backend endpoints exist (`/api/v2/selection-filters/`, `/api/v2/identity-budgets/`).
+The `selection_filter` FK already exists on IdentityFields (abstract base).
+Budget assignment goes through `IdentityBudgetAssignment` junction model.
+Unblocked now that Hypothalamus page exists with browsable reference data.
 
-- `/api/v2/ai-models/` — model catalog
-- `/api/v2/model-providers/` — provider list (Ollama, OpenRouter, etc.)
-- `/api/v2/llm-providers/` — LLM provider reference
-- `/api/v2/model-categories/` — model categories
-- `/api/v2/model-modes/` — model modes
-- `/api/v2/model-families/` — model families
-- `/api/v2/model-pricing/` — pricing data
-- `/api/v2/usage-records/` — cost tracking
-- `/api/v2/model-ratings/` — ELO ratings
-- `/api/v2/sync-status/` — sync status
-- `/api/v2/sync-logs/` — sync logs
-
-View should show: model cards with provider, cost, rating, circuit breaker status.
-Filter by provider, sort by rating/cost. Usage chart over time. Click → inspector with
-full model detail + recent usage records.
-
-Also gates Identity fields: AIModelSelectionFilter assignment and IdentityBudget
-constraints cannot be built until the Hypothalamus UI exists.
-
-### Discord connector
+### 3D Engram Relationship Graph
 
 ---
 
@@ -116,9 +170,18 @@ Currently selecting an iteration/definition is local state only. Needs URL param
 (`/temporal?iteration={id}` or `/temporal?definition={id}`) so refresh preserves context.
 
 ### Identity — Deferred Fields
-- Hypothalamus AIModelSelectionFilter assignment (blocked on Hypothalamus)
-- Budget constraints (blocked on Hypothalamus)
 - Vector embedding visualization (optional, could be a sparkline or badge)
+
+### Hypothalamus — Vectorization After First Sync
+After sync_local detects installed models, they need vectors generated for semantic routing.
+Could be: a management command, a button on the page, or auto-triggered after sync_local.
+The `AIModel.update_vector()` method exists and uses the AIModelDescription fallback chain.
+Requires Ollama running with nomic-embed-text installed.
+
+### Hypothalamus — Subfamily Routing
+The `parent` FK on AIModelFamily exists (migration 0015). The failover engine in
+`hypothalamus.py` (`pick_optimal_model`) needs updating to prefer same-subfamily
+first, then parent-family, then vector search. Post-release enhancement.
 
 ---
 
@@ -143,6 +206,12 @@ Most routes use hyphens (`identity-discs`, `tool-definitions`) but some use unde
 (`engram_tags`, `reasoning_sessions`, `reasoning_turns`, `nerve_terminal_*`). Standardize
 to hyphens post-release. Coordinated frontend+backend sweep.
 
+### Hypothalamus — Standalone Parser Integration
+Integrate the standalone `model_semantic_parser.py` into the Django sync pipeline
+(`hypothalamus.py`). Replace the old DB-driven parser. Run against all models to
+populate family, creator, roles, quantizations. Would improve vector quality for the
+full cloud catalog (OpenRouter sync). Deferred until after local-first release.
+
 ---
 
 ## P3 — Visual
@@ -156,9 +225,6 @@ static/subtle on inner routes.
 ### Glassmorphic Styling Audit
 Consistent treatment across all views. Card styles, panel borders, hover states,
 selection highlights. Document in a UI style guide.
-
-### 3D Engram relationship graph
-
 
 ---
 
@@ -181,8 +247,8 @@ selection highlights. Document in a UI style guide.
 /identity                           → IdentityLedger (disc list + IdentitySheet)
 /identity/:discId                   → IdentityDetail (disc configuration)
 /hippocampus                        → HippocampusPage (engram browser)
+/hypothalamus                       → HypothalamusPage (model catalog + routing + budgets)
 /pns                                → PNSPage (fleet overview)
 /pns/monitor?w1=host&w2=host        → PNSMonitorPage (xterm grid)
-/hypothalamus                       → (TODO) Model management
 /environments                       → EnvironmentEditor (CRUD)
 ```
