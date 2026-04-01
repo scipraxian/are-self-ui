@@ -105,8 +105,7 @@ full model detail + recent usage records.
 Also gates Identity fields: AIModelSelectionFilter assignment and IdentityBudget
 constraints cannot be built until the Hypothalamus UI exists.
 
-
-### 3D Engram relationship graph
+### Discord connector
 
 ---
 
@@ -157,6 +156,9 @@ static/subtle on inner routes.
 ### Glassmorphic Styling Audit
 Consistent treatment across all views. Card styles, panel borders, hover states,
 selection highlights. Document in a UI style guide.
+
+### 3D Engram relationship graph
+
 
 ---
 

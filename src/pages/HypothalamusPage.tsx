@@ -10,6 +10,8 @@ import './HypothalamusPage.css';
 
 /* ── Types ────────────────────────────────────────── */
 
+type NameOrString = string | { name: string; id?: number | string };
+
 interface AIModel {
     id: string;
     name: string;
@@ -21,9 +23,9 @@ interface AIModel {
     parameter_size: string;
     context_length: number;
     mode: string;
-    capabilities: string[];
-    roles: string[];
-    quantizations: string[];
+    capabilities: NameOrString[];
+    roles: NameOrString[];
+    quantizations: NameOrString[];
     input_cost_per_token: string;
     output_cost_per_token: string;
 }
@@ -54,12 +56,12 @@ interface SelectionFilter {
     preferred_model_name: string;
     local_failover_model: string | null;
     local_failover_model_name: string;
-    required_capabilities: string[];
+    required_capabilities: NameOrString[];
     banned_providers: (number | string)[];
     banned_provider_names: string[];
-    preferred_categories: string[];
-    preferred_tags: string[];
-    preferred_roles: string[];
+    preferred_categories: NameOrString[];
+    preferred_tags: NameOrString[];
+    preferred_roles: NameOrString[];
     steps: FailoverStep[];
 }
 
@@ -88,6 +90,16 @@ type SortMode = 'installed' | 'name' | 'family' | 'size';
 type ViewMode = 'grid' | 'list';
 
 /* ── Helpers ──────────────────────────────────────── */
+
+function label(v: NameOrString): string {
+    if (typeof v === 'string') return v;
+    return v.name ?? String(v);
+}
+
+function labelKey(v: NameOrString): string {
+    if (typeof v === 'string') return v;
+    return v.id != null ? String(v.id) : v.name;
+}
 
 function isFree(model: AIModel): boolean {
     return parseFloat(model.input_cost_per_token) === 0 &&
@@ -307,14 +319,14 @@ export function HypothalamusPage() {
         // Capability filter
         if (selectedCapabilities.size > 0) {
             list = list.filter(m =>
-                [...selectedCapabilities].every(c => m.capabilities?.includes(c))
+                [...selectedCapabilities].every(c => m.capabilities?.some(v => label(v) === c))
             );
         }
 
         // Role filter
         if (selectedRoles.size > 0) {
             list = list.filter(m =>
-                [...selectedRoles].some(r => m.roles?.includes(r))
+                [...selectedRoles].some(r => m.roles?.some(v => label(v) === r))
             );
         }
 
@@ -540,7 +552,7 @@ export function HypothalamusPage() {
                                     className={`hypothalamus-chip ${selectedCapabilities.has(cap) ? 'hypothalamus-chip-selected' : ''}`}
                                     onClick={() => toggleCapability(cap)}
                                 >
-                                    {cap.replace('_', ' ')}
+                                    {label(cap).replace('_', ' ')}
                                 </button>
                             ))}
                         </div>
@@ -648,10 +660,10 @@ export function HypothalamusPage() {
                 {(model.capabilities?.length > 0 || model.roles?.length > 0) && (
                     <div className="hypothalamus-card-pills">
                         {model.capabilities?.map(c => (
-                            <span key={c} className="hypothalamus-pill">{c.replace('_', ' ')}</span>
+                            <span key={labelKey(c)} className="hypothalamus-pill">{label(c).replace('_', ' ')}</span>
                         ))}
                         {model.roles?.map(r => (
-                            <span key={r} className="hypothalamus-pill hypothalamus-pill-role">{r}</span>
+                            <span key={labelKey(r)} className="hypothalamus-pill hypothalamus-pill-role">{label(r)}</span>
                         ))}
                     </div>
                 )}
@@ -872,7 +884,7 @@ export function HypothalamusPage() {
                                 {f.required_capabilities?.length > 0 && (
                                     <div className="hypothalamus-card-pills">
                                         {f.required_capabilities.map(c => (
-                                            <span key={c} className="hypothalamus-pill">{c.replace('_', ' ')}</span>
+                                            <span key={labelKey(c)} className="hypothalamus-pill">{label(c).replace('_', ' ')}</span>
                                         ))}
                                     </div>
                                 )}
@@ -982,13 +994,13 @@ export function HypothalamusPage() {
                         <span className="hypothalamus-inspector-section-title">Capabilities & Roles</span>
                         <div className="hypothalamus-inspector-pills">
                             {model.capabilities?.map(c => (
-                                <span key={c} className="hypothalamus-pill">{c.replace('_', ' ')}</span>
+                                <span key={labelKey(c)} className="hypothalamus-pill">{label(c).replace('_', ' ')}</span>
                             ))}
                             {model.roles?.map(r => (
-                                <span key={r} className="hypothalamus-pill hypothalamus-pill-role">{r}</span>
+                                <span key={labelKey(r)} className="hypothalamus-pill hypothalamus-pill-role">{label(r)}</span>
                             ))}
                             {model.quantizations?.map(q => (
-                                <span key={q} className="hypothalamus-pill">{q}</span>
+                                <span key={labelKey(q)} className="hypothalamus-pill">{label(q)}</span>
                             ))}
                         </div>
                     </div>
@@ -1163,7 +1175,7 @@ export function HypothalamusPage() {
                     <span className="hypothalamus-inspector-section-title">Required Capabilities</span>
                     <div className="hypothalamus-inspector-pills">
                         {filter.required_capabilities.map(c => (
-                            <span key={c} className="hypothalamus-pill">{c.replace('_', ' ')}</span>
+                            <span key={labelKey(c)} className="hypothalamus-pill">{label(c).replace('_', ' ')}</span>
                         ))}
                     </div>
                 </div>
@@ -1185,7 +1197,7 @@ export function HypothalamusPage() {
                     <span className="hypothalamus-inspector-section-title">Preferred Roles</span>
                     <div className="hypothalamus-inspector-pills">
                         {filter.preferred_roles.map(r => (
-                            <span key={r} className="hypothalamus-pill hypothalamus-pill-role">{r}</span>
+                            <span key={labelKey(r)} className="hypothalamus-pill hypothalamus-pill-role">{label(r)}</span>
                         ))}
                     </div>
                 </div>
@@ -1196,7 +1208,7 @@ export function HypothalamusPage() {
                     <span className="hypothalamus-inspector-section-title">Preferred Categories</span>
                     <div className="hypothalamus-inspector-pills">
                         {filter.preferred_categories.map(c => (
-                            <span key={c} className="hypothalamus-pill">{c}</span>
+                            <span key={labelKey(c)} className="hypothalamus-pill">{label(c)}</span>
                         ))}
                     </div>
                 </div>
@@ -1207,7 +1219,7 @@ export function HypothalamusPage() {
                     <span className="hypothalamus-inspector-section-title">Preferred Tags</span>
                     <div className="hypothalamus-inspector-pills">
                         {filter.preferred_tags.map(t => (
-                            <span key={t} className="hypothalamus-pill">{t}</span>
+                            <span key={labelKey(t)} className="hypothalamus-pill">{label(t)}</span>
                         ))}
                     </div>
                 </div>
