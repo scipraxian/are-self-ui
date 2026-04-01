@@ -105,6 +105,9 @@ full model detail + recent usage records.
 Also gates Identity fields: AIModelSelectionFilter assignment and IdentityBudget
 constraints cannot be built until the Hypothalamus UI exists.
 
+
+### 3D Engram relationship graph
+
 ---
 
 ## P1 — Remaining Gaps
