@@ -226,6 +226,9 @@ static/subtle on inner routes.
 Consistent treatment across all views. Card styles, panel borders, hover states,
 selection highlights. Document in a UI style guide.
 
+
+### 3D Engram relationship graph
+
 ---
 
 ## URL Structure (Current)
