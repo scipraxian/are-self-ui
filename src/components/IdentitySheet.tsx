@@ -22,6 +22,7 @@ interface BaseIdentityData {
     tags: OutlierData[];
     identity_type?: OutlierData | null;
     ai_model?: OutlierData | null;
+    selection_filter?: OutlierData | null;
 }
 
 interface Engram {
@@ -77,6 +78,7 @@ type ActiveTab = 'telemetry' | 'loadout' | 'memories' | 'flight';
 interface IdentityFormState {
     name: string;
     ai_model_id: string | number | null;
+    selection_filter_id: string | number | null;
     system_prompt_template: string;
     enabled_tool_ids: (string | number)[];
     addon_ids: (string | number)[];
@@ -102,6 +104,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     const [allTools, setAllTools] = useState<OutlierData[]>([]);
     const [allAddons, setAllAddons] = useState<OutlierData[]>([]);
     const [allIdentityTags, setAllIdentityTags] = useState<OutlierData[]>([]);
+    const [selectionFilters, setSelectionFilters] = useState<OutlierData[]>([]);
 
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
@@ -131,6 +134,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const next: IdentityFormState = {
             name: base.name,
             ai_model_id: base.ai_model?.id ?? null,
+            selection_filter_id: base.selection_filter?.id ?? null,
             system_prompt_template: base.system_prompt_template ?? '',
             enabled_tool_ids: (base.enabled_tools ?? []).map(t => t.id),
             addon_ids: (base.addons ?? []).map(a => a.id),
@@ -170,11 +174,12 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const loadCatalogs = async () => {
             try {
                 setIsModelsLoading(true);
-                const [modelRes, toolRes, addonRes, tagRes] = await Promise.all([
+                const [modelRes, toolRes, addonRes, tagRes, filterRes] = await Promise.all([
                     apiFetch('/api/v2/ai-models/'),
                     apiFetch('/api/v2/tool-definitions/'),
                     apiFetch('/api/v2/identity-addons/'),
                     apiFetch('/api/v2/identity-tags/'),
+                    apiFetch('/api/v2/selection-filters/'),
                 ]);
                 if (modelRes.ok) {
                     const json = await modelRes.json();
@@ -191,6 +196,10 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                 if (tagRes.ok) {
                     const json = await tagRes.json();
                     setAllIdentityTags(json.results ?? json);
+                }
+                if (filterRes.ok) {
+                    const json = await filterRes.json();
+                    setSelectionFilters(json.results ?? json);
                 }
             } catch (err) {
                 console.error('Catalog fetch failed', err);
@@ -219,6 +228,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             const payload: any = {
                 name: formState.name,
                 ai_model: formState.ai_model_id,
+                selection_filter_id: formState.selection_filter_id,
                 system_prompt_template: formState.system_prompt_template,
                 enabled_tools: formState.enabled_tool_ids,
                 addons: formState.addon_ids,
@@ -527,6 +537,31 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                 ) : (
                                     <div className="loadout-text">
                                         {currentModelName}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="loadout-field">
+                                <label className="metric-label">Model Selection Filter</label>
+                                {isEditMode ? (
+                                    <select
+                                        className="loadout-input"
+                                        disabled={isModelsLoading}
+                                        value={formState?.selection_filter_id ?? ''}
+                                        onChange={e => setFormState(prev => prev ? {
+                                            ...prev,
+                                            selection_filter_id: e.target.value === '' ? null : e.target.value,
+                                        } : prev)}
+                                    >
+                                        <option value="">No filter (use default routing)</option>
+                                        {selectionFilters.map(sf => (
+                                            <option key={sf.id} value={sf.id}>
+                                                {sf.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="loadout-text">
+                                        {baseData?.selection_filter?.name ?? 'No filter assigned'}
                                     </div>
                                 )}
                             </div>
