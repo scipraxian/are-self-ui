@@ -11,7 +11,7 @@ academic interest from MIT and a PhD student collaborator at UPA. Michael has ex
 product instincts and will actively correct architectural drift. He values ergonomics over
 cleverness, biological naming over mechanical metaphors, and URL-driven navigation above all.
 
-**Workflow:** Claude (this project) for planning and architecture → Claude Code for
+**Workflow:** Claude (Projects chat or Cowork) for planning and architecture → Claude Code for
 implementation via self-contained prompts. Each Claude Code session gets a fresh prompt with
 all necessary context. The CLAUDE.md file is read first by Claude Code every session.
 
@@ -19,7 +19,7 @@ all necessary context. The CLAUDE.md file is read first by Claude Code every ses
 
 A React + Vite + TypeScript frontend for **Are-Self**, an open-source AI reasoning engine with
 neurologically-inspired architecture. Every UI component maps to a brain region. The backend is
-Django REST Framework (repo: `talos`, private under `scipraxian` on GitHub). The frontend
+Django REST Framework (repo: `are-self`, under `scipraxian` on GitHub). The frontend
 consumes the DRF API.
 
 **Mission:** Empower underprivileged youth in remote areas with free access to AI technology.
@@ -452,3 +452,23 @@ When opened fresh (no navigation state), show the shorter breadcrumb — that's 
 - Do not read `AIModel.description` — it is null/deprecated. Use `current_description` (resolved from AIModelDescription).
 - Do not delete AIModel or AIModelProvider records — disable them instead (enabled=False, is_enabled=False).
 - Do not mix fixture data across apps — each Django app has its own `fixtures/initial_data.json`.
+
+## Current State (April 2026)
+
+**What works:** Every brain region has a functional UI. The full drill chain works: Identity →
+Temporal → PFC → CNS → Frontal → Hippocampus. Real-time updates via useDendrite throughout.
+Hypothalamus model catalog with sync, pull, routing, and budget tabs. All navigation is
+URL-driven and bookmarkable.
+
+**What's in progress:** See TASKS.md. Key items: Hypothalamus dendrite refresh bug (blocking
+UX), routing tab POST bugs, Identity SelectionFilter/Budget dropdowns, main menu / root route
+content, PFC double-click drill fix.
+
+**Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
+internal references may still use old naming. The backend CLAUDE.md has the full naming sweep
+status.
+
+## Documentation
+
+See [FEATURES.md](FEATURES.md) for a complete list of what's built.
+See [TASKS.md](TASKS.md) for what's next.
