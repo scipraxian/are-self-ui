@@ -1,0 +1,244 @@
+/* src/components/AddonEditor.css */
+
+.addon-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.addon-create-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(168, 85, 247, 0.6);
+    background: radial-gradient(circle at top left, rgba(147, 51, 234, 0.2), rgba(15, 23, 42, 0.95));
+    color: var(--accent-purple);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 140ms ease-out, box-shadow 140ms ease-out;
+}
+
+.addon-create-toggle:hover {
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.4);
+}
+
+.addon-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.addon-create-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.addon-create-field-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.addon-create-input {
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.addon-create-textarea {
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* --- Addon Cards --- */
+
+.addon-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.addon-card {
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: rgba(15, 23, 42, 0.95);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 200ms ease;
+}
+
+.addon-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.addon-card-title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.addon-card-title-input {
+    flex: 1;
+    min-width: 0;
+    border-radius: 6px;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 3px 6px;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.addon-card-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.addon-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    background: transparent;
+    color: var(--accent-red);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.addon-delete-btn:hover {
+    opacity: 1;
+    border-color: rgba(248, 113, 113, 0.7);
+}
+
+.addon-delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.addon-confirm-btn {
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.addon-confirm-yes {
+    border-color: rgba(248, 113, 113, 0.6);
+    color: var(--accent-red);
+}
+
+.addon-confirm-yes:hover {
+    background: rgba(248, 113, 113, 0.1);
+}
+
+.addon-confirm-no {
+    border-color: rgba(52, 211, 153, 0.6);
+    color: var(--accent-green);
+}
+
+.addon-confirm-no:hover {
+    background: rgba(52, 211, 153, 0.1);
+}
+
+/* Description */
+.addon-card-description {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: pre-wrap;
+}
+
+.addon-card-description-empty {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.addon-card-description-input {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    resize: vertical;
+    min-height: 40px;
+}
+
+/* Saving indicator */
+.addon-saving {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--accent-blue);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.addon-empty {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 12px;
+    text-align: center;
+}
+
+/* Action bar */
+.addon-action-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}

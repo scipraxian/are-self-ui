@@ -183,8 +183,8 @@ export function HypothalamusPage() {
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
-    // Real-time
-    const aceEvent = useDendrite('Acetylcholine', 'hypothalamus');
+    // Real-time — subscribe to the Hypothalamus brain region receptor
+    const aceEvent = useDendrite('Hypothalamus', null);
     const cortEvent = useDendrite('Cortisol', 'hypothalamus');
 
     // Fetch catalog data

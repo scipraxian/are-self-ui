@@ -188,7 +188,16 @@ causing automatic refetch of the relevant data. **This is why the dendrite patte
 appears throughout the codebase — it replaces polling entirely.** No `setInterval`
 anywhere in the system.
 
-Neurotransmitters:
+**receptor_class convention (critical):** The first arg to `useDendrite` is the
+`receptor_class` — a domain entity or brain region name. Valid examples:
+`'PFCEpic'`, `'IdentityDisc'`, `'ReasoningTurn'`, `'Hypothalamus'`, `'SpikeTrain'`.
+**NEVER** use internal ORM models (`'AIModel'`, `'AIModelProvider'`) or molecule types
+(`'Acetylcholine'`, `'Dopamine'`) as the receptor_class. Molecules are Layer 3 routing
+(the neurotransmitter type), not Layer 1 (the Channels group). Brain regions that fire
+manual signals use their own name: `receptor_class='Hypothalamus'`, subscribed via
+`useDendrite('Hypothalamus', null)`.
+
+Neurotransmitters (Layer 3 — molecule types, NOT receptor classes):
 - **Dopamine** — success states (task completed, session concluded)
 - **Cortisol** — errors/halts (spike failed, circuit breaker tripped)
 - **Acetylcholine** — data sync (model refreshed, new turn recorded, catalog updated)
@@ -374,7 +383,8 @@ when the backend says something changed.
 ```tsx
 // Dendrite hooks subscribe to WebSocket events. When an event fires,
 // the hook returns a new object ref. That ref change triggers useEffect.
-const aceEvent = useDendrite('Acetylcholine', 'hypothalamus');
+// First arg is receptor_class (brain region or domain entity), NOT molecule type.
+const aceEvent = useDendrite('Hypothalamus', null);
 const cortEvent = useDendrite('Cortisol', 'hypothalamus');
 
 useEffect(() => {

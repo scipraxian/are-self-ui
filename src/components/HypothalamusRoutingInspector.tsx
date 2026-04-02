@@ -202,11 +202,11 @@ export function HypothalamusRoutingInspector({ filter, onClose, onFilterUpdate }
             }
             payload.preferred_model_id = editPreferredModel ? Number(editPreferredModel) : null;
             payload.local_failover_id = editLocalFailover ? Number(editLocalFailover) : null;
-            payload.required_capability_ids = [...editCapabilities];
-            payload.banned_provider_ids = [...editBannedProviders];
-            payload.preferred_category_ids = [...editCategories];
-            payload.preferred_tag_ids = [...editTags];
-            payload.preferred_role_ids = [...editRoles];
+            payload.required_capabilities_ids = [...editCapabilities];
+            payload.banned_providers_ids = [...editBannedProviders];
+            payload.preferred_categories_ids = [...editCategories];
+            payload.preferred_tags_ids = [...editTags];
+            payload.preferred_roles_ids = [...editRoles];
 
             const res = await apiFetch(`/api/v2/selection-filters/${filter.id}/`, {
                 method: 'PATCH',

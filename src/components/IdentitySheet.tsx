@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2, RefreshCw } from 'lucide-react';
+import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2, RefreshCw, Settings } from 'lucide-react';
 import { apiFetch } from '../api';
 import { EngramEditor } from './EngramEditor';
+import { AddonEditor } from './AddonEditor';
+import { ToolEditor } from './ToolEditor';
 import './IdentitySheet.css';
 import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
@@ -23,6 +25,7 @@ interface BaseIdentityData {
     identity_type?: OutlierData | null;
     ai_model?: OutlierData | null;
     selection_filter?: OutlierData | null;
+    budget?: OutlierData | null;
 }
 
 interface Engram {
@@ -89,6 +92,7 @@ interface ModelPreview {
 interface IdentityFormState {
     name: string;
     selection_filter_id: string | number | null;
+    budget_id: string | number | null;
     system_prompt_template: string;
     enabled_tool_ids: (string | number)[];
     addon_ids: (string | number)[];
@@ -117,6 +121,11 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     const [allAddons, setAllAddons] = useState<OutlierData[]>([]);
     const [allIdentityTags, setAllIdentityTags] = useState<OutlierData[]>([]);
     const [selectionFilters, setSelectionFilters] = useState<OutlierData[]>([]);
+    const [budgets, setBudgets] = useState<OutlierData[]>([]);
+
+    // Editor visibility states
+    const [showAddonEditor, setShowAddonEditor] = useState(false);
+    const [showToolEditor, setShowToolEditor] = useState(false);
 
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
@@ -146,6 +155,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const next: IdentityFormState = {
             name: base.name,
             selection_filter_id: base.selection_filter?.id ?? null,
+            budget_id: base.budget?.id ?? null,
             system_prompt_template: base.system_prompt_template ?? '',
             enabled_tool_ids: (base.enabled_tools ?? []).map(t => t.id),
             addon_ids: (base.addons ?? []).map(a => a.id),
@@ -200,15 +210,35 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         fetchModelPreview();
     }, [fetchModelPreview]);
 
+    const refreshCatalogs = useCallback(async () => {
+        try {
+            const [toolRes, addonRes] = await Promise.all([
+                apiFetch('/api/v2/tool-definitions/'),
+                apiFetch('/api/v2/identity_addons/'),
+            ]);
+            if (toolRes.ok) {
+                const json = await toolRes.json();
+                setAllTools(json.results ?? json);
+            }
+            if (addonRes.ok) {
+                const json = await addonRes.json();
+                setAllAddons(json.results ?? json);
+            }
+        } catch (err) {
+            console.error('Catalog refresh failed', err);
+        }
+    }, []);
+
     useEffect(() => {
         const loadCatalogs = async () => {
             try {
                 setIsModelsLoading(true);
-                const [toolRes, addonRes, tagRes, filterRes] = await Promise.all([
+                const [toolRes, addonRes, tagRes, filterRes, budgetRes] = await Promise.all([
                     apiFetch('/api/v2/tool-definitions/'),
-                    apiFetch('/api/v2/identity-addons/'),
+                    apiFetch('/api/v2/identity_addons/'),
                     apiFetch('/api/v2/identity-tags/'),
                     apiFetch('/api/v2/selection-filters/'),
+                    apiFetch('/api/v2/identity-budgets/'),
                 ]);
                 if (toolRes.ok) {
                     const json = await toolRes.json();
@@ -225,6 +255,10 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                 if (filterRes.ok) {
                     const json = await filterRes.json();
                     setSelectionFilters(json.results ?? json);
+                }
+                if (budgetRes.ok) {
+                    const json = await budgetRes.json();
+                    setBudgets(json.results ?? json);
                 }
             } catch (err) {
                 console.error('Catalog fetch failed', err);
@@ -253,6 +287,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             const payload: any = {
                 name: formState.name,
                 selection_filter_id: formState.selection_filter_id,
+                budget_id_write: formState.budget_id,
                 system_prompt_template: formState.system_prompt_template,
                 enabled_tools: formState.enabled_tool_ids,
                 addons: formState.addon_ids,
@@ -601,13 +636,48 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                     </div>
                                 )}
                             </div>
+                            <div className="loadout-field">
+                                <label className="metric-label">Budget Allocation</label>
+                                {isEditMode ? (
+                                    <select
+                                        className="loadout-input"
+                                        disabled={isModelsLoading}
+                                        value={formState?.budget_id ?? ''}
+                                        onChange={e => setFormState(prev => prev ? {
+                                            ...prev,
+                                            budget_id: e.target.value === '' ? null : e.target.value,
+                                        } : prev)}
+                                    >
+                                        <option value="">No budget assigned</option>
+                                        {budgets.map(budget => (
+                                            <option key={budget.id} value={budget.id}>
+                                                {budget.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="loadout-text">
+                                        {baseData?.budget?.name ?? 'No budget assigned'}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     <div className="sheet-section">
-                        <h3 className="sheet-section-title common-layout-15">
-                            <Wrench size={14} /> Enabled Tools
-                        </h3>
+                        <div className="sheet-section-title-row">
+                            <h3 className="sheet-section-title common-layout-15">
+                                <Wrench size={14} /> Enabled Tools
+                            </h3>
+                            <button
+                                type="button"
+                                className="sheet-manage-btn"
+                                onClick={() => setShowToolEditor(!showToolEditor)}
+                                title="Manage tool registry"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
                         <div className="badge-container">
                             {isEditMode ? (
                                 allTools.length ? allTools.map(tool => {
@@ -635,12 +705,27 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                 )) : <span className="font-mono text-xs text-muted">No tools configured.</span>
                             )}
                         </div>
+                        {showToolEditor && (
+                            <div className="sheet-editor-panel">
+                                <ToolEditor onRefresh={refreshCatalogs} />
+                            </div>
+                        )}
                     </div>
 
                     <div className="sheet-section">
-                        <h3 className="sheet-section-title common-layout-15">
-                            <Zap size={14} /> Neural Addons
-                        </h3>
+                        <div className="sheet-section-title-row">
+                            <h3 className="sheet-section-title common-layout-15">
+                                <Zap size={14} /> Neural Addons
+                            </h3>
+                            <button
+                                type="button"
+                                className="sheet-manage-btn"
+                                onClick={() => setShowAddonEditor(!showAddonEditor)}
+                                title="Manage addon catalog"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
                         <div className="badge-container">
                             {isEditMode ? (
                                 allAddons.length ? allAddons.map(addon => {
@@ -668,6 +753,11 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                 )) : <span className="font-mono text-xs text-muted">No addons active.</span>
                             )}
                         </div>
+                        {showAddonEditor && (
+                            <div className="sheet-editor-panel">
+                                <AddonEditor onRefresh={refreshCatalogs} />
+                            </div>
+                        )}
                     </div>
 
                     <div className="sheet-section">
