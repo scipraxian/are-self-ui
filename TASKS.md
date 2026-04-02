@@ -23,6 +23,9 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Next Up
 
+IdentityDisc addon editor.
+
+
 - [ ] **Temporal Lobe — URL-driven iteration selection.** Currently selecting an iteration/definition is local state
   only. Needs URL params (`/temporal?iteration={id}` or `/temporal?definition={id}`) so refresh preserves context.
 - [ ] **Navigation cleanup.** Hamburger menu has Hippocampus + Hypothalamus (added 4/1). Remaining brain regions TBD.

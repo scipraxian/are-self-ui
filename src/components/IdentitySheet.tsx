@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2 } from 'lucide-react';
+import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../api';
 import { EngramEditor } from './EngramEditor';
 import './IdentitySheet.css';
@@ -75,9 +75,18 @@ interface IdentitySheetProps {
 
 type ActiveTab = 'telemetry' | 'loadout' | 'memories' | 'flight';
 
+interface ModelPreview {
+    model_provider: number | null;
+    model_name: string | null;
+    provider_name: string | null;
+    provider_model_id: string | null;
+    input_cost_per_token: string | null;
+    output_cost_per_token: string | null;
+    reason?: string;
+}
+
 interface IdentityFormState {
     name: string;
-    ai_model_id: string | number | null;
     selection_filter_id: string | number | null;
     system_prompt_template: string;
     enabled_tool_ids: (string | number)[];
@@ -98,7 +107,9 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [formState, setFormState] = useState<IdentityFormState | null>(null);
 
-    const [models, setModels] = useState<OutlierData[]>([]);
+    const [modelPreview, setModelPreview] = useState<ModelPreview | null>(null);
+    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
     const [isModelsLoading, setIsModelsLoading] = useState(false);
 
     const [allTools, setAllTools] = useState<OutlierData[]>([]);
@@ -133,7 +144,6 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const base = current as BaseIdentityData;
         const next: IdentityFormState = {
             name: base.name,
-            ai_model_id: base.ai_model?.id ?? null,
             selection_filter_id: base.selection_filter?.id ?? null,
             system_prompt_template: base.system_prompt_template ?? '',
             enabled_tool_ids: (base.enabled_tools ?? []).map(t => t.id),
@@ -166,25 +176,39 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         }
     }, [hydrateFormFromData, id, type]);
 
+    const fetchModelPreview = useCallback(async () => {
+        if (type !== 'disc') return;
+        setIsPreviewLoading(true);
+        try {
+            const res = await apiFetch(`/api/v2/identity-discs/${id}/model-preview/`);
+            if (res.ok) {
+                setModelPreview(await res.json());
+            }
+        } catch (err) {
+            console.error('Model preview fetch failed:', err);
+        } finally {
+            setIsPreviewLoading(false);
+        }
+    }, [id, type]);
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     useEffect(() => {
+        fetchModelPreview();
+    }, [fetchModelPreview]);
+
+    useEffect(() => {
         const loadCatalogs = async () => {
             try {
                 setIsModelsLoading(true);
-                const [modelRes, toolRes, addonRes, tagRes, filterRes] = await Promise.all([
-                    apiFetch('/api/v2/ai-models/'),
+                const [toolRes, addonRes, tagRes, filterRes] = await Promise.all([
                     apiFetch('/api/v2/tool-definitions/'),
                     apiFetch('/api/v2/identity-addons/'),
                     apiFetch('/api/v2/identity-tags/'),
                     apiFetch('/api/v2/selection-filters/'),
                 ]);
-                if (modelRes.ok) {
-                    const json = await modelRes.json();
-                    setModels(json.results ?? json);
-                }
                 if (toolRes.ok) {
                     const json = await toolRes.json();
                     setAllTools(json.results ?? json);
@@ -227,7 +251,6 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
 
             const payload: any = {
                 name: formState.name,
-                ai_model: formState.ai_model_id,
                 selection_filter_id: formState.selection_filter_id,
                 system_prompt_template: formState.system_prompt_template,
                 enabled_tools: formState.enabled_tool_ids,
@@ -248,6 +271,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             }
 
             await fetchData();
+            await fetchModelPreview();
             setIsEditMode(false);
         } catch (err: any) {
             console.error('Save failed', err);
@@ -304,10 +328,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         );
     }
 
-    const currentModelName =
-        models.find(m => m.id === (formState?.ai_model_id ?? baseData?.ai_model?.id))?.name ||
-        baseData?.ai_model?.name ||
-        'Unassigned Model';
+    const currentModelName = modelPreview?.model_name ?? 'No model resolved';
 
     const sessions = discData?.reasoning_session ?? [];
 
@@ -516,29 +537,38 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                 )}
                             </div>
                             <div className="loadout-field">
-                                <label className="metric-label">AI Model</label>
-                                {isEditMode ? (
-                                    <select
-                                        className="loadout-input"
-                                        disabled={isModelsLoading}
-                                        value={formState?.ai_model_id ?? ''}
-                                        onChange={e => setFormState(prev => prev ? {
-                                            ...prev,
-                                            ai_model_id: e.target.value === '' ? null : e.target.value,
-                                        } : prev)}
+                                <label className="metric-label">
+                                    Hypothalamus Route
+                                    <button
+                                        type="button"
+                                        className="btn-icon-inline"
+                                        title="Refresh model preview"
+                                        onClick={fetchModelPreview}
+                                        disabled={isPreviewLoading}
+                                        style={{ marginLeft: 6, opacity: isPreviewLoading ? 0.4 : 0.7, cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
                                     >
-                                        <option value="">Select model...</option>
-                                        {models.map(model => (
-                                            <option key={model.id} value={model.id}>
-                                                {model.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <div className="loadout-text">
-                                        {currentModelName}
-                                    </div>
-                                )}
+                                        <RefreshCw size={12} className={isPreviewLoading ? 'animate-spin' : ''} />
+                                    </button>
+                                </label>
+                                <div className="loadout-text" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    {isPreviewLoading ? (
+                                        <span className="font-mono text-xs text-muted">Resolving...</span>
+                                    ) : modelPreview?.model_name ? (
+                                        <>
+                                            <span className="font-mono text-sm">{modelPreview.model_name}</span>
+                                            <span className="font-mono text-xs text-muted">
+                                                via {modelPreview.provider_name}
+                                                {modelPreview.input_cost_per_token && modelPreview.input_cost_per_token !== '0' && (
+                                                    <> &middot; ${modelPreview.input_cost_per_token}/tok in</>
+                                                )}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="font-mono text-xs text-muted">
+                                            {modelPreview?.reason ?? 'No model resolved'}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <div className="loadout-field">
                                 <label className="metric-label">Model Selection Filter</label>
