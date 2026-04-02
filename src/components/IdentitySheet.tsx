@@ -77,6 +77,7 @@ type ActiveTab = 'telemetry' | 'loadout' | 'memories' | 'flight';
 
 interface ModelPreview {
     model_provider: number | null;
+    ai_model_id: string | null;
     model_name: string | null;
     provider_name: string | null;
     provider_model_id: string | null;
@@ -555,7 +556,12 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                         <span className="font-mono text-xs text-muted">Resolving...</span>
                                     ) : modelPreview?.model_name ? (
                                         <>
-                                            <span className="font-mono text-sm">{modelPreview.model_name}</span>
+                                            <Link
+                                                to={`/hypothalamus?model=${modelPreview.ai_model_id}`}
+                                                className="font-mono text-sm loadout-model-link"
+                                            >
+                                                {modelPreview.model_name}
+                                            </Link>
                                             <span className="font-mono text-xs text-muted">
                                                 via {modelPreview.provider_name}
                                                 {modelPreview.input_cost_per_token && modelPreview.input_cost_per_token !== '0' && (

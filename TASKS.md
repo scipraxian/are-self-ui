@@ -11,9 +11,9 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   `useEffect` trigger. Key files: `SynapticCleft.tsx`, `synaptic_cleft/consumers.py`, `HypothalamusPage.tsx`.
 - [ ] **Hypothalamus routing tab POST bugs.** Changing failover strategies does not POST. Capability pill changes do
   not POST. Verify the PATCH call in `HypothalamusRoutingInspector.tsx` is wired correctly for all M2M fields.
-- [ ] **Identity — SelectionFilter + Budget dropdowns.** Add SelectionFilter dropdown and Budget dropdown to the
-  Identity Loadout tab. Backend endpoints exist (`/api/v2/selection-filters/`, `/api/v2/identity-budgets/`). The
-  `selection_filter` FK exists on IdentityFields. Budget assignment goes through `IdentityBudgetAssignment`.
+- [ ] **Identity — Budget dropdown.** Add Budget dropdown to the Identity Loadout tab. Backend endpoint exists
+  (`/api/v2/identity-budgets/`). Budget assignment goes through `IdentityBudgetAssignment`.
+  *(SelectionFilter dropdown + live Hypothalamus model preview are done.)*
 - [ ] **PFC double-click drill.** Double-clicking on a ticket brings you to partial edit; should be full edit.
 - [ ] **Main menu / root route.** The root route (`/`) needs real content. Cards of latest spikes, latest sessions,
   system stats. Currently just the 3D brain.
@@ -23,9 +23,10 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Next Up
 
-IdentityDisc addon editor.
-
-
+- [ ] **IdentityDisc addon editor.** Build a dedicated editor for creating and managing neural addons directly from the
+  Identity Loadout tab. Should support CRUD against `/api/v2/identity-addons/` with inline name/description editing.
+- [ ] **IdentityDisc tool editor.** Build a dedicated editor for creating and managing tool definitions from the
+  Identity Loadout tab. Should support CRUD against `/api/v2/tool-definitions/` with schema editing.
 - [ ] **Temporal Lobe — URL-driven iteration selection.** Currently selecting an iteration/definition is local state
   only. Needs URL params (`/temporal?iteration={id}` or `/temporal?definition={id}`) so refresh preserves context.
 - [ ] **Navigation cleanup.** Hamburger menu has Hippocampus + Hypothalamus (added 4/1). Remaining brain regions TBD.
@@ -63,4 +64,4 @@ IdentityDisc addon editor.
 - [ ] **Glassmorphic styling audit.** Consistent treatment across all views. Card styles, panel borders, hover states,
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
-- [ ] **Identity — vector embedding visualization.** Sparkline or badge showing the disc's embedding.
+- [ ] **Identity — vector embedding visualization.** Sparkline or badge s

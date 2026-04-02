@@ -43,14 +43,7 @@ export function IdentityDetailStub() {
                     <IdentitySheet id={discId} type={type} />
                 </div>
             }
-            right={
-                <>
-                    <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
-                    <div className="layout-placeholder font-mono text-sm">
-                        [Contextual Node Details]
-                    </div>
-                </>
-            }
+            right={null}
         />
     );
 }

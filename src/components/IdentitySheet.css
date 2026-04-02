@@ -388,6 +388,16 @@
     color: var(--text-primary);
 }
 
+.loadout-model-link {
+    color: var(--accent, #38bdf8);
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+}
+.loadout-model-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
 .badge-selected {
     box-shadow: 0 0 16px rgba(56, 189, 248, 0.8);
 }
