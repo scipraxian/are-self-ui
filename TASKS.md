@@ -211,6 +211,24 @@ GIT Repo will require name change as well.
 We need real readmes, we need all the documentation possible.
 Videos, tutorials, and comprehensive guides.
 
+
+### MAIN MENU / Root Route
+Something needs to be there. Cards of the latest spikes, the latest sessions, some stats.
+
+
+### Use docker for the other services as well.
+
+
+### Start, Shutdown and restart.
+start needs to look for python and a venv if not build one, and docker.
+shutdown needs to shut down and restart neest to restart
+
+
+### Standardize api urls with dashes not underscores.
+
+### Frontal lobe node needs to be able to select a disc.
+
+
 ---
 
 ## P1 — Remaining Gaps
@@ -283,7 +301,7 @@ to hyphens post-release. Coordinated frontend+backend sweep.
 
 ### tool details in chat views
 
-
+### voice speaking module (in Rust from Samuel)
 
 ---
 
