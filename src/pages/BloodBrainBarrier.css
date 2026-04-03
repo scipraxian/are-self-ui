@@ -1,4 +1,4 @@
-.dashboard-loader {
+.bbb-loader {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -11,7 +11,7 @@
     font-size: 0.9rem;
 }
 
-.dashboard-loader-icon {
+.bbb-loader-icon {
     animation: spin 2s linear infinite;
 }
 
@@ -20,7 +20,7 @@
     to { transform: rotate(360deg); }
 }
 
-.dashboard-container {
+.bbb-container {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -33,12 +33,12 @@
     min-height: 0;
 }
 
-.dashboard-container::-webkit-scrollbar {
+.bbb-container::-webkit-scrollbar {
     display: none;
 }
 
 /* Header */
-.dashboard-header {
+.bbb-header {
     padding: 24px;
     background: rgba(15, 15, 30, 0.7);
     backdrop-filter: blur(12px);
@@ -47,11 +47,11 @@
     flex-shrink: 0;
 }
 
-.dashboard-header-content {
+.bbb-header-content {
     max-width: 600px;
 }
 
-.dashboard-title {
+.bbb-title {
     margin: 0;
     font-size: 2.5rem;
     font-weight: 900;
@@ -61,7 +61,7 @@
     text-transform: uppercase;
 }
 
-.dashboard-subtitle {
+.bbb-subtitle {
     margin: 8px 0 0 0;
     font-size: 0.95rem;
     color: var(--text-secondary);
@@ -70,7 +70,7 @@
 }
 
 /* System Stats Grid */
-.dashboard-stats-grid {
+.bbb-stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
@@ -149,7 +149,7 @@
 }
 
 /* Content Grid */
-.dashboard-content-grid {
+.bbb-content-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 20px;
@@ -157,8 +157,8 @@
     min-height: 0;
 }
 
-/* Dashboard Panel */
-.dashboard-panel {
+/* BBB Panel */
+.bbb-panel {
     display: flex;
     flex-direction: column;
     background: rgba(15, 15, 30, 0.6);
@@ -414,7 +414,7 @@
 }
 
 /* Navigation Section */
-.dashboard-nav {
+.bbb-nav {
     flex-shrink: 0;
     padding: 20px;
     background: rgba(15, 15, 30, 0.6);
@@ -423,7 +423,7 @@
     border-radius: 12px;
 }
 
-.dashboard-nav-title {
+.bbb-nav-title {
     margin: 0 0 12px 0;
     font-size: 0.85rem;
     font-weight: 700;
@@ -463,26 +463,26 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-    .dashboard-content-grid {
+    .bbb-content-grid {
         grid-template-columns: 1fr;
     }
 
-    .dashboard-title {
+    .bbb-title {
         font-size: 2rem;
     }
 }
 
 @media (max-width: 640px) {
-    .dashboard-container {
+    .bbb-container {
         padding: 12px;
         gap: 16px;
     }
 
-    .dashboard-stats-grid {
+    .bbb-stats-grid {
         grid-template-columns: 1fr;
     }
 
-    .dashboard-title {
+    .bbb-title {
         font-size: 1.5rem;
     }
 

@@ -110,6 +110,32 @@
     background: #7dd3fc;
 }
 
+.cns-monitor-sidebar-btn--stop {
+    color: var(--accent-amber, #fbbf24);
+    border-color: var(--accent-amber, #fbbf24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.cns-monitor-sidebar-btn--stop:hover {
+    background: rgba(251, 191, 36, 0.12);
+}
+
+.cns-monitor-sidebar-btn--terminate {
+    color: var(--accent-red, #ef4444);
+    border-color: var(--accent-red, #ef4444);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.cns-monitor-sidebar-btn--terminate:hover {
+    background: rgba(239, 68, 68, 0.12);
+}
+
 .cns-monitor-sidebar-toggle {
     display: flex;
     align-items: center;

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
-import { DashboardContent } from './DashboardContent';
+import { BloodBrainBarrier } from './BloodBrainBarrier';
 
 /**
  * BrainView – the index route ("/").
@@ -16,5 +16,5 @@ export function BrainView() {
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
-    return <DashboardContent />;
+    return <BloodBrainBarrier />;
 }

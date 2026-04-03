@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, TrendingUp, Brain, Zap } from 'lucide-react';
+import {
+    Loader2, TrendingUp, Brain, Zap, Network, Clock, LayoutGrid,
+    BookOpen, Activity, Cpu
+} from 'lucide-react';
 import { apiFetch } from '../api';
 import { useDendrite } from '../components/SynapticCleft';
 import type { Spike, ReasoningSessionData } from '../types';
-import './DashboardContent.css';
+import './BloodBrainBarrier.css';
 
 interface ReasoningSession extends Partial<ReasoningSessionData> {
     id: string;
@@ -49,7 +52,7 @@ const formatTimeAgo = (dateStr: string): string => {
     }
 };
 
-export function DashboardContent() {
+export function BloodBrainBarrier() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [latestSpikes, setLatestSpikes] = useState<Spike[]>([]);
@@ -69,12 +72,12 @@ export function DashboardContent() {
 
         const fetchData = async () => {
             try {
-                // Fetch latest spikes — filter out "begin play" status (id: 1)
+                // Fetch latest spikes — filter out "Begin Play" effector (by effector_name, not status)
                 const spikesRes = await apiFetch('/api/v2/spikes/?ordering=-created');
                 if (spikesRes.ok && !cancelled) {
                     const data = await spikesRes.json();
                     const allSpikes: Spike[] = (data.results || data);
-                    const filtered = allSpikes.filter(s => s.status !== 1);
+                    const filtered = allSpikes.filter(s => s.effector_name !== 'Begin Play');
                     setLatestSpikes(filtered.slice(0, 6));
                 }
 
@@ -106,25 +109,25 @@ export function DashboardContent() {
 
     if (isLoading) {
         return (
-            <div className="dashboard-loader">
-                <Loader2 className="dashboard-loader-icon" />
+            <div className="bbb-loader">
+                <Loader2 className="bbb-loader-icon" />
                 <p>Initializing consciousness...</p>
             </div>
         );
     }
 
     return (
-        <div className="dashboard-container">
+        <div className="bbb-container">
             {/* Header */}
-            <div className="dashboard-header">
-                <div className="dashboard-header-content">
-                    <h1 className="dashboard-title">ARE-SELF</h1>
-                    <p className="dashboard-subtitle">Neurologically-Inspired AI Reasoning Engine</p>
+            <div className="bbb-header">
+                <div className="bbb-header-content">
+                    <h1 className="bbb-title">ARE-SELF</h1>
+                    <p className="bbb-subtitle">Neurologically-Inspired AI Reasoning Engine</p>
                 </div>
             </div>
 
             {/* System Stats — clickable */}
-            <div className="dashboard-stats-grid">
+            <div className="bbb-stats-grid">
                 <div className="stat-card stat-card--identities stat-card--clickable" onClick={() => navigate('/identity')}>
                     <div className="stat-icon">
                         <Brain size={20} />
@@ -157,9 +160,9 @@ export function DashboardContent() {
             </div>
 
             {/* Content Grid */}
-            <div className="dashboard-content-grid">
+            <div className="bbb-content-grid">
                 {/* Latest Spikes */}
-                <div className="dashboard-panel">
+                <div className="bbb-panel">
                     <div className="panel-header">
                         <h2 className="panel-title">Latest Spikes</h2>
                         <button
@@ -195,7 +198,7 @@ export function DashboardContent() {
                 </div>
 
                 {/* Latest Sessions */}
-                <div className="dashboard-panel">
+                <div className="bbb-panel">
                     <div className="panel-header">
                         <h2 className="panel-title">Latest Sessions</h2>
                         <button
@@ -231,29 +234,32 @@ export function DashboardContent() {
             </div>
 
             {/* Quick Navigation */}
-            <div className="dashboard-nav">
-                <h3 className="dashboard-nav-title">Navigate</h3>
+            <div className="bbb-nav">
+                <h3 className="bbb-nav-title">Navigate</h3>
                 <div className="nav-buttons">
                     <button className="nav-button" onClick={() => navigate('/identity')}>
-                        Identities
+                        <Brain size={16} /> Identities
                     </button>
                     <button className="nav-button" onClick={() => navigate('/hypothalamus')}>
-                        Hypothalamus
+                        <Zap size={16} /> Hypothalamus
                     </button>
                     <button className="nav-button" onClick={() => navigate('/frontal')}>
-                        Frontal Lobe
+                        <TrendingUp size={16} /> Frontal Lobe
+                    </button>
+                    <button className="nav-button" onClick={() => navigate('/cns')}>
+                        <Network size={16} /> CNS
                     </button>
                     <button className="nav-button" onClick={() => navigate('/pfc')}>
-                        PFC
+                        <LayoutGrid size={16} /> PFC
                     </button>
                     <button className="nav-button" onClick={() => navigate('/temporal')}>
-                        Temporal Lobe
+                        <Clock size={16} /> Temporal Lobe
                     </button>
                     <button className="nav-button" onClick={() => navigate('/hippocampus')}>
-                        Hippocampus
+                        <BookOpen size={16} /> Hippocampus
                     </button>
                     <button className="nav-button" onClick={() => navigate('/pns')}>
-                        PNS
+                        <Activity size={16} /> PNS
                     </button>
                 </div>
             </div>

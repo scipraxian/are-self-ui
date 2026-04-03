@@ -21,7 +21,7 @@ import './ThalamusChat.css'; // Reusing the glassmorphic styles
 // Assuming a standard REST structure for your session endpoints
 
 const getInteractUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/resume/`;
-const getMessagesUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/messages/`;
+const getMessagesUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/messages/?volatile=true`;
 
 interface BackendMessage {
     role: string;
@@ -177,11 +177,27 @@ function SessionRuntimeProvider({sessionId, children}: { sessionId: string; chil
                 const list = data.messages || [];
 
                 const formatted: ThreadMessage[] = list.map((m: BackendMessage, i: number) => {
-                    const text = typeof m.content === 'string' ? m.content : (m.text || '');
+                    let text = typeof m.content === 'string' ? m.content : (m.text || '');
+
+                    // Render tool-call parts inline as readable text
+                    const parts = (m as Record<string, unknown>).parts as Array<Record<string, unknown>> | undefined;
+                    if (parts && Array.isArray(parts)) {
+                        for (const part of parts) {
+                            if (part.type === 'tool-call') {
+                                const toolName = part.toolName as string || 'unknown';
+                                const args = part.args as Record<string, unknown> || {};
+                                const argSummary = Object.entries(args)
+                                    .map(([k, v]) => `  ${k}: ${typeof v === 'string' ? v.slice(0, 120) : JSON.stringify(v).slice(0, 120)}`)
+                                    .join('\n');
+                                text += `\n[${toolName}]\n${argSummary}`;
+                            }
+                        }
+                    }
+
                     return {
                         id: `history-${i}`,
                         role: (m.role === 'assistant' || m.role === 'system' ? m.role : 'user'),
-                        content: [{type: 'text', text}],
+                        content: [{type: 'text', text: text.trim()}],
                         createdAt: new Date(),
                         metadata: {}
                     } as unknown as ThreadMessage;
