@@ -1,7 +1,7 @@
 import './CNSSpikeSet.css';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Grid3x3, ListOrdered } from 'lucide-react';
+import { Grid3x3, ListOrdered, Network } from 'lucide-react';
 import { CNSTerminalPane } from '../components/CNSTerminalPane';
 import { SpikeCorrelatedTimeline } from '../components/SpikeCorrelatedTimeline';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
@@ -135,7 +135,7 @@ export function CNSSpikeSet() {
         <div className="spikeset-page">
             <div className="spikeset-header">
                 <span className="spikeset-header-title">
-                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '16px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    <Network size={16} style={{ color: '#22d3ee', marginRight: '8px', verticalAlign: 'middle' }} />
                     Spike Set
                 </span>
                 <span className="spikeset-header-count">{spikeIds.length} spike{spikeIds.length !== 1 ? 's' : ''}</span>

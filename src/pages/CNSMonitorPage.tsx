@@ -1,6 +1,7 @@
 import './CNSMonitorPage.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Network } from 'lucide-react';
 import ReactFlow, {
     Background,
     Controls,
@@ -431,7 +432,7 @@ export function CNSMonitorPage() {
                 (selectedSpike || selectedNeuron) ? (
                     <div className="cns-monitor-inspector">
                         <h4 className="cns-monitor-inspector-title font-display">
-                            <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
+                            <Network size={16} style={{ color: '#22d3ee', marginRight: '8px', verticalAlign: 'middle' }} />
                             {selectedSpike ? 'Spike Detail' : 'Neuron Blueprint'}
                         </h4>
 

@@ -2,6 +2,7 @@ import './PNSMonitorPage.css';
 import 'xterm/css/xterm.css';
 import { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Activity } from 'lucide-react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { useTerminal } from '../hooks/useTerminal';
@@ -129,7 +130,7 @@ export function PNSMonitorPage() {
         <div className="pns-monitor-page">
             <div className="pns-monitor-header">
                 <span className="pns-monitor-header-title">
-                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    <Activity size={16} style={{ color: '#fb923c', marginRight: '8px', verticalAlign: 'middle' }} />
                     Worker Monitor
                 </span>
                 <span className="pns-monitor-header-count">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Settings } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
@@ -281,7 +282,7 @@ export function EnvironmentEditor() {
         <div className="env-editor-detail glass-surface">
             <div className="env-editor-detail-header">
                 <h2 className="env-editor-detail-title">
-                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '20px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    <Settings size={18} style={{ color: '#94a3b8', marginRight: '8px', verticalAlign: 'middle' }} />
                     {editingEnv.name}
                 </h2>
                 {!editingEnv.selected ? (

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Brain } from 'lucide-react';
 import { ThreePanel } from '../components/ThreePanel';
 import { IdentityRoster } from '../components/IdentityRoster';
 import { IdentitySheet } from '../components/IdentitySheet';
@@ -30,7 +31,7 @@ export function IdentityDetailStub() {
             left={
                 <>
                     <h2 className="glass-panel-title">
-                        <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '20px', marginRight: '8px', verticalAlign: 'middle' }} />
+                        <Brain size={18} style={{ color: '#38bdf8', marginRight: '8px', verticalAlign: 'middle' }} />
                         IDENTITY ROSTER
                     </h2>
                     <IdentityRoster

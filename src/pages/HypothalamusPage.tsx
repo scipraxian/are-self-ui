@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { List, LayoutGrid, RefreshCw, Download } from 'lucide-react';
+import { List, LayoutGrid, RefreshCw, Download, Zap } from 'lucide-react';
 
 import { ThreePanel } from '../components/ThreePanel';
 import { HypothalamusModelInspector } from '../components/HypothalamusModelInspector';
@@ -871,7 +871,7 @@ export function HypothalamusPage() {
         <div className="hypothalamus-center">
             <div className="hypothalamus-center-header">
                 <span className="hypothalamus-center-title">
-                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    <Zap size={16} style={{ color: '#34d399', marginRight: '8px', verticalAlign: 'middle' }} />
                     {tab === 'catalog' && `${filteredModels.length} Models`}
                     {tab === 'routing' && 'Routing Profiles'}
                     {tab === 'budgets' && 'Budget Definitions'}

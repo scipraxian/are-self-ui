@@ -2,6 +2,7 @@ import 'flexlayout-react/style/light.css';
 import './SpikeView.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Actions, DockLocation, Layout, Model, TabNode } from 'flexlayout-react';
+import { Network } from 'lucide-react';
 import { SpikeStream } from '../components/SpikeStream';
 
 interface SpikeViewProps {
@@ -111,7 +112,7 @@ export const SpikeView = ({ initialSpikeId }: SpikeViewProps) => {
         <div className="spikeview-root">
             <div className="spikeview-toolbar">
                 <div className="spikeview-title">
-                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    <Network size={16} style={{ color: '#22d3ee', marginRight: '8px', verticalAlign: 'middle' }} />
                     SPIKE TELEMETRY MATRIX
                 </div>
                 <button
