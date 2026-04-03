@@ -214,6 +214,23 @@ Neurotransmitters (Layer 3 — molecule types, NOT receptor classes):
 - Both use `@assistant-ui/react` with `useLocalRuntime` and real-time sync via
   `useDendrite('SynapseResponse', null)`.
 
+### Addon System (Frontend Implications)
+The backend assembles LLM payloads via addons (phases: IDENTIFY→CONTEXT→HISTORY→TERMINAL).
+Human messages from `swarm_message_queue` get `<<h>>\n` prepended — this tag distinguishes
+human messages from addon-injected user messages (like the prompt_addon). The river_of_six
+addon (Phase 3 HISTORY) only replays `<<h>>`-tagged user messages in history reconstruction.
+
+**Frontend stripping:** The `<<h>>` prefix should be stripped before displaying messages to
+the user in chat views. It's a backend routing tag, not display content.
+
+**response_payload format:** Can be direct `{role, content}` or OpenAI-style
+`{choices: [{message: {...}}]}`. The `choices` array must be preserved — don't flatten to
+`choices[0]`. The frontend should handle both formats.
+
+**Session summary_dump:** `GET /api/v2/reasoning_sessions/{id}/summary_dump/` returns a
+compact text log showing full INPUT CONTEXT per turn (all addon-assembled messages) and
+OUTPUT. Useful for debugging what the model saw vs what it produced.
+
 ## Style Rules (Non-Negotiable)
 
 - **No inline styles.** CSS files only. Exceptions: dynamic positions, CSS custom properties, flexGrow from data.

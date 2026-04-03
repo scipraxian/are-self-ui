@@ -219,6 +219,89 @@
     min-height: 40px;
 }
 
+/* Phase selector */
+.addon-phase-select {
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+    background-size: 8px 5px;
+    transition: border-color 140ms ease, color 140ms ease;
+}
+
+.addon-phase-select:hover {
+    border-color: rgba(168, 85, 247, 0.6);
+}
+
+.addon-phase-select option {
+    background: #0f172a;
+    color: var(--text-primary);
+}
+
+/* Create form select */
+.addon-create-select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.addon-create-select option {
+    background: #0f172a;
+    color: var(--text-primary);
+}
+
+/* Function slug */
+.addon-card-slug {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--accent-purple);
+    cursor: pointer;
+    padding: 2px 0;
+    opacity: 0.85;
+}
+
+.addon-card-slug-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.addon-slug-label {
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.addon-card-slug-input {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 4px 8px;
+    color: var(--accent-purple);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+}
+
 /* Saving indicator */
 .addon-saving {
     font-family: var(--font-mono);

@@ -632,9 +632,16 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                             </option>
                                         ))}
                                     </select>
+                                ) : baseData?.selection_filter ? (
+                                    <Link
+                                        to={`/hypothalamus?tab=routing&filter=${baseData.selection_filter.id}`}
+                                        className="loadout-text loadout-link"
+                                    >
+                                        {baseData.selection_filter.name}
+                                    </Link>
                                 ) : (
-                                    <div className="loadout-text">
-                                        {baseData?.selection_filter?.name ?? 'No filter assigned'}
+                                    <div className="loadout-text loadout-text-empty">
+                                        No filter assigned
                                     </div>
                                 )}
                             </div>
@@ -657,9 +664,16 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                             </option>
                                         ))}
                                     </select>
+                                ) : baseData?.budget ? (
+                                    <Link
+                                        to={`/hypothalamus?tab=budgets&budget=${baseData.budget.id}`}
+                                        className="loadout-text loadout-link"
+                                    >
+                                        {baseData.budget.name}
+                                    </Link>
                                 ) : (
-                                    <div className="loadout-text">
-                                        {baseData?.budget?.name ?? 'No budget assigned'}
+                                    <div className="loadout-text loadout-text-empty">
+                                        No budget assigned
                                     </div>
                                 )}
                             </div>

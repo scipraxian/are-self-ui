@@ -11,7 +11,7 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 - [ ] **Session chat — messages not delivered or persisted.** Typing in the Thalamus chat window of a running Frontal
   Lobe session does not deliver the message (swarm_message_queue not receiving). On page refresh, the typed message is
   gone — not persisted as a ReasoningTurn. Two bugs: delivery + persistence. **Paired with backend task.**
-- [ ] **Root dashboard — "begin play" filter.** "Begin Play" spikes still showing. **NOTE:** `spike.status` is the
+- [X] **Root dashboard — "begin play" filter.** "Begin Play" spikes still showing. **NOTE:** `spike.status` is the
   execution status (success/failed/running), NOT the effector type. "Begin Play" is an effector (effector_id /
   effector_name). Filter must use `spike.effector_name` or `spike.effector_id`, not `spike.status`. The current
   `spike.status !== 1` filter is WRONG and needs to be corrected.
@@ -23,14 +23,22 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Next Up (Demo Feedback — April 3, 2026)
 
-- [ ] **Rename Dashboard to BloodBrainBarrier.** The old `dashboard/` Django app is being deprecated. The root route
+- [ ] **Reasoning view rethink.** The `/frontal/:sessionId` view needs major improvements:
+  - **Turn counter:** Show current turn number and turns remaining in the reasoning chat/graph view.
+  - **Chat view repetition:** The chat view shows the same content over and over (prompt_addon re-injects each turn).
+    Need to deduplicate or collapse repeated system/prompt messages so the human sees meaningful progression.
+  - **Graph node click:** Clicking a node in the 3D graph doesn't show enough useful info. The ReasoningInspector
+    needs richer data — the tool isn't talking while working, so the inspector should show the full INPUT CONTEXT
+    (what addons assembled), not just the output. Consider showing the session summary_dump data per-turn.
+  - **General:** Michael says "this view needs a rethink in general."
+- [X] **Rename Dashboard to BloodBrainBarrier.** The old `dashboard/` Django app is being deprecated. The root route
   UI component should be renamed from Dashboard to BloodBrainBarrier (BBB) — files, component names, CSS classes.
 
-- [ ] **PFC Edit page — scroll + crushed sections.** PFCEditPage.tsx/css needs `overflow-y: auto` on the container
+- [X] **PFC Edit page — scroll + crushed sections.** PFCEditPage.tsx/css needs `overflow-y: auto` on the container
   and proper flex sizing so accordion sections aren't crushed. Same pattern as the IdentitySheet scroll fix.
-- [ ] **Root dashboard — nav icons + missing endpoints.** Nav buttons need icons (consistent with hamburger menu
+- [X] **Root dashboard — nav icons + missing endpoints.** Nav buttons need icons (consistent with hamburger menu
   and rest of app). Missing endpoints: CNS, Frontal Lobe is there now but verify full coverage. Use lucide-react icons.
-- [ ] **Root dashboard — logo placement.** `Are-SelfLogo-transparent-04022026.png` in the dashboard header and other
+- [X] **Root dashboard — logo placement.** `Are-SelfLogo-transparent-04022026.png` in the dashboard header and other
   logical locations (nav bar, login page if applicable). File is SVG-friendly, can resize freely.
 - [ ] **Neural Pathway Graph Editor — right-click context menu.** Demo feedback: "in Unreal you can right-click."
   Add right-click functionality with search of available items (neurons, effectors) for adding to the pathway.
@@ -43,14 +51,21 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   **Verify it works** — wired to `DELETE /api/v2/iterations/{id}/`.
 - [ ] **PNS worker preview — fill card area.** Worker preview cards on /pns should show more data: PID, prefetch,
   pool concurrency, CPU metrics. Implementation started — verify and expand.
-- [ ] **IdentityDisc addon editor — expand.** Basic CRUD editor is scaffolded (AddonEditor.tsx). Needs expansion:
-  addons have more fields than just name/description. Review the full IdentityAddon model and expose all fields.
-- [ ] **IdentityDisc tool editor — expand.** Basic CRUD editor is scaffolded (ToolEditor.tsx). Needs expansion:
-  tool definitions have JSON schema fields and parameter assignments. Review ToolDefinition model and expose all fields.
+- [x] **IdentityDisc addon editor — expand.** AddonEditor.tsx now exposes all IdentityAddon fields: name,
+  description, phase dropdown (IDENTIFY/CONTEXT/HISTORY/TERMINAL — hardcoded, no API endpoint for phases),
+  and function_slug (inline editable). Both card view and create form updated. (Completed 4/3.)
+- [x] **IdentityDisc tool editor — expand.** ToolEditor.tsx now exposes: name, description, is_async toggle,
+  use_type dropdown (fetched from `/api/v2/tool-use-types/`), and expandable parameter assignment panel with
+  add/remove parameters, REQ/OPT toggle per assignment, prune_after_turns display, enum count badges.
+  (Completed 4/3.)
 - [ ] **Temporal Lobe — URL-driven iteration selection.** Currently selecting an iteration/definition is local state
   only. Needs URL params (`/temporal?iteration={id}` or `/temporal?definition={id}`) so refresh preserves context.
 - [ ] **Navigation cleanup.** Hamburger menu has Hippocampus + Hypothalamus (added 4/1). Remaining brain regions TBD.
 - [ ] **Identity ledger layout.** Remove always-open empty right panel when nothing selected.
+- [ ] **Identity — remove redundant Model Routing Configuration section.** The Loadout tab has an inline
+  SelectionFilterEditor that duplicates the Hypothalamus routing inspector. Now that SelectionFilter and Budget
+  fields click through to the Hypothalamus, the embedded editor is redundant. Consider removing the "Model Routing
+  Configuration" section from IdentitySheet's Loadout tab entirely — editing happens on the Hypothalamus page.
 - [ ] **EngramEditor — attach existing.** "Attach Existing" flow to link existing engrams to a disc.
 - [ ] **Hypothalamus — family filter sort + zero-count hiding.** Family chips in filter panel need alphabetical sort.
   Consider hiding families with zero models (44 chips, 4 models on first load).
@@ -84,6 +99,31 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
 - [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.
+
+## Recently Completed (April 3, 2026 — Session 2)
+
+- [x] **Identity page scroll fix.** Scroll was disabled because `.three-panel-center-stage` had `overflow: hidden`
+  blocking `.identity-sheet-container`'s `overflow-y: auto`. Fix: added `display: flex; flex-direction: column` to
+  center-stage, added `flex: 1; min-height: 0` to identity-sheet-container so it fills parent and scrolls.
+- [x] **SelectionFilter click-through to Hypothalamus.** In read mode, the Model Selection Filter field on the
+  Identity Loadout tab now links to `/hypothalamus?tab=routing&filter={id}`, opening the Hypothalamus routing
+  inspector directly for that filter.
+- [x] **Budget click-through to Hypothalamus.** In read mode, the Budget Allocation field on the Identity Loadout
+  tab now links to `/hypothalamus?tab=budgets&budget={id}`, opening the Hypothalamus budgets tab for that budget.
+- [x] **AddonEditor expanded.** Phase dropdown + function_slug field. See task list above.
+- [x] **ToolEditor expanded.** Use type dropdown + full parameter assignment panel. See task list above.
+
+## Recently Completed (April 3, 2026 — Session 1)
+
+- [x] **NavBar human-friendly labels + icons.** NavBar.tsx dropdown items now show colored lucide-react icon,
+  route name (bold), and human-friendly label (dimmed). Full menu: CNS/Graphs, Cortex/Dashboard,
+  Environments/Config, Frontal Lobe/Reasoning, Hippocampus/Memory, Hypothalamus/Models, Identity/Personas,
+  PFC/Tools, PNS/Fleet, Temporal Lobe/Iterations.
+- [x] **Are-Self logo + text in navbar and BBB.** Logo image + "ARE-SELF" text in both navbar-left and BBB header.
+  Lightened backgrounds for visibility.
+- [x] **Identity PATCH M2M fix.** IdentitySheet.tsx was sending `enabled_tools`, `addons`, `tags` (read-only field
+  names) — DRF silently ignored. Fixed to send `enabled_tool_ids`, `addon_ids`, `tag_ids` (write-only fields).
+- [x] **Dump Data button.** Changed from graph_data JSON dump to summary_dump text log endpoint.
 
 ## Recently Completed (April 2, 2026 — Session 2)
 

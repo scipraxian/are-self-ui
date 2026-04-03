@@ -5,6 +5,8 @@
     gap: 16px;
     padding: 18px 20px 20px;
     border-radius: 18px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     background:
         radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 55%),
@@ -386,6 +388,23 @@
     font-family: var(--font-mono);
     font-size: 0.8rem;
     color: var(--text-primary);
+}
+
+.loadout-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 140ms ease;
+}
+
+.loadout-link:hover {
+    color: var(--accent-purple);
+    text-decoration: underline;
+}
+
+.loadout-text-empty {
+    color: var(--text-muted);
+    font-style: italic;
 }
 
 .loadout-model-link {
