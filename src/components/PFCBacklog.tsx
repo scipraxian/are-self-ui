@@ -26,7 +26,7 @@ const PRIORITY_ICONS: Record<number, React.ReactNode> = {
 };
 
 export function PFCBacklog({
-    items, statuses, selectedItemId,
+    items, selectedItemId,
     onItemSelect, onItemDoubleClick, onCreateItem
 }: PFCBacklogProps) {
     const [sortField, setSortField] = useState<SortField>('priority');

@@ -1,0 +1,396 @@
+.pfc-edit-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    pointer-events: auto;
+}
+
+.pfc-edit-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    pointer-events: auto;
+    min-height: 0;
+    position: relative;
+}
+
+.pfc-edit-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.pfc-edit-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pfc-edit-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.pfc-edit-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+}
+
+.pfc-edit-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.pfc-edit-not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.pfc-edit-back-btn-header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.pfc-edit-back-btn-header:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.pfc-edit-back-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--accent-blue);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.pfc-edit-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+}
+
+.pfc-edit-breadcrumb-link {
+    color: var(--accent-blue);
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.pfc-edit-breadcrumb-link:hover {
+    color: var(--accent-blue-light);
+}
+
+.pfc-edit-breadcrumb-link--epic {
+    color: #a855f7;
+}
+
+.pfc-edit-breadcrumb-link--story {
+    color: #3b82f6;
+}
+
+.pfc-edit-breadcrumb-link--task {
+    color: #4ade80;
+}
+
+.pfc-edit-breadcrumb-sep {
+    color: var(--text-muted);
+}
+
+.pfc-edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+}
+
+.pfc-edit-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pfc-edit-type-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pfc-edit-type-pill--epic {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.pfc-edit-type-pill--story {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.pfc-edit-type-pill--task {
+    background: rgba(74, 222, 128, 0.15);
+    color: #86efac;
+    border-color: rgba(74, 222, 128, 0.3);
+}
+
+.pfc-edit-delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.pfc-edit-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fda29b;
+}
+
+.pfc-edit-name-field {
+    font-family: Outfit, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 0;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.pfc-edit-name-field:focus {
+    border-bottom-color: var(--accent-blue);
+}
+
+.pfc-edit-completion {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+}
+
+.pfc-edit-completion-text {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.pfc-edit-completion-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.pfc-edit-completion-fill {
+    height: 100%;
+    background: #4ade80;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Accordion styling */
+.pfc-edit-accordion {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.pfc-edit-accordion[open] {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.pfc-edit-accordion-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: background 0.15s;
+}
+
+.pfc-edit-accordion-summary:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pfc-edit-accordion[open] .pfc-edit-accordion-summary {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pfc-edit-accordion-content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Field styling */
+.pfc-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pfc-edit-field-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.pfc-edit-field-select,
+.pfc-edit-field-input {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    padding: 8px 10px;
+    border-radius: 6px;
+    outline: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.pfc-edit-field-select:focus,
+.pfc-edit-field-input:focus {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--accent-blue);
+}
+
+.pfc-edit-field-select {
+    cursor: pointer;
+}
+
+.pfc-edit-priority-display {
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+}
+
+.pfc-edit-priority-label {
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.pfc-edit-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-height: 32px;
+}
+
+.pfc-edit-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #93c5fd;
+    font-weight: 500;
+}
+
+.pfc-edit-tag-remove {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    transition: opacity 0.15s;
+}
+
+.pfc-edit-tag-remove:hover {
+    opacity: 0.7;
+}
+
+.pfc-edit-tags-select {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* Textarea styling */
+.pfc-edit-textarea {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px;
+    border-radius: 6px;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.pfc-edit-textarea:focus {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--accent-blue);
+}
+
+.pfc-edit-textarea::placeholder {
+    color: var(--text-muted);
+}

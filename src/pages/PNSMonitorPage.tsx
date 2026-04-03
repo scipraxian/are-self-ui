@@ -95,9 +95,11 @@ export function PNSMonitorPage() {
         if (!writer) return;
 
         switch (event.activity) {
-            case 'log':
-                writer(event.vesicle.message as string);
+            case 'log': {
+                const msg = event.vesicle.message as string;
+                writer(msg.endsWith('\n') ? msg.replace(/\n/g, '\r\n') : msg + '\r\n');
                 break;
+            }
             case 'task_started':
                 writer(`\x1b[33m▶ ${event.vesicle.name} [${(event.vesicle.uuid as string).slice(0, 8)}]\x1b[0m\r\n`);
                 break;

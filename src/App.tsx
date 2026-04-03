@@ -26,6 +26,7 @@ import { CNSSpikeForensics } from './pages/CNSSpikeForensics';
 import { EnvironmentEditor } from './pages/EnvironmentEditor';
 import { HippocampusPage } from './pages/HippocampusPage';
 import { HypothalamusPage } from './pages/HypothalamusPage';
+import { PFCEditPage } from './pages/PFCEditPage';
 
 function App() {
     return (
@@ -57,8 +58,11 @@ function App() {
                                     <Route index element={<PFCPage />} />
                                     <Route path="backlog" element={<PFCPage />} />
                                     <Route path="epic/:epicId" element={<PFCDetailPage />} />
+                                    <Route path="epic/:epicId/edit" element={<PFCEditPage />} />
                                     <Route path="story/:storyId" element={<PFCDetailPage />} />
+                                    <Route path="story/:storyId/edit" element={<PFCEditPage />} />
                                     <Route path="task/:taskId" element={<PFCDetailPage />} />
+                                    <Route path="task/:taskId/edit" element={<PFCEditPage />} />
                                 </Route>
                                 <Route path="identity" element={<IdentityStub />} />
                                 <Route path="identity/:discId" element={<IdentityDetailStub />} />

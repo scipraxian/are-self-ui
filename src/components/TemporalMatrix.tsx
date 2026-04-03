@@ -337,6 +337,8 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     const [isLoading, setIsLoading] = useState(true);
     const [isGestating, setIsGestating] = useState(false);
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
+    const [confirmDeleteIterationId, setConfirmDeleteIterationId] = useState<number | null>(null);
+    const [isDeletingIteration, setIsDeletingIteration] = useState(false);
 
     const iterationEvent = useDendrite('Iteration', null);
 
@@ -616,6 +618,33 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         }
     };
 
+    const deleteIteration = async (id: number) => {
+        try {
+            setIsDeletingIteration(true);
+            const res = await apiFetch(`/api/v2/iterations/${id}/`, { method: 'DELETE' });
+            if (res.ok) {
+                setSelectedIterationId(null);
+                setConfirmDeleteIterationId(null);
+                // Refetch iterations after delete
+                const iterRes = await apiFetch('/api/v2/iterations/');
+                if (iterRes.ok) {
+                    const iterData = await iterRes.json();
+                    const results: IterationData[] = iterData.results || iterData;
+                    setIterations(results);
+                    if (results.length > 0) {
+                        setSelectedIterationId(results[0].id);
+                    }
+                }
+            } else {
+                console.error('Failed to delete iteration');
+            }
+        } catch (err) {
+            console.error('Delete iteration failed:', err);
+        } finally {
+            setIsDeletingIteration(false);
+        }
+    };
+
     const updateShiftDefinitionTurnLimit = async (shiftDefinitionId: number, turnLimit: number) => {
         try {
             const res = await apiFetch(`/api/v2/iteration-shift-definitions/${shiftDefinitionId}/`, {
@@ -890,26 +919,58 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                                     )}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button
-                                    className="btn-ghost"
-                                    onClick={() => setSelectedIterationId(null)}
-                                    style={{ fontSize: '0.85rem' }}
-                                >
-                                    ✕ Close Iteration
-                                </button>
-                                <button
-                                    className="btn-action initiate-btn"
-                                    onClick={handleInitiate}
-                                    disabled={iteration.status_name !== 'Waiting'}
-                                    style={{
-                                        opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
-                                        cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
-                                    }}
-                                >
-                                    <Play size={14} fill="currentColor" />
-                                    INITIATE
-                                </button>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                {confirmDeleteIterationId === iteration.id ? (
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <span className="font-mono text-xs" style={{ color: 'var(--accent-red)' }}>Delete iteration?</span>
+                                        <button
+                                            className="btn-action btn-danger"
+                                            onClick={() => deleteIteration(iteration.id)}
+                                            disabled={isDeletingIteration}
+                                            style={{ fontSize: '0.85rem' }}
+                                        >
+                                            {isDeletingIteration ? <Loader2 className="animate-spin" size={12} /> : 'Yes'}
+                                        </button>
+                                        <button
+                                            className="btn-secondary-outline"
+                                            onClick={() => setConfirmDeleteIterationId(null)}
+                                            disabled={isDeletingIteration}
+                                            style={{ fontSize: '0.85rem' }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <button
+                                            className="btn-ghost"
+                                            onClick={() => setConfirmDeleteIterationId(iteration.id)}
+                                            style={{ fontSize: '0.85rem' }}
+                                            title="Delete this iteration"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <button
+                                            className="btn-ghost"
+                                            onClick={() => setSelectedIterationId(null)}
+                                            style={{ fontSize: '0.85rem' }}
+                                        >
+                                            ✕ Close Iteration
+                                        </button>
+                                        <button
+                                            className="btn-action initiate-btn"
+                                            onClick={handleInitiate}
+                                            disabled={iteration.status_name !== 'Waiting'}
+                                            style={{
+                                                opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
+                                                cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            <Play size={14} fill="currentColor" />
+                                            INITIATE
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
 

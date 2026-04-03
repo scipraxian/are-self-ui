@@ -94,10 +94,9 @@ export const PrefrontalCortex = ({
         }
     };
 
-    const getDefaultParent = (): string | undefined => {
-        const firstStory = items.find(i => i.item_type === 'STORY');
-        return firstStory?.id;
-    };
+    // "Blocked by User" is the intake column — only column where new items are created
+    const isBlockedByUserColumn = (status: PFCItemStatus) =>
+        status.name.toLowerCase().replace(/[\s_]+/g, '') === 'blockedbyuser' || status.id === 6;
 
     return (
         <div className="pfc-container">
@@ -114,6 +113,7 @@ export const PrefrontalCortex = ({
                     {statuses.map(status => {
                         const columnItems = items.filter(i => i.status && i.status.id === status.id);
                         const isDragOver = dragOverStatus === status.id;
+                        const showCreate = isBlockedByUserColumn(status);
 
                         return (
                             <div
@@ -195,13 +195,28 @@ export const PrefrontalCortex = ({
                                         );
                                     })}
                                     <div className={`pfc-drop-zone ${isDragOver ? 'drag-over' : ''}`}></div>
-                                    <PFCInlineCreate
-                                        itemType="TASK"
-                                        parentId={getDefaultParent()}
-                                        statusId={status.id}
-                                        onSubmit={(name, parentId, statusId) => onCreateItem(name, 'TASK', parentId, statusId)}
-                                        compact
-                                    />
+                                    {showCreate && (
+                                        <div className="pfc-create-buttons">
+                                            <PFCInlineCreate
+                                                itemType="EPIC"
+                                                statusId={status.id}
+                                                onSubmit={(name, _parentId, statusId) => onCreateItem(name, 'EPIC', undefined, statusId)}
+                                                compact
+                                            />
+                                            <PFCInlineCreate
+                                                itemType="STORY"
+                                                statusId={status.id}
+                                                onSubmit={(name, _parentId, statusId) => onCreateItem(name, 'STORY', undefined, statusId)}
+                                                compact
+                                            />
+                                            <PFCInlineCreate
+                                                itemType="TASK"
+                                                statusId={status.id}
+                                                onSubmit={(name, _parentId, statusId) => onCreateItem(name, 'TASK', undefined, statusId)}
+                                                compact
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );

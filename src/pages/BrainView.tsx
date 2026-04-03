@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { DashboardContent } from './DashboardContent';
 
 /**
  * BrainView – the index route ("/").
- * Full-screen 3D brain visualization. Lobe clicks are handled by LayoutShell's
- * BackgroundCanvas, so this component just renders nothing (the background is
- * already visible behind the Outlet).
+ * Renders dashboard content (latest spikes, sessions, system stats) overlaid on the
+ * interactive 3D brain background. The background is rendered by LayoutShell's
+ * BackgroundCanvas layer.
  */
 export function BrainView() {
     const { setCrumbs } = useBreadcrumbs();
@@ -15,7 +16,5 @@ export function BrainView() {
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
-    // The interactive brain canvas is rendered by LayoutShell's background layer.
-    // On the root route, LayoutShell passes the navigation handler to BackgroundCanvas.
-    return null;
+    return <DashboardContent />;
 }

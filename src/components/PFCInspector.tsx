@@ -247,7 +247,7 @@ export const PFCInspector = ({ item, allItems, statuses, onUpdate, onDelete, isE
             <div className="pfc-inspector-toolbar">
                 <button
                     className="pfc-inspector-fulledit-btn"
-                    onClick={() => navigate(`/pfc/${item.item_type.toLowerCase()}/${item.id}`)}
+                    onClick={() => navigate(`/pfc/${item.item_type.toLowerCase()}/${item.id}/edit`)}
                     title="Open full editor"
                 >
                     <ExternalLink size={14} />

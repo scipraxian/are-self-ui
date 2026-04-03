@@ -470,9 +470,10 @@ Temporal → PFC → CNS → Frontal → Hippocampus. Real-time updates via useD
 Hypothalamus model catalog with sync, pull, routing, and budget tabs. All navigation is
 URL-driven and bookmarkable.
 
-**What's in progress:** See TASKS.md. Key items: Hypothalamus dendrite refresh bug (blocking
-UX), routing tab POST bugs, Identity SelectionFilter/Budget dropdowns, main menu / root route
-content, PFC double-click drill fix.
+**What's in progress:** See TASKS.md. Key items: PFC double-click drill, main menu / root route
+content, Frontal Lobe disc selection, addon/tool editor expansion. Recently completed:
+Hypothalamus dendrite refresh fix, routing tab POST fixes, Identity SelectionFilter + Budget
+dropdowns, live model preview, addon/tool editor scaffolds, receptor_class convention docs.
 
 **Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
 internal references may still use old naming. The backend CLAUDE.md has the full naming sweep

@@ -228,6 +228,42 @@
     margin-left: 8px;
 }
 
+/* ── System info ── */
+
+.pns-card-sysinfo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 6px;
+}
+
+.pns-card-sysinfo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.pns-card-sysinfo-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.pns-card-sysinfo-value {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    text-align: right;
+}
+
 /* ── Log preview ── */
 
 .pns-card-logs {

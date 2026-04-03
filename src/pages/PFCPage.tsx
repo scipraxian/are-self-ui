@@ -109,7 +109,7 @@ export function PFCPage() {
     }, [setUrlParam]);
 
     const handleItemDoubleClick = useCallback((item: PFCAgileItem) => {
-        navigate(`/pfc/${item.item_type.toLowerCase()}/${item.id}`);
+        navigate(`/pfc/${item.item_type.toLowerCase()}/${item.id}/edit`);
     }, [navigate]);
 
     const handleRefresh = useCallback(() => {
@@ -121,19 +121,38 @@ export function PFCPage() {
     ) => {
         const endpointMap: Record<string, string> = { EPIC: 'pfc-epics', STORY: 'pfc-stories', TASK: 'pfc-tasks' };
         const endpoint = endpointMap[type];
-        const backlogStatus = statuses.find(s => s.name.toLowerCase() === 'backlog') || statuses[0];
-        const payload: Record<string, any> = { name, status: statusId || backlogStatus?.id };
-        if (type === 'STORY' && parentId) payload.epic = parentId;
-        if (type === 'TASK' && parentId) payload.story = parentId;
+
+        // Default to "Blocked by User" status, fall back to first status
+        const blockedStatus = statuses.find(s =>
+            s.name.toLowerCase().replace(/[\s_]+/g, '') === 'blockedbyuser' || s.id === 6
+        );
+        const fallbackStatus = blockedStatus || statuses[0];
+
+        const payload: Record<string, any> = { name, status: statusId || fallbackStatus?.id };
+
+        // Stories require an epic FK, tasks require a story FK.
+        // Auto-assign the first available parent if none provided.
+        if (type === 'STORY') {
+            const epicId = parentId || items.find(i => i.item_type === 'EPIC')?.id;
+            if (epicId) payload.epic = epicId;
+        }
+        if (type === 'TASK') {
+            const storyId = parentId || items.find(i => i.item_type === 'STORY')?.id;
+            if (storyId) payload.story = storyId;
+        }
 
         const res = await apiFetch(`/api/v2/${endpoint}/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('Create failed');
+        if (!res.ok) {
+            const errBody = await res.text().catch(() => '');
+            console.error(`Create ${type} failed (${res.status}):`, errBody);
+            throw new Error(`Create ${type} failed`);
+        }
         handleRefresh();
-    }, [statuses, handleRefresh]);
+    }, [statuses, items, handleRefresh]);
 
     const selectedItem = selectedId ? items.find(i => i.id === selectedId) || null : null;
 

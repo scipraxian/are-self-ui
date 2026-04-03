@@ -5,6 +5,7 @@ import { apiFetch } from '../api';
 import { EngramEditor } from './EngramEditor';
 import { AddonEditor } from './AddonEditor';
 import { ToolEditor } from './ToolEditor';
+import { SelectionFilterEditor } from './SelectionFilterEditor';
 import './IdentitySheet.css';
 import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
@@ -126,6 +127,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     // Editor visibility states
     const [showAddonEditor, setShowAddonEditor] = useState(false);
     const [showToolEditor, setShowToolEditor] = useState(false);
+    const [showFilterEditor, setShowFilterEditor] = useState(false);
 
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
@@ -662,6 +664,40 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    <div className="sheet-section">
+                        <div className="sheet-section-title-row">
+                            <h3 className="sheet-section-title common-layout-15">
+                                <Cpu size={14} /> Model Routing Configuration
+                            </h3>
+                            <button
+                                type="button"
+                                className="sheet-manage-btn"
+                                onClick={() => setShowFilterEditor(!showFilterEditor)}
+                                title="Configure selection filters"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
+                        {showFilterEditor && (
+                            <div className="sheet-editor-panel">
+                                <SelectionFilterEditor onRefresh={() => {
+                                    const loadCatalogs = async () => {
+                                        try {
+                                            const filterRes = await apiFetch('/api/v2/selection-filters/');
+                                            if (filterRes.ok) {
+                                                const json = await filterRes.json();
+                                                setSelectionFilters(json.results ?? json);
+                                            }
+                                        } catch (err) {
+                                            console.error('Failed to refresh filters', err);
+                                        }
+                                    };
+                                    loadCatalogs();
+                                }} />
+                            </div>
+                        )}
                     </div>
 
                     <div className="sheet-section">

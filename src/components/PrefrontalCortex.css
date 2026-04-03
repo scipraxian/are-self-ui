@@ -140,6 +140,13 @@
     background: rgba(56, 189, 248, 0.05);
 }
 
+.pfc-create-buttons {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+}
+
 /* Card base */
 .pfc-card {
     background: var(--bg-panel);
