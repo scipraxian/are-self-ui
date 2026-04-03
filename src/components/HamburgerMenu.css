@@ -10,12 +10,15 @@
 }
 
 .hamburger-logo-link {
-    font-family: var(--font-display, system-ui);
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text-primary);
+    display: flex;
+    align-items: center;
     text-decoration: none;
+}
+
+.hamburger-logo-img {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
 }
 
 .hamburger-toggle {
@@ -55,11 +58,58 @@
 }
 
 .hamburger-list a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: var(--text-primary);
     text-decoration: none;
 }
 
 .hamburger-list a:hover {
     color: var(--accent-orange);
+}
+
+.hamburger-icon {
+    flex-shrink: 0;
+}
+
+.hamburger-icon--cortex {
+    color: #ffffff;
+}
+
+.hamburger-icon--cns {
+    color: #22d3ee;
+}
+
+.hamburger-icon--environments {
+    color: #94a3b8;
+}
+
+.hamburger-icon--frontal {
+    color: #a78bfa;
+}
+
+.hamburger-icon--hippocampus {
+    color: #fbbf24;
+}
+
+.hamburger-icon--hypothalamus {
+    color: #34d399;
+}
+
+.hamburger-icon--identities {
+    color: #38bdf8;
+}
+
+.hamburger-icon--pns {
+    color: #fb923c;
+}
+
+.hamburger-icon--pfc {
+    color: #fb7185;
+}
+
+.hamburger-icon--temporal {
+    color: #818cf8;
 }
 

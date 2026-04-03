@@ -72,20 +72,20 @@ export function BloodBrainBarrier() {
 
         const fetchData = async () => {
             try {
-                // Fetch latest spikes — filter out "Begin Play" effector (by effector_name, not status)
-                const spikesRes = await apiFetch('/api/v2/spikes/?ordering=-created');
+                // Fetch latest spikes from lightweight endpoint
+                const spikesRes = await apiFetch('/api/v2/latest-spikes/');
                 if (spikesRes.ok && !cancelled) {
                     const data = await spikesRes.json();
-                    const allSpikes: Spike[] = (data.results || data);
-                    const filtered = allSpikes.filter(s => s.effector_name !== 'Begin Play');
-                    setLatestSpikes(filtered.slice(0, 6));
+                    setLatestSpikes(data.slice(0, 6));
                 }
 
-                // Fetch latest reasoning sessions
-                const sessionsRes = await apiFetch('/api/v2/reasoning_sessions/?ordering=-created&limit=6');
+                // Fetch latest reasoning sessions from lightweight endpoint
+                const sessionsRes = await apiFetch(
+                    '/api/v2/latest-sessions/'
+                );
                 if (sessionsRes.ok && !cancelled) {
                     const data = await sessionsRes.json();
-                    setLatestSessions((data.results || data).slice(0, 6));
+                    setLatestSessions(data.slice(0, 6));
                 }
 
                 // Fetch system stats via lightweight stats endpoint
@@ -121,7 +121,11 @@ export function BloodBrainBarrier() {
             {/* Header */}
             <div className="bbb-header">
                 <div className="bbb-header-content">
-                    <h1 className="bbb-title">ARE-SELF</h1>
+                    <img
+                        src="/Are-SelfLogo-transparent.png"
+                        alt="Are-Self"
+                        className="bbb-logo"
+                    />
                     <p className="bbb-subtitle">Neurologically-Inspired AI Reasoning Engine</p>
                 </div>
             </div>
@@ -237,29 +241,29 @@ export function BloodBrainBarrier() {
             <div className="bbb-nav">
                 <h3 className="bbb-nav-title">Navigate</h3>
                 <div className="nav-buttons">
-                    <button className="nav-button" onClick={() => navigate('/identity')}>
-                        <Brain size={16} /> Identities
-                    </button>
-                    <button className="nav-button" onClick={() => navigate('/hypothalamus')}>
-                        <Zap size={16} /> Hypothalamus
+                    <button className="nav-button" onClick={() => navigate('/cns')}>
+                        <Network size={16} className="nav-icon nav-icon--cns" /> CNS
                     </button>
                     <button className="nav-button" onClick={() => navigate('/frontal')}>
-                        <TrendingUp size={16} /> Frontal Lobe
-                    </button>
-                    <button className="nav-button" onClick={() => navigate('/cns')}>
-                        <Network size={16} /> CNS
-                    </button>
-                    <button className="nav-button" onClick={() => navigate('/pfc')}>
-                        <LayoutGrid size={16} /> PFC
-                    </button>
-                    <button className="nav-button" onClick={() => navigate('/temporal')}>
-                        <Clock size={16} /> Temporal Lobe
+                        <TrendingUp size={16} className="nav-icon nav-icon--frontal" /> Frontal Lobe
                     </button>
                     <button className="nav-button" onClick={() => navigate('/hippocampus')}>
-                        <BookOpen size={16} /> Hippocampus
+                        <BookOpen size={16} className="nav-icon nav-icon--hippocampus" /> Hippocampus
+                    </button>
+                    <button className="nav-button" onClick={() => navigate('/hypothalamus')}>
+                        <Zap size={16} className="nav-icon nav-icon--hypothalamus" /> Hypothalamus
+                    </button>
+                    <button className="nav-button" onClick={() => navigate('/identity')}>
+                        <Brain size={16} className="nav-icon nav-icon--identities" /> Identities
+                    </button>
+                    <button className="nav-button" onClick={() => navigate('/pfc')}>
+                        <LayoutGrid size={16} className="nav-icon nav-icon--pfc" /> PFC
                     </button>
                     <button className="nav-button" onClick={() => navigate('/pns')}>
-                        <Activity size={16} /> PNS
+                        <Activity size={16} className="nav-icon nav-icon--pns" /> PNS
+                    </button>
+                    <button className="nav-button" onClick={() => navigate('/temporal')}>
+                        <Clock size={16} className="nav-icon nav-icon--temporal" /> Temporal Lobe
                     </button>
                 </div>
             </div>

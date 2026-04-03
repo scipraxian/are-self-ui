@@ -3,7 +3,7 @@
  * Utilizes the Synaptic Cleft (O² routing matrix) for zero-polling, real-time sync.
  */
 
-import React, {useEffect, useState, useMemo} from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
     AssistantRuntimeProvider,
     useLocalRuntime,
@@ -11,11 +11,13 @@ import {
     ThreadPrimitive,
     ComposerPrimitive,
     MessagePrimitive,
+    ChainOfThoughtPrimitive,
     type ChatModelAdapter,
     type ThreadMessage,
+    type ThreadAssistantMessagePart,
 } from '@assistant-ui/react';
-import {apiFetch} from '../api';
-import {useDendrite, type Neurotransmitter} from './SynapticCleft.tsx';
+import { apiFetch } from '../api';
+import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
 import './ThalamusChat.css'; // Reusing the glassmorphic styles
 
 // Assuming a standard REST structure for your session endpoints
@@ -23,68 +25,230 @@ import './ThalamusChat.css'; // Reusing the glassmorphic styles
 const getInteractUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/resume/`;
 const getMessagesUrl = (sessionId: string) => `/api/v2/reasoning_sessions/${sessionId}/messages/?volatile=true`;
 
-interface BackendMessage {
-    role: string;
-    content?: string;
+// ---------------------------------------------------------------------------
+// Local JSON type aliases — mirrors assistant-ui's ReadonlyJSONObject without
+// importing it (avoids a cross-package type drift).
+// ---------------------------------------------------------------------------
+type JSONPrimitive = string | number | boolean | null;
+type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue };
+type ReadonlyJSONObject = { readonly [key: string]: JSONValue };
+
+// ---------------------------------------------------------------------------
+// Backend shapes
+// ---------------------------------------------------------------------------
+
+export interface BackendToolCall {
+    id: string;
+    type: 'function';
+    function: {
+        name: string;
+        arguments: string | Record<string, JSONValue>;
+    };
+}
+
+export interface BackendMessagePart {
+    type: 'text' | 'reasoning' | 'tool-call' | 'tool-result';
     text?: string;
+    reasoning?: string;
+    toolCallId?: string;
+    toolName?: string;
+    args?: string | Record<string, JSONValue>;
+    result?: JSONValue;
+}
+
+export interface BackendMessage {
+    role: 'user' | 'assistant' | 'system' | 'tool';
+    content?: string | JSONValue;
+    text?: string;
+    parts?: BackendMessagePart[];
+    tool_calls?: BackendToolCall[];
+    tool_call_id?: string;
+    name?: string;
 }
 
 interface SynapseChatEvent extends Event {
     detail: Neurotransmitter;
 }
 
+// ---------------------------------------------------------------------------
+// Pure utility helpers
+// ---------------------------------------------------------------------------
+
+function getRawText(m: BackendMessage): string {
+    if (typeof m.content === 'string') return m.content;
+    if (typeof m.text === 'string') return m.text;
+    return '';
+}
+
+function parseArgsObject(args: string | Record<string, JSONValue> | undefined): ReadonlyJSONObject {
+    if (args === undefined || args === null) return {};
+    if (typeof args === 'string') {
+        try {
+            const parsed: unknown = JSON.parse(args);
+            if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return parsed as ReadonlyJSONObject;
+            }
+        } catch {
+            // ignore malformed JSON
+        }
+        return {};
+    }
+    return args as ReadonlyJSONObject;
+}
+
+function argsToText(args: string | Record<string, JSONValue> | undefined): string {
+    if (args === undefined || args === null) return '{}';
+    if (typeof args === 'string') return args;
+    return JSON.stringify(args);
+}
+
+function safeStringify(value: unknown): string {
+    if (typeof value === 'string') return value;
+    try {
+        return JSON.stringify(value, null, 2) ?? String(value);
+    } catch {
+        return String(value);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Content builder
+// Produces a strongly-typed ThreadAssistantMessagePart[] from a backend msg.
+// tool-result parts are merged into the result field of their paired tool-call.
+// ---------------------------------------------------------------------------
+
+function buildAssistantParts(m: BackendMessage, index: number): ThreadAssistantMessagePart[] {
+    const parts: ThreadAssistantMessagePart[] = [];
+
+    if (m.parts && m.parts.length > 0) {
+        // First pass: build parts and track tool-call indices by id so we can
+        // attach tool-result payloads in the same pass.
+        const toolCallIndexById = new Map<string, number>();
+
+        for (const p of m.parts) {
+            switch (p.type) {
+                case 'reasoning': {
+                    parts.push({ type: 'reasoning', text: p.reasoning ?? p.text ?? '' });
+                    break;
+                }
+                case 'text': {
+                    if (p.text) {
+                        parts.push({ type: 'text', text: p.text });
+                    }
+                    break;
+                }
+                case 'tool-call': {
+                    const tcId = p.toolCallId ?? `tc-${index}-${parts.length}`;
+                    toolCallIndexById.set(tcId, parts.length);
+                    parts.push({
+                        type: 'tool-call',
+                        toolCallId: tcId,
+                        toolName: p.toolName ?? 'unknown_tool',
+                        args: parseArgsObject(p.args),
+                        argsText: argsToText(p.args),
+                    });
+                    break;
+                }
+                case 'tool-result': {
+                    // Attach the result onto the matching tool-call part in-place.
+                    const tcId = p.toolCallId;
+                    if (tcId !== undefined) {
+                        const tcIdx = toolCallIndexById.get(tcId);
+                        if (tcIdx !== undefined) {
+                            const existing = parts[tcIdx];
+                            if (existing.type === 'tool-call') {
+                                parts[tcIdx] = {
+                                    ...existing,
+                                    result: p.result ?? p.text ?? '',
+                                };
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    } else {
+        const rawText = getRawText(m);
+        if (rawText) {
+            parts.push({ type: 'text', text: rawText });
+        }
+    }
+
+    // Append flat tool_calls (OpenAI-style) that exist outside of parts.
+    if (m.tool_calls) {
+        for (const tc of m.tool_calls) {
+            parts.push({
+                type: 'tool-call',
+                toolCallId: tc.id,
+                toolName: tc.function?.name ?? 'unknown_tool',
+                args: parseArgsObject(tc.function?.arguments),
+                argsText: argsToText(tc.function?.arguments),
+            });
+        }
+    }
+
+    return parts;
+}
+
+// ---------------------------------------------------------------------------
+// Thread history helpers
+// ---------------------------------------------------------------------------
+
 function getLastUserText(messages: readonly ThreadMessage[]): string {
     for (let i = messages.length - 1; i >= 0; i--) {
         const m = messages[i];
         if (m.role !== 'user') continue;
-        const content = m.content;
-        if (Array.isArray(content)) {
-            const textPart = content.find((p: { type?: string }) => p.type === 'text');
-            if (textPart && typeof (textPart as { text?: string }).text === 'string') {
-                return (textPart as { text: string }).text;
+        if (Array.isArray(m.content)) {
+            for (const part of m.content) {
+                if (part.type === 'text' && 'text' in part && typeof part.text === 'string') {
+                    return part.text;
+                }
             }
         }
-        if (typeof content === 'string') return content;
     }
     return '';
 }
 
-// FACTORY: Creates an adapter locked to a specific Session ID
+// ---------------------------------------------------------------------------
+// Model adapter
+// ---------------------------------------------------------------------------
+
 const createSessionModelAdapter = (sessionId: string): ChatModelAdapter => ({
-    async run({messages, abortSignal}) {
+    async run({ messages, abortSignal }): Promise<{ content: readonly ThreadAssistantMessagePart[] }> {
         const userText = getLastUserText(messages);
         if (!userText.trim()) {
-            return {content: [{type: 'text', text: '[No message to send.]'}]};
+            return { content: [{ type: 'text', text: '[No message to send.]' }] };
         }
 
         // 1. Post the new user message to the specific session
         const res = await apiFetch(getInteractUrl(sessionId), {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({reply: userText.trim()}),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reply: userText.trim() }),
             signal: abortSignal,
         });
 
         if (!res.ok) {
             try {
-                const errorData = await res.json();
-                return {content: [{type: 'text', text: `⚠️ ${errorData.message}`}]};
+                const errorData = await res.json() as { message?: string };
+                return { content: [{ type: 'text', text: `⚠️ ${errorData.message ?? 'Unknown error'}` }] };
             } catch {
-                return {content: [{type: 'text', text: `⚠️ Network error: ${res.status}`}]};
+                return { content: [{ type: 'text', text: `⚠️ Network error: ${res.status}` }] };
             }
         }
 
         // 2. Wait natively for the Synaptic Cleft to deliver this specific session's response
-        return new Promise((resolve) => {
+        return new Promise<{ content: readonly ThreadAssistantMessagePart[] }>((resolve) => {
             const eventName = `synapse_chat_message_${sessionId}`;
 
             const handleWsEvent = (e: Event) => {
                 const customEvent = e as SynapseChatEvent;
-                const v = customEvent.detail.vesicle;
+                const v = customEvent.detail.vesicle as BackendMessage | undefined;
 
-                if (v && v.role === 'assistant') {
+                if (v && (v.role === 'assistant' || v.role === 'tool')) {
                     window.removeEventListener(eventName, handleWsEvent);
-                    resolve({content: [{type: 'text', text: v.content}]});
+                    resolve({ content: buildAssistantParts(v, 0) });
                 }
             };
 
@@ -92,11 +256,85 @@ const createSessionModelAdapter = (sessionId: string): ChatModelAdapter => ({
 
             abortSignal?.addEventListener('abort', () => {
                 window.removeEventListener(eventName, handleWsEvent);
-                resolve({content: [{type: 'text', text: '[Cancelled.]'}]});
+                resolve({ content: [{ type: 'text', text: '[Cancelled.]' }] });
             });
         });
     },
 });
+
+// ---------------------------------------------------------------------------
+// UI components
+// ---------------------------------------------------------------------------
+
+const ChainOfThought: React.FC = () => (
+    <ChainOfThoughtPrimitive.Root className="thalamus-cot-root">
+        <ChainOfThoughtPrimitive.AccordionTrigger className="thalamus-cot-trigger">
+            <span>🤔 Thought Process</span>
+        </ChainOfThoughtPrimitive.AccordionTrigger>
+
+        <AuiIf condition={(s) => !s.chainOfThought.collapsed}>
+            <ChainOfThoughtPrimitive.Parts>
+                {({ part }) => {
+                    if (part.type !== 'reasoning') return null;
+                    const text =
+                        'reasoning' in part && typeof part.reasoning === 'string'
+                            ? part.reasoning
+                            : 'text' in part && typeof part.text === 'string'
+                                ? part.text
+                                : '';
+                    return (
+                        <div className="thalamus-cot-content">
+                            {text}
+                        </div>
+                    );
+                }}
+            </ChainOfThoughtPrimitive.Parts>
+        </AuiIf>
+    </ChainOfThoughtPrimitive.Root>
+);
+
+// Receives content as a prop — avoids the deprecated useMessage() hook and
+// the TS2339 "message does not exist on MessageState" error entirely.
+interface CustomMessageToolsProps {
+    content: readonly ThreadAssistantMessagePart[];
+}
+
+const CustomMessageTools: React.FC<CustomMessageToolsProps> = ({ content }) => (
+    <>
+        {content.map((part, idx) => {
+            if (part.type !== 'tool-call') return null;
+
+            // TypeScript has narrowed part to ToolCallMessagePart here.
+            // result is typed as unknown (the TResult generic default).
+            const hasResult = part.result !== undefined;
+
+            return (
+                <React.Fragment key={`${part.toolCallId}-${idx}`}>
+                    <div className="thalamus-tool-call">
+                        <div className="thalamus-tool-call-header">
+                            <span>⚙️</span>
+                            <span>{part.toolName}</span>
+                        </div>
+                        <pre className="thalamus-tool-call-args">
+                            {part.argsText}
+                        </pre>
+                    </div>
+
+                    {hasResult && (
+                        <div className="thalamus-tool-result">
+                            <div className="thalamus-tool-result-label">
+                                Tool Return Value
+                            </div>
+                            <div className="thalamus-tool-result-value">
+                                {safeStringify(part.result)}
+                            </div>
+                        </div>
+                    )}
+                </React.Fragment>
+            );
+        })}
+    </>
+);
 
 function SessionThreadInner() {
     return (
@@ -111,32 +349,43 @@ function SessionThreadInner() {
                     </div>
                 </AuiIf>
                 <ThreadPrimitive.Messages>
-                    {({message}) => (
-                        <div className={`thalamus-message thalamus-message--${message.role}`}>
-                            <MessagePrimitive.Root>
-                                <div className="thalamus-message-text">
-                                    <MessagePrimitive.Parts/>
-                                </div>
-                            </MessagePrimitive.Root>
-                        </div>
-                    )}
+                    {({ message }) => {
+                        // Narrowed cast: we only pass assistant content to CustomMessageTools,
+                        // and only when the role is actually 'assistant'.
+                        const assistantContent: readonly ThreadAssistantMessagePart[] =
+                            message.role === 'assistant'
+                                ? (message.content as readonly ThreadAssistantMessagePart[])
+                                : [];
+
+                        return (
+                            <div className={`thalamus-message thalamus-message--${message.role}`}>
+                                <MessagePrimitive.Root>
+                                    <div className="thalamus-message-text">
+                                        <MessagePrimitive.Parts
+                                            components={{ ChainOfThought }}
+                                        />
+                                        {message.role === 'assistant' && (
+                                            <CustomMessageTools content={assistantContent} />
+                                        )}
+                                    </div>
+                                </MessagePrimitive.Root>
+                            </div>
+                        );
+                    }}
                 </ThreadPrimitive.Messages>
+
                 <ThreadPrimitive.ViewportFooter className="thalamus-footer">
-                    <ThreadPrimitive.ScrollToBottom className="thalamus-scroll-btn"/>
+                    <ThreadPrimitive.ScrollToBottom className="thalamus-scroll-btn" />
                     <ComposerPrimitive.Root className="thalamus-composer">
                         <ComposerPrimitive.Input
                             className="thalamus-input"
                             placeholder="Message this session…"
                         />
                         <AuiIf condition={(s) => !s.thread.isRunning}>
-                            <ComposerPrimitive.Send className="thalamus-send">
-                                Send
-                            </ComposerPrimitive.Send>
+                            <ComposerPrimitive.Send className="thalamus-send">Send</ComposerPrimitive.Send>
                         </AuiIf>
                         <AuiIf condition={(s) => s.thread.isRunning}>
-                            <ComposerPrimitive.Cancel className="thalamus-cancel">
-                                Cancel
-                            </ComposerPrimitive.Cancel>
+                            <ComposerPrimitive.Cancel className="thalamus-cancel">Cancel</ComposerPrimitive.Cancel>
                         </AuiIf>
                     </ComposerPrimitive.Root>
                 </ThreadPrimitive.ViewportFooter>
@@ -145,7 +394,7 @@ function SessionThreadInner() {
     );
 }
 
-function SessionRuntimeProvider({sessionId, children}: { sessionId: string; children: React.ReactNode }) {
+function SessionRuntimeProvider({ sessionId, children }: { sessionId: string; children: React.ReactNode }) {
     const [initialMessages, setInitialMessages] = useState<ThreadMessage[]>([]);
     const [isSyncing, setIsSyncing] = useState(true);
 
@@ -158,9 +407,9 @@ function SessionRuntimeProvider({sessionId, children}: { sessionId: string; chil
             const vesicle = newChatPacket.vesicle;
 
             // THE CRITICAL CHECK: Does this message belong to this specific session?
-            if (vesicle && vesicle.session_id === sessionId) {
+            if (vesicle && (vesicle as Record<string, unknown>).session_id === sessionId) {
                 const eventName = `synapse_chat_message_${sessionId}`;
-                const event = new CustomEvent(eventName, {detail: newChatPacket});
+                const event = new CustomEvent(eventName, { detail: newChatPacket });
                 window.dispatchEvent(event);
             }
         }
@@ -177,29 +426,27 @@ function SessionRuntimeProvider({sessionId, children}: { sessionId: string; chil
                 const list = data.messages || [];
 
                 const formatted: ThreadMessage[] = list.map((m: BackendMessage, i: number) => {
-                    let text = typeof m.content === 'string' ? m.content : (m.text || '');
-
-                    // Render tool-call parts inline as readable text
-                    const parts = (m as Record<string, unknown>).parts as Array<Record<string, unknown>> | undefined;
-                    if (parts && Array.isArray(parts)) {
-                        for (const part of parts) {
-                            if (part.type === 'tool-call') {
-                                const toolName = part.toolName as string || 'unknown';
-                                const args = part.args as Record<string, unknown> || {};
-                                const argSummary = Object.entries(args)
-                                    .map(([k, v]) => `  ${k}: ${typeof v === 'string' ? v.slice(0, 120) : JSON.stringify(v).slice(0, 120)}`)
-                                    .join('\n');
-                                text += `\n[${toolName}]\n${argSummary}`;
-                            }
-                        }
+                    if (m.role === 'user') {
+                        const text = getRawText(m);
+                        return {
+                            id: `history-${i}-user`,
+                            role: 'user',
+                            content: [{ type: 'text', text }],
+                            createdAt: new Date(),
+                            metadata: { custom: {} },
+                            attachments: [],
+                        } as unknown as ThreadMessage;
                     }
 
+                    // assistant / system / tool — all rendered as assistant bubbles.
                     return {
-                        id: `history-${i}`,
-                        role: (m.role === 'assistant' || m.role === 'system' ? m.role : 'user'),
-                        content: [{type: 'text', text: text.trim()}],
+                        id: `history-${i}-assistant`,
+                        role: 'assistant',
+                        content: buildAssistantParts(m, i),
                         createdAt: new Date(),
-                        metadata: {}
+                        metadata: { custom: {} },
+                        attachments: [],
+                        status: { type: 'complete' },
                     } as unknown as ThreadMessage;
                 });
 
@@ -216,12 +463,12 @@ function SessionRuntimeProvider({sessionId, children}: { sessionId: string; chil
     }, [sessionId]);
 
     const adapter = useMemo(() => createSessionModelAdapter(sessionId), [sessionId]);
-    const runtime = useLocalRuntime(adapter, {initialMessages});
+    const runtime = useLocalRuntime(adapter, { initialMessages });
 
     if (isSyncing) {
         return (
-            <div className="thalamus-welcome">
-                <p>Syncing session memory...</p>
+            <div className="thalamus-welcome thalamus-welcome--syncing">
+                <p>Syncing session memory…</p>
             </div>
         );
     }
@@ -239,7 +486,7 @@ export interface SessionChatProps {
     onClose?: () => void;
 }
 
-export function SessionChat({sessionId, title = "SESSION OVERLAY", onClose}: SessionChatProps) {
+export function SessionChat({ sessionId, title = 'SESSION OVERLAY', onClose }: SessionChatProps): React.JSX.Element {
     return (
         <div className="thalamus-chat glass-panel">
             <div className="thalamus-chat-header">
@@ -247,7 +494,7 @@ export function SessionChat({sessionId, title = "SESSION OVERLAY", onClose}: Ses
                 {onClose && (
                     <button
                         type="button"
-                        className="bbb-close-btn"
+                        className="panel-close-btn"
                         onClick={onClose}
                         aria-label="Close chat"
                     >
@@ -257,7 +504,7 @@ export function SessionChat({sessionId, title = "SESSION OVERLAY", onClose}: Ses
             </div>
             <div className="thalamus-chat-body">
                 <SessionRuntimeProvider sessionId={sessionId}>
-                    <SessionThreadInner/>
+                    <SessionThreadInner />
                 </SessionRuntimeProvider>
             </div>
         </div>
