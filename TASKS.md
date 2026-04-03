@@ -4,25 +4,27 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Ship-Blocking
 
-- [ ] **Frontal Lobe node — identity_disc from context variable.** The CNS fires a spike into a Frontal Lobe neuron,
-  but `_initialize_session()` creates the ReasoningSession with `identity_disc=None`, then crashes at line 401.
-  Fix: read `identity_disc` UUID from the neuron's context variables (NeuronContext / spike blackboard) and pass it
-  into `ReasoningSession.objects.create()`. The CNSInspector context variable editor already supports adding/editing
-  variables, so the user pastes the disc UUID as a context var — no new dropdown UI needed. **Paired with backend task.**
 - [ ] **Session view — render tool calls in chat.** Local models often work silently (no assistant text, just tool use).
   The chat view shows nothing for these turns. Need to render tool call name, arguments, and results inline so the
-  conversation isn't invisible. Move "Tool details in chat views" from backlog to here — this is critical for usability.
-  Consider making the `thought` parameter required or improving system prompts so models explain actions.
-- [ ] **Root dashboard — performance.** Dashboard fetches full unpaginated lists just to count records. Create a
-  lightweight `/api/v2/stats/` endpoint (or per-model count endpoints) on the backend. Currently takes forever to load.
-- [ ] **Root dashboard — "begin play" filter.** Spikes with status id 1 ("Begin Play") still showing. Current filter
-  matches by name substring which missed it. Filter by status id instead.
+  conversation isn't invisible. Critical for usability. Consider making the `thought` parameter required or improving
+  system prompts so models explain actions. **Paired with backend task.**
+- [ ] **Session chat — messages not delivered or persisted.** Typing in the Thalamus chat window of a running Frontal
+  Lobe session does not deliver the message (swarm_message_queue not receiving). On page refresh, the typed message is
+  gone — not persisted as a ReasoningTurn. Two bugs: delivery + persistence. **Paired with backend task.**
+- [ ] **Root dashboard — "begin play" filter.** "Begin Play" spikes still showing. **NOTE:** `spike.status` is the
+  execution status (success/failed/running), NOT the effector type. "Begin Play" is an effector (effector_id /
+  effector_name). Filter must use `spike.effector_name` or `spike.effector_id`, not `spike.status`. The current
+  `spike.status !== 1` filter is WRONG and needs to be corrected.
+- [x] **Root dashboard — performance.** Wired to lightweight `GET /api/v2/stats/` endpoint (created 4/3).
+- [x] **Frontal Lobe node — identity_disc from context variable.** identity_disc now flows from NeuronContext to
+  ReasoningSession creation (fixed 4/3). `prompt` context variable injection still broken — see backend tasks.
 - [ ] **Shutdown / restart controls.** UI buttons or controls for clean system shutdown and restart. Backend scripts
   (`are-self-shutdown.bat`, `are-self-restart.bat`) need to be created first.
 
-## Next Up (Demo Feedback — April 2, 2026)
+## Next Up (Demo Feedback — April 3, 2026)
 
-rename Dashboard to BloodBrainBarrier (of which there was one at one time but now it's dashboard).
+- [ ] **Rename Dashboard to BloodBrainBarrier.** The old `dashboard/` Django app is being deprecated. The root route
+  UI component should be renamed from Dashboard to BloodBrainBarrier (BBB) — files, component names, CSS classes.
 
 - [ ] **PFC Edit page — scroll + crushed sections.** PFCEditPage.tsx/css needs `overflow-y: auto` on the container
   and proper flex sizing so accordion sections aren't crushed. Same pattern as the IdentitySheet scroll fix.
@@ -122,4 +124,4 @@ rename Dashboard to BloodBrainBarrier (of which there was one at one time but no
 - [x] **IdentityDisc addon editor (scaffold).** AddonEditor.tsx with inline CRUD. Needs expansion for full model fields.
 - [x] **IdentityDisc tool editor (scaffold).** ToolEditor.tsx with inline CRUD. Needs expansion for full model fields.
 - [x] **receptor_class convention documented.** Both CLAUDE.md files updated with explicit rules: brain regions for
-  manual signals, `sender.__name__` for Thalamus auto-signals, never internal ORM models or molecule types.
+  manua
