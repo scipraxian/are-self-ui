@@ -18,9 +18,9 @@ interface ReasoningSession extends Partial<ReasoningSessionData> {
 }
 
 interface SystemStats {
-    total_identities: number;
-    total_models: number;
-    active_sessions: number;
+    identity_disc_count: number;
+    ai_model_count: number;
+    reasoning_session_count: number;
 }
 
 const getStatusColor = (status: unknown): string => {
@@ -55,9 +55,9 @@ export function DashboardContent() {
     const [latestSpikes, setLatestSpikes] = useState<Spike[]>([]);
     const [latestSessions, setLatestSessions] = useState<ReasoningSession[]>([]);
     const [stats, setStats] = useState<SystemStats>({
-        total_identities: 0,
-        total_models: 0,
-        active_sessions: 0
+        identity_disc_count: 0,
+        ai_model_count: 0,
+        reasoning_session_count: 0
     });
 
     // Dendrite hooks for real-time updates
@@ -69,14 +69,12 @@ export function DashboardContent() {
 
         const fetchData = async () => {
             try {
-                // Fetch latest spikes — filter out "being play" status
+                // Fetch latest spikes — filter out "begin play" status (id: 1)
                 const spikesRes = await apiFetch('/api/v2/spikes/?ordering=-created');
                 if (spikesRes.ok && !cancelled) {
                     const data = await spikesRes.json();
                     const allSpikes: Spike[] = (data.results || data);
-                    const filtered = allSpikes.filter(s =>
-                        !(s.status_name ?? '').toLowerCase().includes('being play')
-                    );
+                    const filtered = allSpikes.filter(s => s.status !== 1);
                     setLatestSpikes(filtered.slice(0, 6));
                 }
 
@@ -87,28 +85,13 @@ export function DashboardContent() {
                     setLatestSessions((data.results || data).slice(0, 6));
                 }
 
-                // Fetch system stats — no global pagination, endpoints return plain arrays
-                const [identitiesRes, modelsRes, activeSessionsRes] = await Promise.all([
-                    apiFetch('/api/v2/identity-discs/'),
-                    apiFetch('/api/v2/ai-models/'),
-                    apiFetch('/api/v2/reasoning_sessions/')
-                ]);
-
-                if (!cancelled) {
-                    const countFrom = async (res: Response) => {
-                        if (!res.ok) return 0;
-                        const data = await res.json();
-                        // Paginated → data.count; unpaginated → array length
-                        return data.count ?? (Array.isArray(data) ? data.length : (data.results?.length ?? 0));
-                    };
-
-                    const [totalIdentities, totalModels, activeSessions] = await Promise.all([
-                        countFrom(identitiesRes),
-                        countFrom(modelsRes),
-                        countFrom(activeSessionsRes)
-                    ]);
-
-                    setStats({ total_identities: totalIdentities, total_models: totalModels, active_sessions: activeSessions });
+                // Fetch system stats via lightweight stats endpoint
+                const statsRes = await apiFetch('/api/v2/stats/');
+                if (statsRes.ok && !cancelled) {
+                    const data = await statsRes.json();
+                    setStats(data);
+                    setIsLoading(false);
+                } else if (!cancelled) {
                     setIsLoading(false);
                 }
             } catch (err) {
@@ -148,7 +131,7 @@ export function DashboardContent() {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Identities</p>
-                        <p className="stat-value">{stats.total_identities}</p>
+                        <p className="stat-value">{stats.identity_disc_count}</p>
                     </div>
                 </div>
 
@@ -158,7 +141,7 @@ export function DashboardContent() {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Models</p>
-                        <p className="stat-value">{stats.total_models}</p>
+                        <p className="stat-value">{stats.ai_model_count}</p>
                     </div>
                 </div>
 
@@ -168,7 +151,7 @@ export function DashboardContent() {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Sessions</p>
-                        <p className="stat-value">{stats.active_sessions}</p>
+                        <p className="stat-value">{stats.reasoning_session_count}</p>
                     </div>
                 </div>
             </div>

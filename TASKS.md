@@ -22,6 +22,8 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Next Up (Demo Feedback — April 2, 2026)
 
+rename Dashboard to BloodBrainBarrier (of which there was one at one time but now it's dashboard).
+
 - [ ] **PFC Edit page — scroll + crushed sections.** PFCEditPage.tsx/css needs `overflow-y: auto` on the container
   and proper flex sizing so accordion sections aren't crushed. Same pattern as the IdentitySheet scroll fix.
 - [ ] **Root dashboard — nav icons + missing endpoints.** Nav buttons need icons (consistent with hamburger menu
