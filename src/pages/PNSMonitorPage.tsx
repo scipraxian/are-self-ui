@@ -128,7 +128,10 @@ export function PNSMonitorPage() {
     return (
         <div className="pns-monitor-page">
             <div className="pns-monitor-header">
-                <span className="pns-monitor-header-title">Worker Monitor</span>
+                <span className="pns-monitor-header-title">
+                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    Worker Monitor
+                </span>
                 <span className="pns-monitor-header-count">
                     {count} worker{count !== 1 ? 's' : ''}
                 </span>

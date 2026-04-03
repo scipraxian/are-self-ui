@@ -431,6 +431,7 @@ export function CNSMonitorPage() {
                 (selectedSpike || selectedNeuron) ? (
                     <div className="cns-monitor-inspector">
                         <h4 className="cns-monitor-inspector-title font-display">
+                            <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
                             {selectedSpike ? 'Spike Detail' : 'Neuron Blueprint'}
                         </h4>
 

@@ -291,9 +291,9 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                 selection_filter_id: formState.selection_filter_id,
                 budget_id_write: formState.budget_id,
                 system_prompt_template: formState.system_prompt_template,
-                enabled_tools: formState.enabled_tool_ids,
-                addons: formState.addon_ids,
-                tags: formState.tag_ids,
+                enabled_tool_ids: formState.enabled_tool_ids,
+                addon_ids: formState.addon_ids,
+                tag_ids: formState.tag_ids,
             };
 
             const res = await apiFetch(endpoint, {

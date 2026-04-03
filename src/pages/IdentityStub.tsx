@@ -80,7 +80,10 @@ export function IdentityStub() {
         <ThreePanel
             left={
                 <>
-                    <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
+                    <h2 className="glass-panel-title">
+                        <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '20px', marginRight: '8px', verticalAlign: 'middle' }} />
+                        IDENTITY ROSTER
+                    </h2>
                     {!showCreateForm ? (
                         <button
                             className="btn-action identity-create-btn"

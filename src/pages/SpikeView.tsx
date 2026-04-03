@@ -111,6 +111,7 @@ export const SpikeView = ({ initialSpikeId }: SpikeViewProps) => {
         <div className="spikeview-root">
             <div className="spikeview-toolbar">
                 <div className="spikeview-title">
+                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
                     SPIKE TELEMETRY MATRIX
                 </div>
                 <button

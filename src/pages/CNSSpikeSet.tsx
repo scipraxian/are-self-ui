@@ -134,7 +134,10 @@ export function CNSSpikeSet() {
     return (
         <div className="spikeset-page">
             <div className="spikeset-header">
-                <span className="spikeset-header-title">Spike Set</span>
+                <span className="spikeset-header-title">
+                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '16px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    Spike Set
+                </span>
                 <span className="spikeset-header-count">{spikeIds.length} spike{spikeIds.length !== 1 ? 's' : ''}</span>
                 <div className="spikeset-mode-bar">
                     <button

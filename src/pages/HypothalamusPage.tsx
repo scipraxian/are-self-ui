@@ -871,6 +871,7 @@ export function HypothalamusPage() {
         <div className="hypothalamus-center">
             <div className="hypothalamus-center-header">
                 <span className="hypothalamus-center-title">
+                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '18px', marginRight: '8px', verticalAlign: 'middle' }} />
                     {tab === 'catalog' && `${filteredModels.length} Models`}
                     {tab === 'routing' && 'Routing Profiles'}
                     {tab === 'budgets' && 'Budget Definitions'}

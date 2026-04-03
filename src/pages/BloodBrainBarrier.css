@@ -40,15 +40,21 @@
 /* Header */
 .bbb-header {
     padding: 24px;
-    background: rgba(15, 15, 30, 0.7);
+    background: rgba(45, 50, 80, 0.85);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     flex-shrink: 0;
 }
 
 .bbb-header-content {
     max-width: 600px;
+}
+
+.bbb-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .bbb-logo {

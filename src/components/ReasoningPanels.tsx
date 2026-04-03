@@ -98,15 +98,16 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
 
     const handleDump = async () => {
         try {
-            const res = await fetch(`/api/v1/reasoning_sessions/${activeSessionId}/graph_data/`);
-            const data = await res.json();
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const res = await fetch(`/api/v1/reasoning_sessions/${activeSessionId}/summary_dump/`);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = dataStr;
-            a.download = `talos_cortex_dump_${activeSessionId}.json`;
+            a.href = url;
+            a.download = `session_summary_${String(activeSessionId).slice(0, 8)}.log`;
             document.body.appendChild(a);
             a.click();
             a.remove();
+            URL.revokeObjectURL(url);
         } catch (e) {
             console.error("Dump failed", e);
         }

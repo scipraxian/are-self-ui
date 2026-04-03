@@ -121,11 +121,14 @@ export function BloodBrainBarrier() {
             {/* Header */}
             <div className="bbb-header">
                 <div className="bbb-header-content">
-                    <img
-                        src="/Are-SelfLogo-transparent.png"
-                        alt="Are-Self"
-                        className="bbb-logo"
-                    />
+                    <div className="bbb-logo-row">
+                        <img
+                            src="/Are-SelfLogo-transparent.png"
+                            alt="Are-Self"
+                            className="bbb-logo"
+                        />
+                        <h1 className="bbb-title">ARE-SELF</h1>
+                    </div>
                     <p className="bbb-subtitle">Neurologically-Inspired AI Reasoning Engine</p>
                 </div>
             </div>

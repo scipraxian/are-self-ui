@@ -280,7 +280,10 @@ export function EnvironmentEditor() {
     const center = editingEnv ? (
         <div className="env-editor-detail glass-surface">
             <div className="env-editor-detail-header">
-                <h2 className="env-editor-detail-title">{editingEnv.name}</h2>
+                <h2 className="env-editor-detail-title">
+                    <img src="/Are-SelfLogo-transparent.png" alt="" style={{ height: '20px', marginRight: '8px', verticalAlign: 'middle' }} />
+                    {editingEnv.name}
+                </h2>
                 {!editingEnv.selected ? (
                     <button className="env-editor-btn-action" onClick={handleSetActive}>Set as Active</button>
                 ) : (
