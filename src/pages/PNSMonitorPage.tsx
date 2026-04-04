@@ -6,6 +6,7 @@ import { Activity } from 'lucide-react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { useTerminal } from '../hooks/useTerminal';
+import { SystemControlPanel } from '../components/SystemControlPanel';
 import type { NorepinephrineEvent } from '../types';
 
 interface TerminalPaneProps {
@@ -118,8 +119,11 @@ export function PNSMonitorPage() {
 
     if (workerHostnames.length === 0) {
         return (
-            <div className="pns-monitor-empty">
-                <p>No workers selected. Go to the fleet view and Shift+click workers to select them.</p>
+            <div className="pns-monitor-page">
+                <SystemControlPanel />
+                <div className="pns-monitor-empty">
+                    <p>No workers selected. Go to the fleet view and Shift+click workers to select them.</p>
+                </div>
             </div>
         );
     }
@@ -137,6 +141,7 @@ export function PNSMonitorPage() {
                     {count} worker{count !== 1 ? 's' : ''}
                 </span>
             </div>
+            <SystemControlPanel />
             <div className="pns-monitor-grid" data-count={count}>
                 {workerHostnames.slice(0, 4).map(hostname => (
                     <PNSTerminalPane

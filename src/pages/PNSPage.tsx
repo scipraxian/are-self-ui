@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useWorkerSet } from '../context/WorkerSetProvider';
 import { useDendrite } from '../components/SynapticCleft';
+import { SystemControlPanel } from '../components/SystemControlPanel';
 import { apiFetch } from '../api';
 import type { CeleryTask, NorepinephrineEvent } from '../types';
 
@@ -241,6 +242,8 @@ export function PNSPage() {
 
     return (
         <div className="pns-page">
+            <SystemControlPanel />
+
             <div className="pns-beat-bar">
                 <div className="pns-beat-status">
                     <span className={`pns-beat-dot ${beatRunning ? 'pns-beat-dot--active' : ''}`} />
