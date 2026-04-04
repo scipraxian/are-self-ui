@@ -114,6 +114,11 @@
     border-color: rgba(255, 255, 255, 0.3);
 }
 
+.custom-node-field-select option {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
 .custom-node-field-textarea {
     font-family: var(--font-mono, monospace);
     font-size: 0.7rem;

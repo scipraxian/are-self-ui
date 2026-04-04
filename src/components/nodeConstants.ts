@@ -8,6 +8,7 @@ export const EFFECTOR = {
     LOGIC_RETRY: 6,
     LOGIC_DELAY: 7,
     FRONTAL_LOBE: 8,
+    DEBUG: 9,
 } as const;
 
 /**
@@ -29,6 +30,7 @@ export const EFFECTOR_STYLE: Record<number, { color: string; label: string }> = 
     [EFFECTOR.LOGIC_RETRY]: { color: '#f59e0b', label: 'RETRY' },
     [EFFECTOR.LOGIC_DELAY]: { color: '#6366f1', label: 'DELAY' },
     [EFFECTOR.FRONTAL_LOBE]: { color: '#a855f7', label: 'FRONTAL' },
+    [EFFECTOR.DEBUG]: { color: '#22c55e', label: 'DEBUG' },
 };
 
 /**

@@ -273,20 +273,17 @@ export function CNSMonitorPage() {
     const [selectedNeuron, setSelectedNeuron] = useState<Neuron | null>(null);
     const [autoPan, setAutoPan] = useState(false);
 
-// Remove refetchTick state entirely
-// Remove the two dendrite useEffect blocks entirely
-
-// Real-time events — these change reference when a new event fires
+    // Real-time events — these change reference when a new event fires
     const spikeEvent = useDendrite('Spike', null);
     const trainEvent = useDendrite('SpikeTrain', null);
 
-// Single effect that refetches when spiketrainId OR any dendrite event changes
+    // Fetch the pathway blueprint ONCE when the spiketrainId changes.
+    // Pathways are blueprints — they don't change during execution.
     useEffect(() => {
         if (!spiketrainId) return;
-
         let cancelled = false;
 
-        const load = async () => {
+        const loadPathway = async () => {
             try {
                 const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
                 if (!res.ok || cancelled) return;
@@ -302,11 +299,33 @@ export function CNSMonitorPage() {
                 if (cancelled) return;
                 setPathway(pwData);
             } catch (err) {
-                console.error('Failed to fetch train/pathway', err);
+                console.error('Failed to fetch pathway', err);
             }
         };
 
-        load();
+        loadPathway();
+        return () => { cancelled = true; };
+    }, [spiketrainId]);
+
+    // Refetch ONLY the train (with nested spikes) on dendrite events.
+    // This is the hot path — spike status changes fire frequently during execution.
+    useEffect(() => {
+        if (!spiketrainId || !spikeEvent && !trainEvent) return;
+        let cancelled = false;
+
+        const refreshTrain = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
+                if (!res.ok || cancelled) return;
+                const trainData = (await res.json()) as SpikeTrain;
+                if (cancelled) return;
+                setTrain(trainData);
+            } catch (err) {
+                console.error('Failed to refresh train', err);
+            }
+        };
+
+        refreshTrain();
         return () => { cancelled = true; };
     }, [spiketrainId, spikeEvent, trainEvent]);
 

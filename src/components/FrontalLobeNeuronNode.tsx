@@ -26,13 +26,16 @@ export const FrontalLobeNeuronNode = ({ data, id }: { data: FrontalLobeNodeData;
 
     // Fetch available identity discs for the selector
     useEffect(() => {
-        apiFetch('/api/v1/identity-discs/')
+        let cancelled = false;
+        apiFetch('/api/v2/identity-discs/')
             .then(res => res.json())
             .then(json => {
+                if (cancelled) return;
                 const list = json.results || json;
                 setDiscs(Array.isArray(list) ? list : []);
             })
             .catch(() => {});
+        return () => { cancelled = true; };
     }, []);
 
     const promptVal = context.prompt || context.PROMPT || '';
@@ -53,25 +56,16 @@ export const FrontalLobeNeuronNode = ({ data, id }: { data: FrontalLobeNodeData;
                     <>
                         <div className="custom-node-field">
                             <span className="custom-node-field-label">DISC</span>
-                            {discs.length > 0 ? (
-                                <select
-                                    className="nodrag custom-node-field-select"
-                                    value={discVal}
-                                    onChange={e => updateContext('identity_disc', e.target.value)}
-                                >
-                                    <option value="">default</option>
-                                    {discs.map(d => (
-                                        <option key={d.id} value={d.name}>{d.name}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input
-                                    className="nodrag custom-node-field-input"
-                                    value={discVal}
-                                    placeholder="identity disc name"
-                                    onChange={e => updateContext('identity_disc', e.target.value)}
-                                />
-                            )}
+                            <select
+                                className="nodrag custom-node-field-select"
+                                value={discVal}
+                                onChange={e => updateContext('identity_disc', e.target.value)}
+                            >
+                                <option value="">— select disc —</option>
+                                {discs.map(d => (
+                                    <option key={d.id} value={String(d.id)}>{d.name}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="custom-node-field" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
                             <span className="custom-node-field-label">PROMPT</span>
