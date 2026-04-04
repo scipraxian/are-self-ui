@@ -1,5 +1,5 @@
 import './CNSMonitorPage.css';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Network } from 'lucide-react';
 import ReactFlow, {
@@ -277,11 +277,18 @@ export function CNSMonitorPage() {
     const spikeEvent = useDendrite('Spike', null);
     const trainEvent = useDendrite('SpikeTrain', null);
 
+    // Debounce ref: coalesce rapid dendrite events into a single refetch.
+    // Without this, every spike status change triggers an immediate GET, flooding
+    // the server during active execution.
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const trainTerminalRef = useRef(false);
+
     // Fetch the pathway blueprint ONCE when the spiketrainId changes.
     // Pathways are blueprints — they don't change during execution.
     useEffect(() => {
         if (!spiketrainId) return;
         let cancelled = false;
+        trainTerminalRef.current = false;
 
         const loadPathway = async () => {
             try {
@@ -290,6 +297,9 @@ export function CNSMonitorPage() {
                 const trainData = (await res.json()) as SpikeTrain;
                 if (cancelled) return;
                 setTrain(trainData);
+                if (isTerminalStatus(trainData.status_name)) {
+                    trainTerminalRef.current = true;
+                }
                 const pwId = String(trainData.pathway);
                 setPathwayId(pwId);
 
@@ -308,25 +318,32 @@ export function CNSMonitorPage() {
     }, [spiketrainId]);
 
     // Refetch ONLY the train (with nested spikes) on dendrite events.
-    // This is the hot path — spike status changes fire frequently during execution.
+    // Debounced: waits 500ms after the last event before fetching, coalescing
+    // rapid-fire spike status changes into a single request.
+    // Stops refetching once the train reaches terminal status.
     useEffect(() => {
-        if (!spiketrainId || !spikeEvent && !trainEvent) return;
-        let cancelled = false;
+        if (!spiketrainId || (!spikeEvent && !trainEvent)) return;
+        if (trainTerminalRef.current) return;
 
-        const refreshTrain = async () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        debounceRef.current = setTimeout(async () => {
             try {
                 const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
-                if (!res.ok || cancelled) return;
+                if (!res.ok) return;
                 const trainData = (await res.json()) as SpikeTrain;
-                if (cancelled) return;
                 setTrain(trainData);
+                if (isTerminalStatus(trainData.status_name)) {
+                    trainTerminalRef.current = true;
+                }
             } catch (err) {
                 console.error('Failed to refresh train', err);
             }
-        };
+        }, 500);
 
-        refreshTrain();
-        return () => { cancelled = true; };
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
     }, [spiketrainId, spikeEvent, trainEvent]);
 
     // Breadcrumbs — include parent context if we drilled from a parent train

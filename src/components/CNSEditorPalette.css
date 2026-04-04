@@ -26,6 +26,29 @@
     margin-bottom: 8px;
 }
 
+.cns-palette-search {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    color: var(--text-primary, #e2e8f0);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cns-palette-search:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.cns-palette-search::placeholder {
+    color: var(--text-muted, #64748b);
+}
+
 .cns-palette-scroll {
     overflow-y: auto;
     display: flex;

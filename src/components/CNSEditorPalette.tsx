@@ -34,6 +34,7 @@ const HIDDEN_EFFECTOR_IDS: ReadonlySet<number> = new Set([
 
 export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) => {
     const [items, setItems] = useState<LibraryItem[]>([]);
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
         if (!pathwayId) return;
@@ -43,8 +44,11 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
             .catch(console.error);
     }, [pathwayId]);
 
-    const effectors = items.filter(i => i.category === 'Spells' && !HIDDEN_EFFECTOR_IDS.has(Number(i.id)));
-    const subGraphs = items.filter(i => i.category === 'Sub-Graphs');
+    const query = search.toLowerCase();
+    const matchesSearch = (item: LibraryItem) => !query || item.name.toLowerCase().includes(query);
+
+    const effectors = items.filter(i => i.category === 'Spells' && !HIDDEN_EFFECTOR_IDS.has(Number(i.id)) && matchesSearch(i));
+    const subGraphs = items.filter(i => i.category === 'Sub-Graphs' && matchesSearch(i));
 
     const logicNodes = effectors.filter(i => LOGIC_EFFECTOR_IDS.has(Number(i.id)));
     const reasoningNodes = effectors.filter(i => REASONING_EFFECTOR_IDS.has(Number(i.id)));
@@ -77,13 +81,20 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
     return (
         <div className="cns-palette-root">
             <div className="common-layout-3">
-                <h2 className="glass-panel-title common-layout-4">ACTION PALETTE</h2>
+                <h2 className="glass-panel-title common-layout-4">EFFECTORS</h2>
                 {onBack && (
                     <button onClick={onBack} className="bbb-close-btn common-layout-5">
                         ✕
                     </button>
                 )}
             </div>
+            <input
+                className="cns-palette-search"
+                type="text"
+                placeholder="Search effectors..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+            />
             <div className="cns-palette-scroll">
                 {logicNodes.length > 0 && (
                     <div>

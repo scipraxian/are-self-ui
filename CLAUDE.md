@@ -466,7 +466,7 @@ Each maps to a fixture-defined effector PK that is stable and can be depended up
 ### Architecture
 
 **Constants file:** `src/components/nodeConstants.ts` — single source of truth for:
-- `EFFECTOR` — canonical PK constants (BEGIN_PLAY=1, LOGIC_GATE=5, LOGIC_RETRY=6, LOGIC_DELAY=7, FRONTAL_LOBE=8)
+- `EFFECTOR` — canonical PK constants (BEGIN_PLAY=1, LOGIC_GATE=5, LOGIC_RETRY=6, LOGIC_DELAY=7, FRONTAL_LOBE=8, DEBUG=9)
 - `EFFECTOR_NODE_TYPE` — maps PK → ReactFlow node type string (e.g., 5 → 'gateNode')
 - `EFFECTOR_STYLE` — maps PK → `{color, label}` for visual identity
 - `EFFECTOR_DEFAULTS` — maps PK → default NeuronContext key/value pairs posted on drop
@@ -501,6 +501,12 @@ with sensible defaults (e.g., gate_operator='exists', max_retries='3').
 `NeuronMonitorNode.tsx` receives `effectorId` from `CNSMonitorPage.tsx` and uses `EFFECTOR_STYLE`
 + a local `EFFECTOR_ICON` map for visual consistency between editor and viewer. The monitor shows
 type badge, accent color, and icon alongside the standard spike status indicators.
+
+**Polling fix:** `CNSMonitorPage.tsx` debounces dendrite-triggered refetches with a 500ms coalesce
+window (via `useRef` + `setTimeout`). Rapid spike status changes during execution are batched into
+a single GET request. Once the train reaches terminal status, refetching stops entirely via a
+`trainTerminalRef`. This prevents the "polls over and over" flood observed when `useDendrite('Spike', null)`
+fires for every spike globally.
 
 ### Backend Mirror
 
@@ -548,11 +554,12 @@ WAV/MP3 results, modality indicator on Identity Loadout showing what each disc i
 (art, audio, code). Generation effector node (awaiting backend PoC).
 
 **What's in progress:** See TASKS.md. Key items: reasoning view rethink, graph editor right-click
-context menu, temporal URL-driven selection. Recently completed (Session 5): 4 custom neuron node
-components (Gate, Retry, Delay, Frontal Lobe) with inline editing and PK-based type resolution.
-CNSEditor and NeuronMonitorNode updated for effector-aware visuals in both editor and viewer.
-Session 4: EnvironmentEditor "+ Key" button. Earlier: tool call rendering overhaul, addon/tool
-editor expansion, Identity scroll fix, SelectionFilter/Budget click-throughs to Hypothalamus.
+context menu, temporal URL-driven selection, shutdown/restart controls (ship-blocker). Recently
+completed (Session 6): effector palette overhaul (grouped/colored/searchable, renamed to EFFECTORS),
+Frontal Lobe identity disc dropdown, gate CSS fix, run button → spike train navigation, spike train
+polling fix (debounced dendrite events), debug node frontend constants. Session 5: 4 custom neuron
+node components (Gate, Retry, Delay, Frontal Lobe) with inline editing and PK-based type resolution.
+Session 4: EnvironmentEditor "+ Key" button.
 
 **Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
 internal references may still use old naming. The backend CLAUDE.md has the full naming sweep

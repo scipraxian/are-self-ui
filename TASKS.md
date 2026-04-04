@@ -29,8 +29,10 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
 - [x] **Root dashboard — performance.** Wired to lightweight `GET /api/v2/stats/` endpoint (created 4/3).
 - [x] **Frontal Lobe node — identity_disc from context variable.** identity_disc now flows from NeuronContext to
   ReasoningSession creation (fixed 4/3). `prompt` context variable injection still broken — see backend tasks.
-- [ ] **Shutdown / restart controls.** UI buttons or controls for clean system shutdown and restart. Backend scripts
-  (`are-self-shutdown.bat`, `are-self-restart.bat`) need to be created first.
+- [ ] **Shutdown / restart controls.** ⚠️ SHIP-BLOCKER. UI buttons or controls for clean system shutdown and restart.
+  Backend scripts (`are-self-shutdown.bat`, `are-self-restart.bat`) need to be created first. Without this, developers
+  must manually kill/restart Celery workers when deploying code changes — stale workers run old native handlers and
+  produce confusing errors (e.g., "No handler found for slug: debug_node").
 
 ## Next Up (Demo Feedback — April 3, 2026)
 
@@ -126,6 +128,25 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
 - [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.
+
+## Recently Completed (April 4, 2026 — Session 6)
+
+- [x] **Effector palette overhaul.** Renamed "ACTION PALETTE" → "EFFECTORS". Items grouped by role:
+  Logic (teal), Reasoning (purple), Effectors (gray), Pathways (blue). Each canonical item gets colored
+  left border + accent dot from `EFFECTOR_STYLE`. Begin Play hidden via `HIDDEN_EFFECTOR_IDS`. Search
+  input filters all sections by name.
+- [x] **Frontal Lobe node — identity disc dropdown.** Changed from free text input to `<select>` dropdown
+  fetching from `/api/v2/identity-discs/`. Stores disc ID instead of name. Removed free text fallback.
+- [x] **Gate dropdown CSS fix.** Dark theme `option` styling (white on dark background) in `CustomNeuronNodes.css`.
+- [x] **Run button → spike train navigation.** `CNSEditor.tsx` `handleRunNode` now calls `onLaunch` callback
+  with the new SpikeTrain ID from the launch response. Both `CNSEditPage` and `CNSEditStub` wire
+  `onLaunch={(trainId) => navigate('/cns/spiketrain/' + trainId)}`.
+- [x] **Spike train polling fix — debounced dendrite events.** `CNSMonitorPage.tsx` refetch effect now
+  debounces rapid spike/train dendrite events with a 500ms coalesce window. Stops refetching entirely
+  once the train reaches terminal status (SUCCESS/FAILED/STOPPED). Fixes the "polls over and over"
+  HTTP GET flood during active execution.
+- [x] **Debug node (PK 9) — frontend constants.** Added `DEBUG: 9` to `EFFECTOR` in `nodeConstants.ts`
+  with green color `#22c55e` in `EFFECTOR_STYLE`.
 
 ## Recently Completed (April 4, 2026 — Session 5)
 

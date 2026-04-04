@@ -20,6 +20,8 @@ interface CNSEditorProps {
     pathwayId: string;
     onDrillDown?: (pathwayId: string) => void;
     onNodeSelect?: (node: any) => void;
+    /** Called after a successful launch with the new SpikeTrain ID. */
+    onLaunch?: (spikeTrainId: string) => void;
     /**
      * When true, the editor runs in "monitor" mode:
      * - nodes and edges are read-only
@@ -43,6 +45,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
     pathwayId,
     onDrillDown,
     onNodeSelect,
+    onLaunch,
     isMonitorMode = false,
 }) => {
     const [selectedNode, setSelectedNode] = useState<Neuron | null>(null);
@@ -153,15 +156,17 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
         apiFetch(`/api/v2/neuralpathways/${pathwayId}/launch/`, { method: 'POST' })
             .then(async (res) => {
                 if (res.ok) {
-                    // The backend successfully created the SpikeTrain!
-                    alert("Pathway Launched Successfully! Switch to the CNS View to monitor execution.");
+                    const data = await res.json();
+                    if (onLaunch && data.id) {
+                        onLaunch(data.id);
+                    }
                 } else {
                     const err = await res.json();
-                    alert("Launch Failed: " + (err.error || JSON.stringify(err)));
+                    console.error('Launch failed:', err);
                 }
             })
             .catch(err => console.error("Failed to run pathway", err));
-    }, [pathwayId]);
+    }, [pathwayId, onLaunch]);
 
     const handleStopNode = useCallback((_nodeId: string) => {
         // Pathways are blueprints, so we must stop the specific SpikeTrain instance
