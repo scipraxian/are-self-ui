@@ -201,6 +201,32 @@
     gap: 10px;
 }
 
+.env-editor-key-form {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    padding: 8px 0;
+}
+
+.env-editor-key-input {
+    flex: 1;
+}
+
+.env-editor-key-select-wrapper {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.env-editor-key-select-wrapper select {
+    flex: 1;
+}
+
+.env-editor-btn-inline {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .env-editor-contexts-header {
     display: flex;
     align-items: center;
