@@ -25,6 +25,11 @@ consumes the DRF API.
 **Mission:** Empower underprivileged youth in remote areas with free access to AI technology.
 MIT licensed. The interface must be approachable, intuitive, and beautiful.
 
+**Target user:** A 10-year-old with no money (or their grandma). Every design decision flows
+from this. If it requires a credit card, a powerful GPU, or a CS degree — it's wrong. The
+system must run on whatever hardware they have, use free models, and be approachable enough
+that a child can make art and games with it.
+
 ## The Complete App Flow
 
 Every UI view exists to support this lifecycle. Build the wrong flow, build the wrong thing.
