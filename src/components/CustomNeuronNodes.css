@@ -1,0 +1,210 @@
+/* ─── Shared structure for all custom neuron nodes ─── */
+
+.custom-node {
+    width: 270px;
+    position: relative;
+    color: var(--text-primary);
+    padding: 0;
+    border-radius: 15px;
+    border: 1px solid var(--border-glass);
+    background: var(--bg-obsidian, #0f172a);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.custom-node-header {
+    padding: 10px 14px;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.custom-node-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.custom-node-header-icon {
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 4px currentColor);
+}
+
+.custom-node-header-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-node-header-id {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.custom-node-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ─── Inline editable fields ─── */
+
+.custom-node-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.custom-node-field-label {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    min-width: 50px;
+}
+
+.custom-node-field-input {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    padding: 3px 6px;
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.custom-node-field-input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.custom-node-field-select {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    padding: 3px 6px;
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    cursor: pointer;
+}
+
+.custom-node-field-select:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-node-field-textarea {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    padding: 4px 6px;
+    width: 100%;
+    min-height: 36px;
+    max-height: 60px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.3;
+}
+
+.custom-node-field-textarea:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Ports (reuse NeuronNode handle styles) ─── */
+
+.custom-node-ports {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.custom-node-port-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    height: 16px;
+}
+
+.custom-node-port-label {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.custom-node-port-label--flow { color: var(--accent-blue, #38bdf8); }
+.custom-node-port-label--success { color: var(--accent-green, #10b981); }
+.custom-node-port-label--fail { color: var(--accent-red, #ef4444); }
+.custom-node-port-label--input { color: var(--text-muted, #94a3b8); }
+
+.custom-node-outputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+/* Handle styles matching existing NeuronNode */
+.custom-node-handle {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-obsidian, #0f172a);
+    z-index: 10;
+}
+
+.custom-node-handle--in {
+    background: #94a3b8;
+    left: -23px;
+}
+
+.custom-node-handle--flow {
+    background: var(--accent-blue, #38bdf8);
+    right: -23px;
+}
+
+.custom-node-handle--success {
+    background: var(--accent-green, #10b981);
+    right: -23px;
+}
+
+.custom-node-handle--fail {
+    background: var(--accent-red, #ef4444);
+    right: -23px;
+}
+
+/* ─── Read-only mode (monitor) ─── */
+
+.custom-node--readonly .custom-node-field-input,
+.custom-node--readonly .custom-node-field-select,
+.custom-node--readonly .custom-node-field-textarea {
+    pointer-events: none;
+    opacity: 0.7;
+    border-color: transparent;
+    background: transparent;
+}

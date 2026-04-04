@@ -4,11 +4,14 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Top Priority — Image & Audio Manipulation
 
-The next major push is **image and audio manipulation capabilities**. IdentityDiscs should be "attuned" to
-these modalities — dedicated personas with tool sets, addons, and routing profiles for visual and audio tasks.
-Frontend implications: tool editors may need modality-specific UX (e.g., image preview in tool results,
-audio waveform rendering), and the Identity Loadout tab may need a "capabilities" or "modality" indicator
-showing what each disc is attuned to. Hypothalamus routing filters may need multimodal model awareness.
+Image and audio generation are **CNS effectors** (not Parietal Lobe tools). The artist LLM writes a prompt
+to the blackboard, a generation effector calls an external service, the result path goes back on the
+blackboard. This decouples Are-Self from any specific backend (InvokeAI, ComfyUI, etc.).
+
+Frontend implications: the CNS monitoring views already show effector execution. New needs: image preview
+in spike forensics when the effector result is an image path, audio playback widget for WAV/MP3 results,
+and potentially a "modality" indicator on Identity Loadout showing what each disc is attuned to (art,
+audio, code). The Effector Editor (backend task) will need a frontend counterpart.
 
 ## Ship-Blocking
 
@@ -48,6 +51,22 @@ showing what each disc is attuned to. Hypothalamus routing filters may need mult
   and rest of app). Missing endpoints: CNS, Frontal Lobe is there now but verify full coverage. Use lucide-react icons.
 - [X] **Root dashboard — logo placement.** `Are-SelfLogo-transparent-04022026.png` in the dashboard header and other
   logical locations (nav bar, login page if applicable). File is SVG-friendly, can resize freely.
+- [x] **Neural Pathway Graph Editor — custom node visuals (Session 5).** 4 specialized ReactFlow node components
+  built, each with unique Unreal Engine blueprint-style visuals (solid colored headers, lucide-react icons),
+  inline editing via `useNeuronContext` hook, and PK-based type resolution from `nodeConstants.ts`:
+  - **Gate node** (`GateNeuronNode.tsx`): Teal (#06b6d4), GitBranch icon. Editable key/operator/value.
+    Ports: IN → PASS/FAIL. Effector PK 5.
+  - **Retry node** (`RetryNeuronNode.tsx`): Amber (#f59e0b), RotateCw icon. Editable max_retries/delay.
+    Ports: IN → PASS/FAIL. Effector PK 6.
+  - **Delay node** (`DelayNeuronNode.tsx`): Indigo (#6366f1), Clock icon. Editable delay seconds.
+    Ports: IN → OUT. Effector PK 7.
+  - **Frontal Lobe node** (`FrontalLobeNeuronNode.tsx`): Purple (#a855f7), Brain icon. Identity disc
+    selector (fetches from API) + prompt textarea. Ports: IN → PASS/FAIL. Effector PK 8.
+  CNSEditor.tsx updated to use PK-based matching (`EFFECTOR_NODE_TYPE` from `nodeConstants.ts`) instead of
+  old executable slug matching. Default NeuronContext values posted on drop for logic nodes (`EFFECTOR_DEFAULTS`).
+  NeuronMonitorNode.tsx enhanced with effector-type-aware accent colors and icons for visual consistency
+  in the spike train viewer. Old `LogicNeuronNode.tsx/css` and `FrontalLobeNeuronNode.css` deleted.
+  **Remaining:** Generation effector node (awaiting backend PoC).
 - [ ] **Neural Pathway Graph Editor — right-click context menu.** Demo feedback: "in Unreal you can right-click."
   Add right-click functionality with search of available items (neurons, effectors) for adding to the pathway.
   Backend already supports the item catalog — this is a frontend UX feature.
@@ -107,6 +126,31 @@ showing what each disc is attuned to. Hypothalamus routing filters may need mult
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
 - [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.
+
+## Recently Completed (April 4, 2026 — Session 5)
+
+- [x] **4 custom neuron node components.** Gate, Retry, Delay, Frontal Lobe — each with unique visuals,
+  inline editing, and shared infrastructure (`useNeuronContext.ts` hook, `CustomNeuronNodes.css`,
+  `nodeConstants.ts` constants). See task description above for full details.
+- [x] **Canonical effector PK architecture (frontend).** `nodeConstants.ts` exports `EFFECTOR` PKs (1, 5, 6, 7, 8),
+  `EFFECTOR_NODE_TYPE` (PK → ReactFlow type string), `EFFECTOR_STYLE` (PK → color/label), and
+  `EFFECTOR_DEFAULTS` (PK → default NeuronContext values). All node type resolution now uses PK matching,
+  not executable slug matching.
+- [x] **CNSEditor.tsx PK-based wiring.** Removed old `EXECUTABLE_NODE_TYPE` slug map. Node type resolution
+  uses `EFFECTOR_NODE_TYPE[neuron.effector]`. On drop, default context values from `EFFECTOR_DEFAULTS` are
+  POSTed to `/api/v1/node-contexts/`. All 4 custom + 1 generic node types registered.
+- [x] **NeuronMonitorNode effector awareness.** Monitor nodes now show effector-type icons (GitBranch, RotateCw,
+  Clock, Brain) and accent colors from `EFFECTOR_STYLE`. Type badge shows label (GATE, RETRY, DELAY, FRONTAL).
+  `effectorId` passed through from `CNSMonitorPage.tsx`.
+- [x] **Frontal Lobe effector PK moved from 171 to 8.** Consistent with other canonical PKs (5, 6, 7).
+  Updated in `nodeConstants.ts`, backend `models.py`, and fixture.
+- [x] **Old files cleaned up.** Deleted `LogicNeuronNode.tsx`, `LogicNeuronNode.css`, `FrontalLobeNeuronNode.css`.
+
+## Recently Completed (April 4, 2026 — Session 4)
+
+- [x] **EnvironmentEditor — "+ Key" button.** Added inline creation of new context variable keys.
+  POSTs to `/api/v2/context-keys/`, auto-selects new key after creation. CSS in EnvironmentEditor.css
+  with `env-editor-*` class convention.
 
 ## Recently Completed (April 3, 2026 — Session 3)
 

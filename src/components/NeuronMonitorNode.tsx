@@ -1,11 +1,13 @@
 import './NeuronMonitorNode.css';
 import { Handle, Position } from 'reactflow';
-import { Network } from 'lucide-react';
+import { Network, GitBranch, RotateCw, Clock, Brain } from 'lucide-react';
+import { EFFECTOR_STYLE } from './nodeConstants';
 import type { Spike } from '../types';
 
 interface NeuronMonitorData {
     label: string;
     effectorName: string | null;
+    effectorId?: number | null;
     is_root?: boolean;
     invoked_pathway_name?: string | null;
     invoked_pathway_id?: number | string | null;
@@ -20,6 +22,14 @@ const statusClasses: Record<string, string> = {
     success: 'neuron-monitor--success',
     failed: 'neuron-monitor--failed',
     pending: 'neuron-monitor--pending',
+};
+
+/** Pick the right icon component for a known effector type */
+const EFFECTOR_ICON: Record<number, typeof GitBranch> = {
+    5: GitBranch,   // Gate
+    6: RotateCw,    // Retry
+    7: Clock,       // Delay
+    8: Brain,       // Frontal Lobe
 };
 
 function formatDuration(created: string, modified: string): string {
@@ -38,11 +48,19 @@ function formatDuration(created: string, modified: string): string {
 export const NeuronMonitorNode = ({ data }: { data: NeuronMonitorData }) => {
     const statusClass = statusClasses[data.spikeStatus] || statusClasses.unrun;
     const isRoot = !!data.is_root;
-
     const hasSubGraph = !!data.invoked_pathway_id;
 
+    // Effector-type-aware accent
+    const effId = data.effectorId;
+    const style = effId ? EFFECTOR_STYLE[effId] : undefined;
+    const IconComponent = effId ? EFFECTOR_ICON[effId] : undefined;
+    const accentColor = style?.color;
+
     return (
-        <div className={`neuron-monitor-node ${statusClass}${hasSubGraph ? ' neuron-monitor--subgraph' : ''}`}>
+        <div
+            className={`neuron-monitor-node ${statusClass}${hasSubGraph ? ' neuron-monitor--subgraph' : ''}`}
+            style={accentColor ? { '--monitor-accent': accentColor } as React.CSSProperties : undefined}
+        >
             {!isRoot && (
                 <Handle type="target" position={Position.Left} id="in" className="neuron-monitor-handle neuron-monitor-handle--in" />
             )}
@@ -54,15 +72,23 @@ export const NeuronMonitorNode = ({ data }: { data: NeuronMonitorData }) => {
             )}
 
             <div className="neuron-monitor-body">
-                <div className="neuron-monitor-label">
+                <div className="neuron-monitor-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {IconComponent && (
+                        <IconComponent size={13} style={{ color: accentColor, flexShrink: 0 }} />
+                    )}
                     {data.label}
                 </div>
+                {style && (
+                    <div className="neuron-monitor-type-badge" style={{ color: accentColor }}>
+                        {style.label}
+                    </div>
+                )}
                 {data.spike && (
                     <div className="neuron-monitor-timing">
                         {formatDuration(data.spike.created, data.spike.modified)}
                     </div>
                 )}
-                {data.effectorName && data.effectorName !== data.label && (
+                {data.effectorName && data.effectorName !== data.label && !style && (
                     <div className="neuron-monitor-effector">{data.effectorName}</div>
                 )}
             </div>

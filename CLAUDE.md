@@ -458,6 +458,56 @@ navigate(`/cns/spiketrain/${childTrainId}`, {
 Read it back with `useLocation().state` and build breadcrumbs that include the parent chain.
 When opened fresh (no navigation state), show the shorter breadcrumb — that's correct.
 
+## Custom Neuron Nodes (CNS Graph Editor)
+
+The CNS graph editor uses specialized ReactFlow node components for canonical effector types.
+Each maps to a fixture-defined effector PK that is stable and can be depended upon.
+
+### Architecture
+
+**Constants file:** `src/components/nodeConstants.ts` — single source of truth for:
+- `EFFECTOR` — canonical PK constants (BEGIN_PLAY=1, LOGIC_GATE=5, LOGIC_RETRY=6, LOGIC_DELAY=7, FRONTAL_LOBE=8)
+- `EFFECTOR_NODE_TYPE` — maps PK → ReactFlow node type string (e.g., 5 → 'gateNode')
+- `EFFECTOR_STYLE` — maps PK → `{color, label}` for visual identity
+- `EFFECTOR_DEFAULTS` — maps PK → default NeuronContext key/value pairs posted on drop
+
+**Shared hook:** `src/components/useNeuronContext.ts` — fetches and edits NeuronContext for a neuron.
+Used by all custom nodes. Pattern: fetch from `/api/v1/neurons/{id}/inspector_details/` on mount,
+update via search-then-create/patch/delete on `/api/v1/node-contexts/`. Dispatches
+`cns-context-changed` CustomEvent for inspector panel sync.
+
+**Shared CSS:** `src/components/CustomNeuronNodes.css` — Unreal Engine blueprint-style structural
+CSS used by all 4 custom nodes. Solid colored headers, dark bodies, inline editable fields,
+port layout matching existing NeuronNode handle sizes. Uses `--readonly` modifier class.
+
+### Node Components
+
+| Component | Effector PK | Color | Icon | Editable Fields |
+|-----------|-------------|-------|------|-----------------|
+| `GateNeuronNode.tsx` | 5 | Teal (#06b6d4) | GitBranch | gate_key, gate_operator, gate_value |
+| `RetryNeuronNode.tsx` | 6 | Amber (#f59e0b) | RotateCw | max_retries, retry_delay |
+| `DelayNeuronNode.tsx` | 7 | Indigo (#6366f1) | Clock | delay |
+| `FrontalLobeNeuronNode.tsx` | 8 | Purple (#a855f7) | Brain | identity_disc (select), prompt (textarea) |
+
+### Type Resolution
+
+`CNSEditor.tsx` resolves node types via `EFFECTOR_NODE_TYPE[neuron.effector]`, falling back to
+generic `'neuron'` type. This replaces the old executable slug matching. On drop, default context
+values from `EFFECTOR_DEFAULTS` are POSTed to `/api/v1/node-contexts/` so new logic nodes start
+with sensible defaults (e.g., gate_operator='exists', max_retries='3').
+
+### Monitor View
+
+`NeuronMonitorNode.tsx` receives `effectorId` from `CNSMonitorPage.tsx` and uses `EFFECTOR_STYLE`
++ a local `EFFECTOR_ICON` map for visual consistency between editor and viewer. The monitor shows
+type badge, accent color, and icon alongside the standard spike status indicators.
+
+### Backend Mirror
+
+Python constants in `central_nervous_system/models.py` (`Effector.BEGIN_PLAY`, `.LOGIC_GATE`, etc.)
+mirror the TypeScript constants. Fixture PKs are stable — never change an existing canonical PK.
+The Frontal Lobe was moved from PK 171 to PK 8 in Session 5 for consistency with the 5-8 range.
+
 ## Dependencies
 - `react-force-graph-3d` + `three` — 3D force graph (Frontal Lobe)
 - `reactflow` — Graph editor (CNS)
@@ -492,15 +542,17 @@ Temporal → PFC → CNS → Frontal → Hippocampus. Real-time updates via useD
 Hypothalamus model catalog with sync, pull, routing, and budget tabs. All navigation is
 URL-driven and bookmarkable.
 
-**Top priority:** Image and audio manipulation capabilities. IdentityDiscs "attuned" to visual
-and audio modalities. Frontend implications: modality indicators on Identity Loadout, potential
-image preview in tool results, audio waveform rendering in session chat.
+**Top priority:** Image and audio manipulation capabilities via CNS effectors. Frontend implications:
+image preview in spike forensics when effector result is an image path, audio playback widget for
+WAV/MP3 results, modality indicator on Identity Loadout showing what each disc is attuned to
+(art, audio, code). Generation effector node (awaiting backend PoC).
 
-**What's in progress:** See TASKS.md. Key items: reasoning view rethink, graph editor
-right-click context menu, temporal URL-driven selection. Recently completed: tool call rendering
-overhaul (thought extraction, structured args, collapsible results), addon/tool editor expansion
-(full field coverage), Identity scroll fix, SelectionFilter/Budget click-throughs to Hypothalamus,
-deprecated ModelProvider/ModelRegistry removal from backend.
+**What's in progress:** See TASKS.md. Key items: reasoning view rethink, graph editor right-click
+context menu, temporal URL-driven selection. Recently completed (Session 5): 4 custom neuron node
+components (Gate, Retry, Delay, Frontal Lobe) with inline editing and PK-based type resolution.
+CNSEditor and NeuronMonitorNode updated for effector-aware visuals in both editor and viewer.
+Session 4: EnvironmentEditor "+ Key" button. Earlier: tool call rendering overhaul, addon/tool
+editor expansion, Identity scroll fix, SelectionFilter/Budget click-throughs to Hypothalamus.
 
 **Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
 internal references may still use old naming. The backend CLAUDE.md has the full naming sweep

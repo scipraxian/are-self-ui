@@ -10,6 +10,11 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import type { Neuron } from "../types.ts";
 import { NeuronNode } from './NeuronNode';
+import { GateNeuronNode } from './GateNeuronNode';
+import { RetryNeuronNode } from './RetryNeuronNode';
+import { DelayNeuronNode } from './DelayNeuronNode';
+import { FrontalLobeNeuronNode } from './FrontalLobeNeuronNode';
+import { EFFECTOR_NODE_TYPE, EFFECTOR_DEFAULTS } from './nodeConstants';
 
 interface CNSEditorProps {
     pathwayId: string;
@@ -25,7 +30,11 @@ interface CNSEditorProps {
 }
 
 const nodeTypes = {
-    neuron: NeuronNode
+    neuron: NeuronNode,
+    gateNode: GateNeuronNode,
+    retryNode: RetryNeuronNode,
+    delayNode: DelayNeuronNode,
+    frontalLobeNode: FrontalLobeNeuronNode,
 };
 
 import { apiFetch } from '../api';
@@ -183,14 +192,18 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
                             }
                         }
 
+                        // Pick custom node type based on canonical effector PK, fall back to generic
+                        const nodeType = (neuron.effector && EFFECTOR_NODE_TYPE[neuron.effector]) || 'neuron';
+
                         return {
                             id: neuron.id.toString(),
-                            type: 'neuron', // CRITICAL: Hooks into the 4-port NeuronNode.tsx
-                            position: { x: posX, y: posY }, // <--- FIXED: Exact mapping, no syntax errors
+                            type: nodeType,
+                            position: { x: posX, y: posY },
                             data: {
                                 label: neuron.invoked_pathway_name || neuron.effector_name || 'Action Node',
                                 effectorName: neuron.effector_name,
                                 is_root: neuron.is_root,
+                                neuronId: neuron.id.toString(),
                                 invoked_pathway_name: neuron.invoked_pathway_name,
                                 invoked_pathway_id: neuron.invoked_pathway,
                                 onDrillDown: onDrillDown,
@@ -322,14 +335,31 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(requestBody)
-                    }).then(res => res.json()).then(newNeuron => {
+                    }).then(res => res.json()).then(async newNeuron => {
+                        // Post default NeuronContext values for specialized node types
+                        const effId = newNeuron.effector;
+                        const defaults = effId ? EFFECTOR_DEFAULTS[effId] : undefined;
+                        if (defaults) {
+                            await Promise.all(
+                                Object.entries(defaults).map(([key, value]) =>
+                                    apiFetch('/api/v1/node-contexts/', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ neuron: newNeuron.id, key, value }),
+                                    }).catch(console.error)
+                                )
+                            );
+                        }
+
+                        const newNodeType = (effId && EFFECTOR_NODE_TYPE[effId]) || 'neuron';
                         const newNode = {
                             id: newNeuron.id.toString(),
-                            type: 'neuron',
+                            type: newNodeType,
                             position: uiObject,
                             data: {
                                 label: newNeuron.invoked_pathway_name || newNeuron.effector_name || 'Action Node',
                                 effectorName: newNeuron.effector_name,
+                                neuronId: newNeuron.id.toString(),
                                 invokedPathwayId: newNeuron.invoked_pathway,
                                 is_root: newNeuron.is_root,
                                 onDrillDown: onDrillDown,

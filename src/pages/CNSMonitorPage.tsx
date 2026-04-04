@@ -35,6 +35,7 @@ interface PathwayDetail {
 interface NeuronMonitorData {
     label: string;
     effectorName: string | null;
+    effectorId: number | null;
     is_root: boolean;
     invoked_pathway_name: string | null;
     invoked_pathway_id: string | null;
@@ -164,6 +165,7 @@ function MonitorGraph({
                 data: {
                     label: neuron.invoked_pathway_name || neuron.effector_name || 'Action Node',
                     effectorName: neuron.effector_name,
+                    effectorId: neuron.effector ?? null,
                     is_root: neuron.is_root,
                     invoked_pathway_name: neuron.invoked_pathway_name,
                     invoked_pathway_id: neuron.invoked_pathway,
