@@ -4,10 +4,10 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
 ## Ship-Blocking
 
-- [ ] **Session view — render tool calls in chat.** Local models often work silently (no assistant text, just tool use).
-  The chat view shows nothing for these turns. Need to render tool call name, arguments, and results inline so the
-  conversation isn't invisible. Critical for usability. Consider making the `thought` parameter required or improving
-  system prompts so models explain actions. **Paired with backend task.**
+- [x] **Session view — render tool calls in chat.** `CustomMessageTools` in both `SessionChat.tsx` and
+  `ThalamusChat.tsx` now extracts `thought` parameter (displayed as readable prose), formats remaining args as
+  structured key-value pairs instead of raw JSON, and makes long results collapsible with expand/collapse toggle.
+  CSS updated in `ThalamusChat.css`. **Backend task (make `thought` required) still open.**
 - [ ] **Session chat — messages not delivered or persisted.** Typing in the Thalamus chat window of a running Frontal
   Lobe session does not deliver the message (swarm_message_queue not receiving). On page refresh, the typed message is
   gone — not persisted as a ReasoningTurn. Two bugs: delivery + persistence. **Paired with backend task.**

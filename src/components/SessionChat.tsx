@@ -299,35 +299,63 @@ interface CustomMessageToolsProps {
     content: readonly ThreadAssistantMessagePart[];
 }
 
+const RESULT_PREVIEW_LIMIT = 200;
+
 const CustomMessageTools: React.FC<CustomMessageToolsProps> = ({ content }) => (
     <>
         {content.map((part, idx) => {
             if (part.type !== 'tool-call') return null;
 
-            // TypeScript has narrowed part to ToolCallMessagePart here.
-            // result is typed as unknown (the TResult generic default).
             const hasResult = part.result !== undefined;
+            const argsObj = (part.args ?? {}) as Record<string, JSONValue>;
+            const thought = argsObj.thought;
+            const otherArgs = Object.entries(argsObj).filter(([k]) => k !== 'thought');
+            const resultStr = hasResult ? safeStringify(part.result) : '';
+            const isLongResult = resultStr.length > RESULT_PREVIEW_LIMIT;
 
             return (
                 <React.Fragment key={`${part.toolCallId}-${idx}`}>
                     <div className="thalamus-tool-call">
                         <div className="thalamus-tool-call-header">
-                            <span>⚙️</span>
-                            <span>{part.toolName}</span>
+                            <span className="thalamus-tool-call-icon">⚙️</span>
+                            <span className="thalamus-tool-call-name">{part.toolName}</span>
                         </div>
-                        <pre className="thalamus-tool-call-args">
-                            {part.argsText}
-                        </pre>
+                        {thought && (
+                            <div className="thalamus-tool-thought">
+                                {String(thought)}
+                            </div>
+                        )}
+                        {otherArgs.length > 0 && (
+                            <div className="thalamus-tool-call-params">
+                                {otherArgs.map(([key, val]) => (
+                                    <div key={key} className="thalamus-tool-param">
+                                        <span className="thalamus-tool-param-key">{key}</span>
+                                        <span className="thalamus-tool-param-val">
+                                            {typeof val === 'string' ? val : safeStringify(val)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {hasResult && (
                         <div className="thalamus-tool-result">
-                            <div className="thalamus-tool-result-label">
-                                Tool Return Value
-                            </div>
-                            <div className="thalamus-tool-result-value">
-                                {safeStringify(part.result)}
-                            </div>
+                            <div className="thalamus-tool-result-label">Result</div>
+                            {isLongResult ? (
+                                <details className="thalamus-tool-result-details">
+                                    <summary className="thalamus-tool-result-summary">
+                                        {resultStr.slice(0, RESULT_PREVIEW_LIMIT)}…
+                                    </summary>
+                                    <div className="thalamus-tool-result-value">
+                                        {resultStr}
+                                    </div>
+                                </details>
+                            ) : (
+                                <div className="thalamus-tool-result-value">
+                                    {resultStr}
+                                </div>
+                            )}
                         </div>
                     )}
                 </React.Fragment>

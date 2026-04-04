@@ -220,6 +220,63 @@
     gap: 8px;
 }
 
+.thalamus-tool-call-icon {
+    font-size: 0.875rem;
+}
+
+.thalamus-tool-call-name {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+}
+
+/* Thought parameter — extracted and displayed as readable prose */
+.thalamus-tool-thought {
+    color: #c4b5fd;
+    font-style: italic;
+    font-size: 0.8rem;
+    padding: 6px 0 4px 0;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+/* Structured key-value args */
+.thalamus-tool-call-params {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 4px;
+}
+
+.thalamus-tool-param {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.thalamus-tool-param-key {
+    color: #93c5fd;
+    font-family: var(--font-mono, monospace);
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.thalamus-tool-param-key::after {
+    content: ':';
+    color: #6b7280;
+}
+
+.thalamus-tool-param-val {
+    color: #d1d5db;
+    font-family: var(--font-mono, monospace);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-width: 0;
+}
+
+/* Legacy raw args (kept for backwards compat) */
 .thalamus-tool-call-args {
     color: #d1d5db;
     font-family: var(--font-mono, monospace);
@@ -238,7 +295,7 @@
     border: 1px dashed #374151;
     border-radius: 6px;
     padding: 12px;
-    margin: 4px 0;
+    margin: 4px 0 8px 0;
     font-size: 0.875rem;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
@@ -258,6 +315,43 @@
     font-size: 0.75rem;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+/* Collapsible long results */
+.thalamus-tool-result-details {
+    cursor: pointer;
+}
+
+.thalamus-tool-result-summary {
+    color: #9ca3af;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    list-style: none;
+}
+
+.thalamus-tool-result-summary::-webkit-details-marker {
+    display: none;
+}
+
+.thalamus-tool-result-summary::after {
+    content: ' [expand]';
+    color: #6366f1;
+    font-style: italic;
+    font-size: 0.7rem;
+}
+
+.thalamus-tool-result-details[open] .thalamus-tool-result-summary::after {
+    content: ' [collapse]';
+}
+
+.thalamus-tool-result-details[open] .thalamus-tool-result-value {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #374151;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 /* Syncing state */
