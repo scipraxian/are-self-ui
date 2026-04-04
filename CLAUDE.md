@@ -487,10 +487,15 @@ Temporal → PFC → CNS → Frontal → Hippocampus. Real-time updates via useD
 Hypothalamus model catalog with sync, pull, routing, and budget tabs. All navigation is
 URL-driven and bookmarkable.
 
-**What's in progress:** See TASKS.md. Key items: PFC double-click drill, main menu / root route
-content, Frontal Lobe disc selection, addon/tool editor expansion. Recently completed:
-Hypothalamus dendrite refresh fix, routing tab POST fixes, Identity SelectionFilter + Budget
-dropdowns, live model preview, addon/tool editor scaffolds, receptor_class convention docs.
+**Top priority:** Image and audio manipulation capabilities. IdentityDiscs "attuned" to visual
+and audio modalities. Frontend implications: modality indicators on Identity Loadout, potential
+image preview in tool results, audio waveform rendering in session chat.
+
+**What's in progress:** See TASKS.md. Key items: reasoning view rethink, graph editor
+right-click context menu, temporal URL-driven selection. Recently completed: tool call rendering
+overhaul (thought extraction, structured args, collapsible results), addon/tool editor expansion
+(full field coverage), Identity scroll fix, SelectionFilter/Budget click-throughs to Hypothalamus,
+deprecated ModelProvider/ModelRegistry removal from backend.
 
 **Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
 internal references may still use old naming. The backend CLAUDE.md has the full naming sweep

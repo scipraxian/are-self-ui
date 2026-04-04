@@ -2,6 +2,14 @@
 
 Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
+## Top Priority — Image & Audio Manipulation
+
+The next major push is **image and audio manipulation capabilities**. IdentityDiscs should be "attuned" to
+these modalities — dedicated personas with tool sets, addons, and routing profiles for visual and audio tasks.
+Frontend implications: tool editors may need modality-specific UX (e.g., image preview in tool results,
+audio waveform rendering), and the Identity Loadout tab may need a "capabilities" or "modality" indicator
+showing what each disc is attuned to. Hypothalamus routing filters may need multimodal model awareness.
+
 ## Ship-Blocking
 
 - [x] **Session view — render tool calls in chat.** `CustomMessageTools` in both `SessionChat.tsx` and
@@ -99,6 +107,17 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
 - [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.
+
+## Recently Completed (April 3, 2026 — Session 3)
+
+- [x] **Tool call rendering overhaul.** `CustomMessageTools` in both `SessionChat.tsx` and `ThalamusChat.tsx`
+  replaced raw JSON dumps with structured rendering: `thought` parameter extracted and displayed as readable
+  italic prose (purple, above args), remaining args as key-value pairs with labeled keys, long results (>200
+  chars) collapsible via `<details>` with expand/collapse toggle. New CSS classes in `ThalamusChat.css`:
+  `.thalamus-tool-thought`, `.thalamus-tool-call-params`, `.thalamus-tool-param`, `.thalamus-tool-param-key`,
+  `.thalamus-tool-param-val`, `.thalamus-tool-result-details`, `.thalamus-tool-result-summary`.
+- [x] **Identity page scroll fix.** (Completed in Session 2, verified working in Session 3.)
+- [x] **SelectionFilter + Budget click-throughs.** (Completed in Session 2, verified working in Session 3.)
 
 ## Recently Completed (April 3, 2026 — Session 2)
 
