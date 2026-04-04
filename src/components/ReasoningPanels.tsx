@@ -115,10 +115,22 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
 
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const isAlive = activeSession && ['Active', 'Pending', 'Running', 'Thinking'].includes(activeSession.status_name);
+    const turnCount = activeSession?.turns?.length || 0;
 
     return (
         <div className="sidebar-root">
             <h2 className="glass-panel-title sidebar-title">COGNITIVE THREADS</h2>
+
+            {/* Turn Counter - prominently displayed when session is active */}
+            {activeSessionId && turnCount > 0 && (
+                <div className={`sidebar-turn-counter ${isAlive ? 'sidebar-turn-counter--active' : ''}`}>
+                    <div className="sidebar-turn-counter-label">TURNS</div>
+                    <div className="sidebar-turn-counter-display">
+                        {turnCount}
+                    </div>
+                </div>
+            )}
+
             <div className="scroll-hidden sidebar-session-list">
                 {sessions.map(s => {
                     const isActive = s.id === activeSessionId;
@@ -255,8 +267,10 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                             const turn = n as ReasoningTurnData;
                             const tokensIn = turn.model_usage_record?.input_tokens ?? 0;
                             const tokensOut = turn.model_usage_record?.output_tokens ?? 0;
+                            const totalTokens = tokensIn + tokensOut;
                             const timing = turn.model_usage_record?.query_time || turn.delta || '--';
                             const modelName = turn.model_usage_record?.ai_model_provider?.ai_model?.name || 'Unknown';
+                            const providerName = turn.model_usage_record?.ai_model_provider?.provider?.name || 'Unknown';
                             const turnThought = extractThoughtFromUsageRecord(turn.model_usage_record);
                             const messages = turn.model_usage_record?.request_payload || [];
                             const hasMessages = Array.isArray(messages) && messages.length > 0;
@@ -265,18 +279,62 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                                 : ['Active', 'Running', 'Pending', 'Thinking'].includes(n.status_name)
                                     ? 'inspector-status--active'
                                     : 'inspector-status--completed';
+                            const toolCallsCount = turn.tool_calls?.length || 0;
+                            const hasToolErrors = turn.tool_calls?.some(call => call.traceback || (call.result_payload && String(call.result_payload).includes('FIZZLE'))) || false;
                             return (
                                 <>
-                        <div className="inspector-badge-row">
-                            <div className="inspector-badge--turn">TURN {turn.turn_number}</div>
-                            <div className="inspector-badge--tokens-in">IN {tokensIn}</div>
-                            <div className="inspector-badge--tokens-out">OUT {tokensOut}</div>
-                            <div className="inspector-badge--timing">{timing}</div>
+                        {/* Turn Header */}
+                        <div className="inspector-turn-header">
+                            <div className="inspector-turn-title">TURN {turn.turn_number}</div>
+                            <div className={`inspector-turn-status ${statusClass}`}>
+                                {n.status_name}
+                            </div>
                         </div>
 
-                        <div className={`inspector-status-line ${statusClass}`}>
-                            Status: {n.status_name} | Model: {modelName}
+                        {/* Token and Timing Badges */}
+                        <div className="inspector-badge-row">
+                            <div className="inspector-badge--tokens-in">
+                                <div className="inspector-badge-label">INPUT</div>
+                                <div className="inspector-badge-value">{tokensIn}</div>
+                            </div>
+                            <div className="inspector-badge--tokens-out">
+                                <div className="inspector-badge-label">OUTPUT</div>
+                                <div className="inspector-badge-value">{tokensOut}</div>
+                            </div>
+                            <div className="inspector-badge--timing">
+                                <div className="inspector-badge-label">TOTAL</div>
+                                <div className="inspector-badge-value">{totalTokens}</div>
+                            </div>
                         </div>
+
+                        {/* Model & Timing Info Section */}
+                        <div className="inspector-info-section">
+                            <div className="inspector-info-section-title">EXECUTION DETAILS</div>
+                            <div className="inspector-info-grid">
+                                <div className="inspector-info-item">
+                                    <div className="inspector-info-label">Model</div>
+                                    <div className="inspector-info-value">{modelName}</div>
+                                </div>
+                                <div className="inspector-info-item">
+                                    <div className="inspector-info-label">Provider</div>
+                                    <div className="inspector-info-value">{providerName}</div>
+                                </div>
+                                <div className="inspector-info-item">
+                                    <div className="inspector-info-label">Duration</div>
+                                    <div className="inspector-info-value">{timing}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tool Calls Summary */}
+                        {toolCallsCount > 0 && (
+                            <div className="inspector-tools-summary">
+                                <div className="inspector-tools-summary-title">
+                                    TOOL CALLS: {toolCallsCount}
+                                    {hasToolErrors && <span className="inspector-tools-summary-error"> (ERRORS)</span>}
+                                </div>
+                            </div>
+                        )}
 
                         {turnThought && (
                             <Accordion title="THOUGHT PROCESS" color="#cc99cc" open>
@@ -293,17 +351,21 @@ export const ReasoningInspector = ({ node }: ReasoningInspectorProps) => {
                         )}
 
                         {turn.tool_calls && Array.isArray(turn.tool_calls) && turn.tool_calls.length > 0 && (
-                            <Accordion title={`TOOL CALLS (${n.tool_calls.length})`} color="#4ade80" open>
+                            <Accordion title={`TOOL CALLS (${turn.tool_calls.length})`} color="#4ade80" open>
                                 <div className="inspector-tool-call-list">
                                     {turn.tool_calls.map((call: ToolCallData, idx: number) => {
                                         const isError = call.traceback || (call.result_payload && String(call.result_payload).includes('FIZZLE'));
                                         const errorClass = isError ? 'inspector-tool-call--error' : '';
                                         const argsStr = typeof call.arguments === 'object' ? JSON.stringify(call.arguments, null, 2) : String(call.arguments || '');
+                                        const statusBadge = call.status_name ? call.status_name : (isError ? 'FAILED' : 'SUCCESS');
 
                                         return (
                                             <div key={idx} className={`inspector-tool-call ${errorClass}`}>
                                                 <div className="inspector-tool-call-header">
-                                                    &gt; CALL [{idx + 1}]: {call.tool_name}
+                                                    <span>&gt; CALL [{idx + 1}]: {call.tool_name}</span>
+                                                    <span className={`inspector-tool-status ${isError ? 'inspector-tool-status--error' : 'inspector-tool-status--success'}`}>
+                                                        {statusBadge}
+                                                    </span>
                                                 </div>
                                                 <Accordion title="ARGUMENTS" color="#99ccff">
                                                     <pre className="inspector-args-pre--blue">

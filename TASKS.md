@@ -29,10 +29,10 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
 - [x] **Root dashboard — performance.** Wired to lightweight `GET /api/v2/stats/` endpoint (created 4/3).
 - [x] **Frontal Lobe node — identity_disc from context variable.** identity_disc now flows from NeuronContext to
   ReasoningSession creation (fixed 4/3). `prompt` context variable injection still broken — see backend tasks.
-- [ ] **Shutdown / restart controls.** ⚠️ SHIP-BLOCKER. UI buttons or controls for clean system shutdown and restart.
-  Backend scripts (`are-self-shutdown.bat`, `are-self-restart.bat`) need to be created first. Without this, developers
-  must manually kill/restart Celery workers when deploying code changes — stale workers run old native handlers and
-  produce confusing errors (e.g., "No handler found for slug: debug_node").
+- [~] **Shutdown / restart controls.** ⚠️ SHIP-BLOCKER. Backend endpoints done (`/api/v2/system-control/`).
+  Frontend SystemControlPanel exists on PNSPage. Restart works. **Remaining:** CSS layout fix (huge empty spaces),
+  full app lifecycle (close browser windows, restart webserver — Michael's old app did this). Consider moving
+  controls to a global header/nav position instead of PNS-only.
 
 ## Next Up (Demo Feedback — April 3, 2026)
 
@@ -128,6 +128,28 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
 - [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.
+
+## Recently Completed (April 4, 2026 — Session 7)
+
+- [x] **SystemControlPanel on PNS page.** Shutdown/restart buttons now render at the top of PNSPage.tsx,
+  above the beat bar. Accessible without selecting any workers. Restart works. Layout needs CSS polish —
+  currently creates large empty spaces.
+- [x] **Debug node red on editor.** NeuronNode.tsx now imports EFFECTOR_STYLE and renders a colored
+  border-top + type label badge for any effector with a style entry. CNSEditor.tsx passes `effectorId`
+  in node data. Debug nodes (PK 9) show red (#ef4444) accent and "DEBUG" label in the graph editor.
+- [x] **RetryNeuronNode key fix.** Reverted to `retry_delay` as the canonical key (reads `context.retry_delay`,
+  writes via `updateContext('retry_delay', ...)`). Matches backend `CTX_RETRY_DELAY`.
+- [x] **CNSMonitorPage getSpikeStatus fix.** Removed duplicate `return 'unrun'` statement.
+
+## Known Bugs — Session 7
+
+- [ ] **CNS Monitor view never refreshes.** After clicking Start and navigating to the spiketrain view,
+  nodes show initial state then never update. The graph shows all nodes as green (unrun or stale success).
+  Running nodes should pulse. Suspected cause: dendrite events not scoped to spiketrain ID on the backend,
+  or `trainTerminalRef` getting set prematurely from a stale status. Check backend `fire_neurotransmitter`
+  calls during spike lifecycle — `dendrite_id` must be `str(spike.spike_train_id)`.
+- [ ] **PNS page layout.** SystemControlPanel at top of PNSPage creates large empty spaces. Needs CSS work
+  to make it compact/inline with the beat bar or styled as a minimal header strip.
 
 ## Recently Completed (April 4, 2026 — Session 6)
 

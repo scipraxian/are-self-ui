@@ -485,8 +485,8 @@ port layout matching existing NeuronNode handle sizes. Uses `--readonly` modifie
 | Component | Effector PK | Color | Icon | Editable Fields |
 |-----------|-------------|-------|------|-----------------|
 | `GateNeuronNode.tsx` | 5 | Teal (#06b6d4) | GitBranch | gate_key, gate_operator, gate_value |
-| `RetryNeuronNode.tsx` | 6 | Amber (#f59e0b) | RotateCw | max_retries, retry_delay |
-| `DelayNeuronNode.tsx` | 7 | Indigo (#6366f1) | Clock | delay |
+| `RetryNeuronNode.tsx` | 6 | Amber (#f59e0b) | RotateCw | max_retries, retry_delay (NOT delay) |
+| `DelayNeuronNode.tsx` | 7 | Indigo (#6366f1) | Clock | delay (NOT retry_delay) |
 | `FrontalLobeNeuronNode.tsx` | 8 | Purple (#a855f7) | Brain | identity_disc (select), prompt (textarea) |
 
 ### Type Resolution
@@ -554,12 +554,14 @@ WAV/MP3 results, modality indicator on Identity Loadout showing what each disc i
 (art, audio, code). Generation effector node (awaiting backend PoC).
 
 **What's in progress:** See TASKS.md. Key items: reasoning view rethink, graph editor right-click
-context menu, temporal URL-driven selection, shutdown/restart controls (ship-blocker). Recently
-completed (Session 6): effector palette overhaul (grouped/colored/searchable, renamed to EFFECTORS),
+context menu, temporal URL-driven selection, shutdown/restart controls (partially done — restart works,
+layout needs CSS fix). **KNOWN BUGS:** Monitor view never refreshes after start (dendrite scoping
+issue), PNS page has large empty spaces from SystemControlPanel placement. Recently completed
+(Session 7): SystemControlPanel on PNS page, debug node red in editor, retry_delay key fix,
+getSpikeStatus duplicate return fix, 49 logic node tests. Session 6: effector palette overhaul,
 Frontal Lobe identity disc dropdown, gate CSS fix, run button → spike train navigation, spike train
-polling fix (debounced dendrite events), debug node frontend constants. Session 5: 4 custom neuron
-node components (Gate, Retry, Delay, Frontal Lobe) with inline editing and PK-based type resolution.
-Session 4: EnvironmentEditor "+ Key" button.
+polling fix, debug node constants. Session 5: 4 custom neuron node components with inline editing
+and PK-based type resolution. Session 4: EnvironmentEditor "+ Key" button.
 
 **Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
 internal references may still use old naming. The backend CLAUDE.md has the full naming sweep

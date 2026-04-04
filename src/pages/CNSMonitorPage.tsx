@@ -71,7 +71,8 @@ function getSpikeStatus(statusName: string): SpikeStatus {
     if (s.includes('success') || s.includes('completed') || s.includes('done')) return 'success';
     if (s.includes('fail') || s.includes('error') || s.includes('abort')) return 'failed';
     if (s.includes('running') || s.includes('active') || s.includes('executing')) return 'running';
-    if (s.includes('pending') || s.includes('queued') || s.includes('waiting')) return 'pending';
+    if (s.includes('pending') || s.includes('queued') || s.includes('waiting') || s.includes('created')) return 'pending';
+    if (s.includes('delegated')) return 'running';
     return 'unrun';
 }
 
@@ -145,8 +146,22 @@ function MonitorGraph({
         const map = new Map<string, Spike>();
         if (train?.spikes) {
             for (const spike of train.spikes) {
-                if (spike.neuron) {
-                    map.set(String(spike.neuron), spike);
+                if (!spike.neuron) continue;
+                const key = String(spike.neuron);
+                const existing = map.get(key);
+                if (!existing) {
+                    map.set(key, spike);
+                    continue;
+                }
+                // Prioritize non-terminal spikes (running/pending/created)
+                // so the pulse shows on the active node, not a stale success.
+                const existingStatus = getSpikeStatus(existing.status_name);
+                const newStatus = getSpikeStatus(spike.status_name);
+                const isExistingAlive = existingStatus === 'running' || existingStatus === 'pending';
+                const isNewAlive = newStatus === 'running' || newStatus === 'pending';
+                if (isNewAlive || (!isExistingAlive && !isNewAlive)) {
+                    // Prefer alive spikes; among terminal, keep the latest
+                    map.set(key, spike);
                 }
             }
         }
@@ -271,11 +286,11 @@ export function CNSMonitorPage() {
     const [pathwayId, setPathwayId] = useState<string>('');
     const [selectedSpike, setSelectedSpike] = useState<Spike | null>(null);
     const [selectedNeuron, setSelectedNeuron] = useState<Neuron | null>(null);
-    const [autoPan, setAutoPan] = useState(false);
+    const [autoPan, setAutoPan] = useState(true);
 
     // Real-time events — these change reference when a new event fires
-    const spikeEvent = useDendrite('Spike', null);
-    const trainEvent = useDendrite('SpikeTrain', null);
+    const spikeEvent = useDendrite('Spike', spiketrainId || null);
+    const trainEvent = useDendrite('SpikeTrain', spiketrainId || null);
 
     // Debounce ref: coalesce rapid dendrite events into a single refetch.
     // Without this, every spike status change triggers an immediate GET, flooding

@@ -207,6 +207,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
                             data: {
                                 label: neuron.invoked_pathway_name || neuron.effector_name || 'Action Node',
                                 effectorName: neuron.effector_name,
+                                effectorId: neuron.effector ?? null,
                                 is_root: neuron.is_root,
                                 neuronId: neuron.id.toString(),
                                 invoked_pathway_name: neuron.invoked_pathway_name,

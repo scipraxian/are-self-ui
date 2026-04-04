@@ -30,14 +30,27 @@ export const EFFECTOR_STYLE: Record<number, { color: string; label: string }> = 
     [EFFECTOR.LOGIC_RETRY]: { color: '#f59e0b', label: 'RETRY' },
     [EFFECTOR.LOGIC_DELAY]: { color: '#6366f1', label: 'DELAY' },
     [EFFECTOR.FRONTAL_LOBE]: { color: '#a855f7', label: 'FRONTAL' },
-    [EFFECTOR.DEBUG]: { color: '#22c55e', label: 'DEBUG' },
+    [EFFECTOR.DEBUG]: { color: '#ef4444', label: 'DEBUG' },
 };
+
+/**
+ * NeuronContext key constants — shared with backend pathway_logic_node.py.
+ * NEVER hardcode these strings elsewhere; import from here.
+ */
+export const CTX = {
+    LOGIC_MODE: 'logic_mode',
+    MAX_RETRIES: 'max_retries',
+    DELAY: 'delay',
+    GATE_KEY: 'gate_key',
+    GATE_OPERATOR: 'gate_operator',
+    GATE_VALUE: 'gate_value',
+} as const;
 
 /**
  * Default NeuronContext values to apply when dropping a new node of this type.
  */
 export const EFFECTOR_DEFAULTS: Record<number, Record<string, string>> = {
-    [EFFECTOR.LOGIC_GATE]: { logic_mode: 'gate', gate_operator: 'exists' },
-    [EFFECTOR.LOGIC_RETRY]: { logic_mode: 'retry', max_retries: '3' },
-    [EFFECTOR.LOGIC_DELAY]: { logic_mode: 'wait', delay: '5' },
+    [EFFECTOR.LOGIC_GATE]: { [CTX.LOGIC_MODE]: 'gate', [CTX.GATE_OPERATOR]: 'exists' },
+    [EFFECTOR.LOGIC_RETRY]: { [CTX.LOGIC_MODE]: 'retry', [CTX.MAX_RETRIES]: '3' },
+    [EFFECTOR.LOGIC_DELAY]: { [CTX.LOGIC_MODE]: 'wait', [CTX.DELAY]: '5' },
 };

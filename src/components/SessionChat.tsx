@@ -428,6 +428,7 @@ function SessionRuntimeProvider({ sessionId, children }: { sessionId: string; ch
 
     // Sprout a Dendrite to listen to the new Ledger-backed SynapseResponse globally
     const newChatPacket = useDendrite('SynapseResponse', null);
+    const [seenMessageIds] = useState<Set<string>>(new Set());
 
     // Filter cross-talk and bridge the WebSocket packet into a DOM event locked to this Session ID
     useEffect(() => {
@@ -436,14 +437,23 @@ function SessionRuntimeProvider({ sessionId, children }: { sessionId: string; ch
 
             // THE CRITICAL CHECK: Does this message belong to this specific session?
             if (vesicle && (vesicle as Record<string, unknown>).session_id === sessionId) {
+                // Deduplicate by message ID to prevent processing the same message twice
+                const msgId = (vesicle as Record<string, unknown>).id;
+                if (msgId && seenMessageIds.has(String(msgId))) {
+                    return; // Skip if we've already processed this message ID
+                }
+                if (msgId) {
+                    seenMessageIds.add(String(msgId));
+                }
+
                 const eventName = `synapse_chat_message_${sessionId}`;
                 const event = new CustomEvent(eventName, { detail: newChatPacket });
                 window.dispatchEvent(event);
             }
         }
-    }, [newChatPacket, sessionId]);
+    }, [newChatPacket, sessionId, seenMessageIds]);
 
-    // Initial Hydration
+    // Initial Hydration with deduplication
     useEffect(() => {
         let cancelled = false;
 
@@ -453,29 +463,48 @@ function SessionRuntimeProvider({ sessionId, children }: { sessionId: string; ch
                 if (cancelled) return;
                 const list = data.messages || [];
 
-                const formatted: ThreadMessage[] = list.map((m: BackendMessage, i: number) => {
+                // Deduplicate messages by creating a content hash to detect duplicates
+                const seenHashes = new Set<string>();
+
+                const formatted: ThreadMessage[] = [];
+
+                list.forEach((m: BackendMessage, i: number) => {
+                    // Create a hash of the message content for deduplication
+                    const contentHash = `${m.role}:${getRawText(m) || JSON.stringify(m.parts || m.tool_calls || '')}`;
+
+                    // Skip if we've already seen this exact message
+                    if (seenHashes.has(contentHash)) {
+                        return;
+                    }
+                    seenHashes.add(contentHash);
+
                     if (m.role === 'user') {
                         const text = getRawText(m);
-                        return {
-                            id: `history-${i}-user`,
-                            role: 'user',
-                            content: [{ type: 'text', text }],
-                            createdAt: new Date(),
-                            metadata: { custom: {} },
-                            attachments: [],
-                        } as unknown as ThreadMessage;
+                        if (text.trim()) { // Only add non-empty user messages
+                            formatted.push({
+                                id: `history-${i}-user-${contentHash.slice(0, 8)}`,
+                                role: 'user',
+                                content: [{ type: 'text', text }],
+                                createdAt: new Date(),
+                                metadata: { custom: {} },
+                                attachments: [],
+                            } as unknown as ThreadMessage);
+                        }
+                    } else {
+                        // assistant / system / tool — all rendered as assistant bubbles.
+                        const parts = buildAssistantParts(m, i);
+                        if (parts.length > 0) { // Only add messages with actual parts
+                            formatted.push({
+                                id: `history-${i}-assistant-${contentHash.slice(0, 8)}`,
+                                role: 'assistant',
+                                content: parts,
+                                createdAt: new Date(),
+                                metadata: { custom: {} },
+                                attachments: [],
+                                status: { type: 'complete' },
+                            } as unknown as ThreadMessage);
+                        }
                     }
-
-                    // assistant / system / tool — all rendered as assistant bubbles.
-                    return {
-                        id: `history-${i}-assistant`,
-                        role: 'assistant',
-                        content: buildAssistantParts(m, i),
-                        createdAt: new Date(),
-                        metadata: { custom: {} },
-                        attachments: [],
-                        status: { type: 'complete' },
-                    } as unknown as ThreadMessage;
                 });
 
                 setInitialMessages(formatted);

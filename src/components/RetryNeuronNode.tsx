@@ -47,7 +47,7 @@ export const RetryNeuronNode = ({ data, id }: { data: RetryNodeData; id: string 
                                 type="number"
                                 min="0"
                                 step="1"
-                                value={context.retry_delay || '0'}
+                                value={context.retry_delay || context.delay || '0'}
                                 placeholder="seconds between"
                                 onChange={e => updateContext('retry_delay', e.target.value)}
                             />

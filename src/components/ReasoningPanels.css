@@ -46,13 +46,59 @@
     gap: 12px;
 }
 
+/* Turn Header */
+.inspector-turn-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(168, 85, 247, 0.3);
+}
+
+.inspector-turn-title {
+    font-family: Outfit, sans-serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #a855f7;
+    letter-spacing: 1px;
+}
+
+.inspector-turn-status {
+    font-family: Outfit, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+}
+
+.inspector-turn-status.inspector-status--completed {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+    border: 1px solid #4ade80;
+}
+
+.inspector-turn-status.inspector-status--active {
+    background: rgba(250, 204, 21, 0.2);
+    color: #facc15;
+    border: 1px solid #facc15;
+}
+
+.inspector-turn-status.inspector-status--error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
 .inspector-node-content {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* --- Badge row (TURN / IN / OUT / TIMING) --- */
+/* --- Badge row (TOKENS & TIMING) --- */
 .inspector-badge-row {
     display: flex;
     gap: 10px;
@@ -60,44 +106,50 @@
     text-transform: uppercase;
 }
 
-.inspector-badge--turn {
-    flex: 1;
-    padding: 8px;
-    text-align: center;
-    background: #f99f1b;
-    color: black;
-    font-weight: 800;
-    border-radius: 20px;
-}
-
 .inspector-badge--tokens-in {
     flex: 1;
-    padding: 8px;
+    padding: 10px 8px;
     text-align: center;
-    background: #cc99cc;
-    color: black;
+    background: linear-gradient(135deg, rgba(204, 153, 204, 0.3), rgba(204, 153, 204, 0.1));
+    border: 1px solid #cc99cc;
+    color: #cc99cc;
     font-weight: 800;
-    border-radius: 20px;
+    border-radius: 8px;
 }
 
 .inspector-badge--tokens-out {
     flex: 1;
-    padding: 8px;
+    padding: 10px 8px;
     text-align: center;
-    background: #38bdf8;
-    color: black;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(56, 189, 248, 0.1));
+    border: 1px solid #38bdf8;
+    color: #38bdf8;
     font-weight: 800;
-    border-radius: 20px;
+    border-radius: 8px;
 }
 
 .inspector-badge--timing {
     flex: 1;
-    padding: 8px;
+    padding: 10px 8px;
     text-align: center;
-    background: #4ade80;
-    color: black;
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.1));
+    border: 1px solid #4ade80;
+    color: #4ade80;
     font-weight: 800;
-    border-radius: 20px;
+    border-radius: 8px;
+}
+
+.inspector-badge-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+}
+
+.inspector-badge-value {
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin-top: 2px;
 }
 
 /* --- Status line --- */
@@ -130,6 +182,75 @@
     line-height: 1.5;
 }
 
+/* --- Info Section (Model, Provider, Duration) --- */
+.inspector-info-section {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.inspector-info-section-title {
+    font-family: Outfit, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #a855f7;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.inspector-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+.inspector-info-item {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.inspector-info-label {
+    font-family: Outfit, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+}
+
+.inspector-info-value {
+    font-family: JetBrains Mono;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    margin-top: 4px;
+    word-break: break-word;
+}
+
+/* --- Tools Summary --- */
+.inspector-tools-summary {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.inspector-tools-summary-title {
+    font-family: Outfit, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #4ade80;
+    letter-spacing: 0.5px;
+}
+
+.inspector-tools-summary-error {
+    color: #ef4444;
+}
+
 /* --- Tool call cards --- */
 .inspector-tool-call-list {
     display: flex;
@@ -149,6 +270,9 @@
 }
 
 .inspector-tool-call-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     color: #4ade80;
     font-weight: bold;
     margin-bottom: 10px;
@@ -158,6 +282,28 @@
 
 .inspector-tool-call--error .inspector-tool-call-header {
     color: #ef4444;
+}
+
+.inspector-tool-status {
+    font-family: Outfit, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+}
+
+.inspector-tool-status--success {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+    border: 1px solid #4ade80;
+}
+
+.inspector-tool-status--error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid #ef4444;
 }
 
 .inspector-tool-result {
@@ -362,6 +508,50 @@
 
 .sidebar-title {
     margin-bottom: 16px;
+}
+
+/* Turn Counter */
+.sidebar-turn-counter {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 2px solid #a855f7;
+    border-radius: 8px;
+    text-align: center;
+    animation: none;
+}
+
+.sidebar-turn-counter--active {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        background: rgba(168, 85, 247, 0.1);
+        box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4);
+    }
+    50% {
+        background: rgba(168, 85, 247, 0.2);
+        box-shadow: 0 0 15px 0 rgba(168, 85, 247, 0.6);
+    }
+}
+
+.sidebar-turn-counter-label {
+    font-family: Outfit, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #a855f7;
+    letter-spacing: 1px;
+}
+
+.sidebar-turn-counter-display {
+    font-family: Outfit, sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #a855f7;
+    margin-top: 4px;
+    letter-spacing: 2px;
 }
 
 .sidebar-session-list {
