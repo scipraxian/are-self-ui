@@ -289,7 +289,10 @@ export function CNSMonitorPage() {
     const [autoPan, setAutoPan] = useState(true);
 
     // Real-time events — these change reference when a new event fires
-    const spikeEvent = useDendrite('Spike', spiketrainId || null);
+    // Listen to ALL spike events (unfiltered) — the thalamus broadcasts
+    // dendrite_id=spike.id, not spike_train_id, so we cannot filter here.
+    // The debounced refetch below coalesces rapid events into one GET.
+    const spikeEvent = useDendrite('Spike', null);
     const trainEvent = useDendrite('SpikeTrain', spiketrainId || null);
 
     // Debounce ref: coalesce rapid dendrite events into a single refetch.
