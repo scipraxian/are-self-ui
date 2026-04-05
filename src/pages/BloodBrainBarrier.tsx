@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Loader2, TrendingUp, Brain, Zap, Network, Clock, LayoutGrid,
-    BookOpen, Activity, Cpu
+    BookOpen, Activity
 } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useDendrite } from '../components/SynapticCleft';

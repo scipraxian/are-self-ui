@@ -9,7 +9,12 @@ import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import './NavBar.css';
 
-export const NavBar = () => {
+interface NavBarProps {
+    gpuSaver: boolean;
+    onGpuSaverChange: (value: boolean) => void;
+}
+
+export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -142,6 +147,23 @@ export const NavBar = () => {
                         <span className="nav-dd-route">Temporal Lobe</span>
                         <span className="nav-dd-label">Iterations</span>
                     </Link>
+
+                    <div className="navbar-dropdown-divider" />
+
+                    <label className="navbar-dropdown-toggle">
+                        <Brain size={14} className="nav-dd-icon" style={{ color: gpuSaver ? '#64748b' : '#38bdf8' }} />
+                        <span className="nav-dd-route">GPU Saver</span>
+                        <span className="nav-dd-label">During runs</span>
+                        <input
+                            type="checkbox"
+                            className="navbar-toggle-checkbox"
+                            checked={gpuSaver}
+                            onChange={(e) => onGpuSaverChange(e.target.checked)}
+                        />
+                        <span className="navbar-toggle-track">
+                            <span className="navbar-toggle-thumb" />
+                        </span>
+                    </label>
                 </div>
             )}
         </nav>
