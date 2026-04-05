@@ -46,3 +46,37 @@
   border-color: rgba(15, 23, 42, 0.92) transparent transparent transparent;
 }
 
+.reasoninggraph3d-hover-card {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  max-width: 280px;
+  z-index: 100;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.4);
+}
+
+.reasoninggraph3d-hover-card-line {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  margin: 2px 0;
+}
+
+.reasoninggraph3d-hover-card-line:first-child {
+  color: #e2e8f0;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.reasoninggraph3d-hover-card-line:not(:first-child) {
+  color: #94a3b8;
+}
+

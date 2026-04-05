@@ -36,14 +36,25 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
 
 ## Next Up (Demo Feedback — April 3, 2026)
 
-- [ ] **Reasoning view rethink.** The `/frontal/:sessionId` view needs major improvements:
-  - **Turn counter:** Show current turn number and turns remaining in the reasoning chat/graph view.
-  - **Chat view repetition:** The chat view shows the same content over and over (prompt_addon re-injects each turn).
-    Need to deduplicate or collapse repeated system/prompt messages so the human sees meaningful progression.
-  - **Graph node click:** Clicking a node in the 3D graph doesn't show enough useful info. The ReasoningInspector
-    needs richer data — the tool isn't talking while working, so the inspector should show the full INPUT CONTEXT
-    (what addons assembled), not just the output. Consider showing the session summary_dump data per-turn.
-  - **General:** Michael says "this view needs a rethink in general."
+- [x] **Reasoning view rethink (Session 8).** Major overhaul of `/frontal/:sessionId`:
+  - **Inspector rewrite:** Session overview card when nothing selected (summary from mcp_done, aggregated
+    tool stats, token budget, identity). Three-tier turn inspector: headline (model/duration/tokens/time on
+    task), Parietal Lobe narrative (semantic tool summaries with thought field + error recovery), and
+    collapsed deep dive (filtered input context + raw payloads). Engram/tool/conclusion inspectors improved.
+  - **Chat improvements:** Turn markers (`──── turn 4 · 0.32s · 155 tokens ────`), semantic tool one-liners
+    using shared toolFormatters.ts, system prompt deduplication (show once, extract L1 cache warnings as
+    badges). Thought field shown with 💭 prefix. Click-through to raw data.
+  - **Parietal Activity tab:** Third tab alongside Graph/Chat. Scrollable list of all tool calls with
+    semantic summaries, recovery annotations, filter chips by tool name. Clickable rows.
+  - **Graph hover cards:** Glassmorphic tooltip cards on node mouseover (200ms debounce, pointer-events:none).
+    Type-aware content for turns, tools, engrams, goals, conclusions. Coexist with thought bubbles.
+  - **Shared foundation:** `src/utils/toolFormatters.ts` — semantic one-liner rendering for known tools
+    (mcp_ticket, mcp_done, mcp_pass, mcp_respond_to_user, engram tools) with fallback for unknown.
+  - **Backend:** `narrative_dump` endpoint alongside forensic `summary_dump`. Compact human-readable
+    session briefing with tool activity, errors, token summary. 16 tests.
+  - **Design doc:** `REASONING_VIEW_RETHINK.md` in repo root.
+  - **Status: Code written, needs testing.** Run frontend dev server to verify. Run backend tests via
+    Claude Code (`venv/Scripts/pytest frontal_lobe/tests/test_narrative_dump.py`).
 - [X] **Rename Dashboard to BloodBrainBarrier.** The old `dashboard/` Django app is being deprecated. The root route
   UI component should be renamed from Dashboard to BloodBrainBarrier (BBB) — files, component names, CSS classes.
 
@@ -143,11 +154,12 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
 
 ## Known Bugs — Session 7
 
-- [ ] **CNS Monitor view never refreshes.** After clicking Start and navigating to the spiketrain view,
-  nodes show initial state then never update. The graph shows all nodes as green (unrun or stale success).
-  Running nodes should pulse. Suspected cause: dendrite events not scoped to spiketrain ID on the backend,
-  or `trainTerminalRef` getting set prematurely from a stale status. Check backend `fire_neurotransmitter`
-  calls during spike lifecycle — `dendrite_id` must be `str(spike.spike_train_id)`.
+- [x] **CNS Monitor view never refreshes (fixed Session 8).** Root cause: `useDendrite('Spike', spiketrainId)`
+  filtered by spike_train UUID, but the thalamus `broadcast_status` signal sends `dendrite_id=spike.id`
+  (individual spike UUID). These never matched, so events were silently dropped. Fix: changed to
+  `useDendrite('Spike', null)` — unfiltered. The 500ms debounced refetch coalesces events. The SpikeTrain
+  subscription was already correct. **NOT a backend issue** — the thalamus design is correct (`dendrite_id =
+  instance.id`). Future subscriptions must match the thalamus pattern.
 - [ ] **PNS page layout.** SystemControlPanel at top of PNSPage creates large empty spaces. Needs CSS work
   to make it compact/inline with the beat bar or styled as a minimal header strip.
 

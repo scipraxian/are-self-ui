@@ -553,12 +553,35 @@ image preview in spike forensics when effector result is an image path, audio pl
 WAV/MP3 results, modality indicator on Identity Loadout showing what each disc is attuned to
 (art, audio, code). Generation effector node (awaiting backend PoC).
 
-**What's in progress:** See TASKS.md. Key items: reasoning view rethink, graph editor right-click
-context menu, temporal URL-driven selection, shutdown/restart controls (partially done — restart works,
-layout needs CSS fix). **KNOWN BUGS:** Monitor view never refreshes after start (dendrite scoping
-issue), PNS page has large empty spaces from SystemControlPanel placement. Recently completed
-(Session 7): SystemControlPanel on PNS page, debug node red in editor, retry_delay key fix,
-getSpikeStatus duplicate return fix, 49 logic node tests. Session 6: effector palette overhaul,
+**What's in progress:** See TASKS.md. Key items: graph editor right-click context menu, temporal
+URL-driven selection, shutdown/restart controls (partially done — restart works, layout needs CSS fix).
+PNS page has large empty spaces from SystemControlPanel placement.
+
+**Session 8 — reasoning view rethink + critical fixes:**
+
+Reasoning view overhaul: inspector rewrite with session overview card and three-tier turn display
+(headline / Parietal Lobe narrative with thought field / filtered deep dive). New Parietal Activity
+tab (third tab, all tool calls chronologically). Chat improvements: turn markers, semantic tool
+one-liners via shared `toolFormatters.ts`, system prompt dedup. Graph hover cards on all node types.
+Backend `narrative_dump` endpoint for compact session briefings.
+
+**New shared utility:** `src/utils/toolFormatters.ts` — semantic rendering for known tools
+(mcp_ticket, mcp_done, mcp_pass, etc). Use `summarizeTool()` for structured data, `toolOneLiner()`
+for compact strings. Always import from here when rendering tool calls. Unknown tools get a
+generic fallback. The `thought` field is extracted and shown prominently (💭 prefix).
+
+**Design doc:** `REASONING_VIEW_RETHINK.md` in the monorepo root. Covers the full design rationale.
+
+Monitor view now refreshes live. Root cause was `useDendrite('Spike',
+spiketrainId)` — the thalamus sends `dendrite_id=spike.id` (individual spike UUID), not the
+train UUID, so the filter never matched. Changed to `useDendrite('Spike', null)` (unfiltered).
+The debounced refetch coalesces events. **Design rule:** the thalamus `broadcast_status` signal
+always uses `instance.id` as `dendrite_id`. Frontend subscriptions must match this — subscribe
+to the correct receptor_class and either pass `null` or the exact instance ID. Do not assume
+parent IDs will be used as dendrite_id.
+
+Session 7: SystemControlPanel on PNS page, debug node red in editor, retry_delay key fix,
+getSpikeStatus duplicate return fix, 68 logic node tests. Session 6: effector palette overhaul,
 Frontal Lobe identity disc dropdown, gate CSS fix, run button → spike train navigation, spike train
 polling fix, debug node constants. Session 5: 4 custom neuron node components with inline editing
 and PK-based type resolution. Session 4: EnvironmentEditor "+ Key" button.

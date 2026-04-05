@@ -362,3 +362,210 @@
     height: 100%;
     color: #6b7280;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* TURN MARKERS - lightweight separators between conversation turns */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+.thalamus-turn-marker-root {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0;
+    margin: 16px 0;
+}
+
+.thalamus-turn-marker {
+    align-self: center;
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: center;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.thalamus-turn-marker:hover {
+    color: #9ca3af;
+}
+
+.thalamus-turn-context {
+    padding: 8px 12px;
+    background: rgba(99, 102, 241, 0.05);
+    border-left: 2px solid rgba(99, 102, 241, 0.2);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin: 0 16px;
+}
+
+.thalamus-turn-context p {
+    margin: 0;
+    font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* SYSTEM PROMPT BLOCK - identity context deduplication */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+.thalamus-system-prompt-block {
+    margin: 12px 0;
+    background: rgba(30, 58, 138, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.thalamus-system-prompt-header {
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s ease;
+}
+
+.thalamus-system-prompt-header:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.thalamus-system-prompt-toggle {
+    color: #6366f1;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.thalamus-system-prompt-label {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #818cf8;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.thalamus-system-warnings-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
+    align-items: center;
+}
+
+.thalamus-warning-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-family: var(--font-mono, monospace);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.thalamus-warning-badge.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.thalamus-warning-badge.critical {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.thalamus-system-prompt-content {
+    padding: 12px 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border-top: 1px solid rgba(99, 102, 241, 0.1);
+    font-size: 0.75rem;
+    color: #9ca3af;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: var(--font-mono, monospace);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* SEMANTIC TOOL CALL RENDERING - compact by default */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+.thalamus-tool-call-compact {
+    background: rgba(30, 58, 138, 0.3);
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 8px 0;
+    font-size: 0.875rem;
+}
+
+.thalamus-tool-call-oneliner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.thalamus-tool-call-oneliner .thalamus-tool-call-icon {
+    color: #60a5fa;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.thalamus-tool-call-semantic {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    color: #93c5fd;
+    flex: 1;
+}
+
+.thalamus-tool-call-oneliner .thalamus-tool-call-status {
+    color: #4ade80;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.thalamus-tool-thought-compact {
+    color: #c4b5fd;
+    font-style: italic;
+    font-size: 0.75rem;
+    padding: 6px 0;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.thalamus-tool-details-toggle {
+    background: transparent;
+    border: none;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    color: #6366f1;
+    cursor: pointer;
+    font-family: var(--font-mono, monospace);
+    text-align: left;
+    margin: 0;
+    transition: color 0.2s;
+}
+
+.thalamus-tool-details-toggle:hover {
+    color: #818cf8;
+}
+
+.thalamus-tool-call-verbose {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(99, 102, 241, 0.15);
+    background: #1f2937;
+    border-radius: 4px;
+    padding: 10px;
+}

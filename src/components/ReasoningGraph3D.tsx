@@ -3,6 +3,7 @@ import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import { useDendrite } from './SynapticCleft';
+import { summarizeTool, toolOneLiner } from '../utils/toolFormatters';
 import type {
     GraphLink,
     GraphNode,
@@ -54,22 +55,77 @@ const extractNodeThought = (node: GraphNode): string => {
     return thought;
 };
 
+const generateHoverCardLines = (node: GraphNode): string[] => {
+    const lines: string[] = [];
+
+    if (node.type === 'turn') {
+        const turnData = node as ReasoningTurnData & { id: string };
+        const durationStr = turnData.model_usage_record?.query_time || turnData.delta || '?';
+        const status = turnData.status_name || 'Unknown';
+        lines.push(`Turn ${turnData.turn_number} · ${durationStr} · ${status}`);
+
+        if (turnData.tool_calls && turnData.tool_calls.length > 0) {
+            lines.push(toolOneLiner(turnData.tool_calls[0]));
+        }
+
+        const thought = extractNodeThought(node);
+        if (thought) {
+            lines.push(`💭 "${thought}"`);
+        }
+    } else if (node.type === 'tool') {
+        const toolData = node as ToolCallData & { id: string };
+        const summary = summarizeTool(toolData);
+        const status = toolData.status_name || 'Unknown';
+        lines.push(`⚙ ${toolData.tool_name} · ${status}`);
+        lines.push(summary.action);
+    } else if (node.type === 'engram') {
+        const engramData = node as TalosEngramData & { id: string };
+        lines.push(`◆ "${engramData.name}"`);
+        const relevance = (engramData.relevance_score || 0).toFixed(2);
+        const sourceTurn = engramData.source_turns?.[0] || '?';
+        lines.push(`relevance ${relevance} · from Turn ${sourceTurn}`);
+    } else if (node.type === 'goal') {
+        const goalData = node as ReasoningGoalData & { id: string };
+        const status = goalData.status_name || 'Unknown';
+        lines.push(`⊕ Goal · ${status}`);
+        const goalPreview = goalData.rendered_goal?.slice(0, 100) || '';
+        lines.push(`"${goalPreview}"`);
+    } else if (node.type === 'conclusion') {
+        const conclusionData = node as any; // SessionConclusionData
+        const status = conclusionData.outcome_status || conclusionData.status_name || 'Complete';
+        lines.push(`◼ ${status}`);
+        const summaryPreview = conclusionData.summary?.slice(0, 100) || '';
+        lines.push(`"${summaryPreview}"`);
+    }
+
+    return lines;
+};
+
 interface BubblePosition {
     x: number;
     y: number;
     text: string;
 }
 
+interface HoverCard {
+    nodeId: string;
+    x: number;
+    y: number;
+    lines: string[];
+}
+
 interface ReasoningGraphProps {
     sessionId: string;
     onNodeSelect: (node: GraphNode) => void;
     onStatsUpdate: (stats: { level: number, focus: string, xp: number, status: string, latestThought: string }) => void;
+    onSessionDataUpdate?: (data: ReasoningSessionData) => void;
 }
 
 export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     sessionId,
     onNodeSelect,
     onStatsUpdate,
+    onSessionDataUpdate,
 }: ReasoningGraphProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
@@ -78,6 +134,8 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
     const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
+    const [hoverCard, setHoverCard] = useState<HoverCard | null>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const parseDuration = (str: string) => {
         if (!str) return 0;
@@ -134,6 +192,8 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                     status: data.status_name,
                     latestThought
                 });
+
+                onSessionDataUpdate?.(data);
 
                 const newNodes: GraphNode[] = [];
                 const newLinks: GraphLink[] = [];
@@ -207,7 +267,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         prevDataRef.current = "";
         load();
         return () => { cancelled = true; };
-    }, [sessionId, turnEvent, sessionEvent, onStatsUpdate]);
+    }, [sessionId, turnEvent, sessionEvent, onStatsUpdate, onSessionDataUpdate]);
 
     useEffect(() => {
         let frameId: number;
@@ -282,6 +342,52 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
         return () => cancelAnimationFrame(frameId);
     }, [graphData]);
+
+    const handleNodeHover = useCallback((nodeObj: object | null) => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+
+        if (!nodeObj) {
+            setHoverCard(null);
+            return;
+        }
+
+        const node = nodeObj as GraphNode;
+        const fg = fgRef.current;
+        if (!fg) return;
+
+        hoverTimeoutRef.current = setTimeout(() => {
+            const camera = fg.camera();
+            const renderer = fg.renderer();
+
+            if (!camera || !renderer) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            const { width, height } = rect;
+
+            const vector = new THREE.Vector3(
+                (node.x as number) || 0,
+                (node.y as number) || 0,
+                (node.z as number) || 0
+            );
+
+            vector.project(camera);
+
+            const x = (vector.x * 0.5 + 0.5) * width + 15;
+            const y = (-vector.y * 0.5 + 0.5) * height + 15;
+
+            const lines = generateHoverCardLines(node);
+
+            setHoverCard({
+                nodeId: node.id,
+                x,
+                y,
+                lines
+            });
+        }, 200);
+    }, []);
 
     const renderNode = useCallback((nodeObj: object) => {
         const node = nodeObj as GraphNode;
@@ -358,6 +464,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                 }}
                 linkDirectionalParticleWidth={2}
                 linkDirectionalParticleSpeed={0.005}
+                onNodeHover={handleNodeHover}
                 onNodeClick={(nodeObj: object) => {
                     const node = nodeObj as GraphNode;
                     const distance = 60;
@@ -395,6 +502,18 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                     );
                 })}
             </div>
+            {hoverCard && (
+                <div
+                    className="reasoninggraph3d-hover-card"
+                    style={{ left: `${hoverCard.x}px`, top: `${hoverCard.y}px` }}
+                >
+                    {hoverCard.lines.map((line, idx) => (
+                        <div key={idx} className="reasoninggraph3d-hover-card-line">
+                            {line}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 });

@@ -18,6 +18,7 @@ import {
 } from '@assistant-ui/react';
 import { apiFetch } from '../api';
 import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
+import { toolOneLiner, extractThought } from '../utils/toolFormatters';
 import './ThalamusChat.css'; // Reusing the glassmorphic styles
 
 // Assuming a standard REST structure for your session endpoints
@@ -263,6 +264,48 @@ const createSessionModelAdapter = (sessionId: string): ChatModelAdapter => ({
 });
 
 // ---------------------------------------------------------------------------
+// System prompt deduplication utilities
+// ---------------------------------------------------------------------------
+
+interface SystemPromptCache {
+    firstContent: string;
+    isFirstShown: boolean;
+}
+
+function computeContentSimilarity(a: string, b: string): number {
+    // Simple heuristic: compare length and key substrings
+    const lenA = a.length;
+    const lenB = b.length;
+    if (lenA === 0 || lenB === 0) return lenA === lenB ? 1 : 0;
+
+    const minLen = Math.min(lenA, lenB);
+    const maxLen = Math.max(lenA, lenB);
+
+    // Check if >80% similar by length
+    if (minLen / maxLen > 0.8) {
+        // Check for key phrase similarity
+        const keyPhrases = ['IDENTITY CONTEXT', 'ReasoningSession', 'Cortex'];
+        const sharedPhrases = keyPhrases.filter(p => a.includes(p) && b.includes(p)).length;
+        return sharedPhrases >= 2 ? 0.85 : 0.75;
+    }
+    return minLen / maxLen;
+}
+
+function extractSystemWarnings(content: string): string[] {
+    const warnings: string[] = [];
+    const lines = content.split('\n');
+
+    for (const line of lines) {
+        if (line.includes('[SYSTEM WARNING:') || line.includes('[SYSTEM CRITICAL:')) {
+            const match = line.match(/\[(SYSTEM[^\]]+)\]/);
+            if (match) warnings.push(match[1]);
+        }
+    }
+
+    return warnings;
+}
+
+// ---------------------------------------------------------------------------
 // UI components
 // ---------------------------------------------------------------------------
 
@@ -297,74 +340,191 @@ const ChainOfThought: React.FC = () => (
 // the TS2339 "message does not exist on MessageState" error entirely.
 interface CustomMessageToolsProps {
     content: readonly ThreadAssistantMessagePart[];
+    expandDetails?: boolean;
 }
 
 const RESULT_PREVIEW_LIMIT = 200;
 
-const CustomMessageTools: React.FC<CustomMessageToolsProps> = ({ content }) => (
-    <>
-        {content.map((part, idx) => {
-            if (part.type !== 'tool-call') return null;
+const CustomMessageTools: React.FC<CustomMessageToolsProps> = ({ content, expandDetails = false }) => {
+    const [expandedToolIds, setExpandedToolIds] = useState<Set<string>>(new Set());
 
-            const hasResult = part.result !== undefined;
-            const argsObj = (part.args ?? {}) as Record<string, JSONValue>;
-            const thought = argsObj.thought;
-            const otherArgs = Object.entries(argsObj).filter(([k]) => k !== 'thought');
-            const resultStr = hasResult ? safeStringify(part.result) : '';
-            const isLongResult = resultStr.length > RESULT_PREVIEW_LIMIT;
+    const toggleExpanded = (toolCallId: string) => {
+        setExpandedToolIds(prev => {
+            const next = new Set(prev);
+            if (next.has(toolCallId)) next.delete(toolCallId);
+            else next.add(toolCallId);
+            return next;
+        });
+    };
 
-            return (
-                <React.Fragment key={`${part.toolCallId}-${idx}`}>
-                    <div className="thalamus-tool-call">
-                        <div className="thalamus-tool-call-header">
-                            <span className="thalamus-tool-call-icon">⚙️</span>
-                            <span className="thalamus-tool-call-name">{part.toolName}</span>
-                        </div>
-                        {thought && (
-                            <div className="thalamus-tool-thought">
-                                {String(thought)}
+    return (
+        <>
+            {content.map((part, idx) => {
+                if (part.type !== 'tool-call') return null;
+
+                const hasResult = part.result !== undefined;
+                const argsObj = (part.args ?? {}) as Record<string, JSONValue>;
+                const thought = argsObj.thought as string | undefined;
+                const otherArgs = Object.entries(argsObj).filter(([k]) => k !== 'thought');
+                const resultStr = hasResult ? safeStringify(part.result) : '';
+                const isLongResult = resultStr.length > RESULT_PREVIEW_LIMIT;
+                const isExpanded = expandedToolIds.has(part.toolCallId) || expandDetails;
+
+                return (
+                    <React.Fragment key={`${part.toolCallId}-${idx}`}>
+                        <div className="thalamus-tool-call-compact">
+                            <div className="thalamus-tool-call-oneliner">
+                                <span className="thalamus-tool-call-icon">⚙</span>
+                                <span className="thalamus-tool-call-semantic">
+                                    {part.toolName} → {part.toolName.includes('_') ? 'custom action' : 'call'}
+                                </span>
+                                <span className="thalamus-tool-call-status">✓</span>
                             </div>
-                        )}
-                        {otherArgs.length > 0 && (
-                            <div className="thalamus-tool-call-params">
-                                {otherArgs.map(([key, val]) => (
-                                    <div key={key} className="thalamus-tool-param">
-                                        <span className="thalamus-tool-param-key">{key}</span>
-                                        <span className="thalamus-tool-param-val">
-                                            {typeof val === 'string' ? val : safeStringify(val)}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
 
-                    {hasResult && (
-                        <div className="thalamus-tool-result">
-                            <div className="thalamus-tool-result-label">Result</div>
-                            {isLongResult ? (
-                                <details className="thalamus-tool-result-details">
-                                    <summary className="thalamus-tool-result-summary">
-                                        {resultStr.slice(0, RESULT_PREVIEW_LIMIT)}…
-                                    </summary>
-                                    <div className="thalamus-tool-result-value">
-                                        {resultStr}
+                            {thought && (
+                                <div className="thalamus-tool-thought-compact">
+                                    💭 {String(thought).slice(0, 120)}{String(thought).length > 120 ? '…' : ''}
+                                </div>
+                            )}
+
+                            <button
+                                className="thalamus-tool-details-toggle"
+                                onClick={() => toggleExpanded(part.toolCallId)}
+                                type="button"
+                                aria-label="Toggle tool details"
+                            >
+                                {isExpanded ? '▼' : '▸'} details
+                            </button>
+
+                            {isExpanded && (
+                                <div className="thalamus-tool-call-verbose">
+                                    <div className="thalamus-tool-call-header">
+                                        <span className="thalamus-tool-call-icon">⚙️</span>
+                                        <span className="thalamus-tool-call-name">{part.toolName}</span>
                                     </div>
-                                </details>
-                            ) : (
-                                <div className="thalamus-tool-result-value">
-                                    {resultStr}
+                                    {thought && (
+                                        <div className="thalamus-tool-thought">
+                                            {String(thought)}
+                                        </div>
+                                    )}
+                                    {otherArgs.length > 0 && (
+                                        <div className="thalamus-tool-call-params">
+                                            {otherArgs.map(([key, val]) => (
+                                                <div key={key} className="thalamus-tool-param">
+                                                    <span className="thalamus-tool-param-key">{key}</span>
+                                                    <span className="thalamus-tool-param-val">
+                                                        {typeof val === 'string' ? val : safeStringify(val)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
-                    )}
-                </React.Fragment>
-            );
-        })}
-    </>
-);
+
+                        {hasResult && isExpanded && (
+                            <div className="thalamus-tool-result">
+                                <div className="thalamus-tool-result-label">Result</div>
+                                {isLongResult ? (
+                                    <details className="thalamus-tool-result-details">
+                                        <summary className="thalamus-tool-result-summary">
+                                            {resultStr.slice(0, RESULT_PREVIEW_LIMIT)}…
+                                        </summary>
+                                        <div className="thalamus-tool-result-value">
+                                            {resultStr}
+                                        </div>
+                                    </details>
+                                ) : (
+                                    <div className="thalamus-tool-result-value">
+                                        {resultStr}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </>
+    );
+};
+
+interface TurnMarkerData {
+    turnNumber: number;
+    timestamp: number;
+    tokenCount?: number;
+}
+
+const TurnMarker: React.FC<{ data: TurnMarkerData }> = ({ data }) => {
+    const [expanded, setExpanded] = useState(false);
+    const elapsed = data.timestamp ? (data.timestamp / 1000).toFixed(2) : '0.00';
+    const tokens = data.tokenCount ? ` · ${data.tokenCount} tokens` : '';
+
+    return (
+        <div className="thalamus-turn-marker-root">
+            <button
+                className="thalamus-turn-marker"
+                onClick={() => setExpanded(!expanded)}
+                type="button"
+                title="Click to expand turn context"
+            >
+                ──── turn {data.turnNumber} · {elapsed}s{tokens} ────
+            </button>
+            {expanded && (
+                <div className="thalamus-turn-context">
+                    <p>Turn {data.turnNumber} context loaded</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const SystemPromptBlock: React.FC<{ content: string; isFirst: boolean; warnings: string[] }> = ({
+    content,
+    isFirst,
+    warnings,
+}) => {
+    const [expanded, setExpanded] = useState(isFirst); // Collapse by default for subsequent ones
+
+    if (!isFirst && warnings.length === 0) {
+        // Skip rendering if it's a duplicate and has no unique warnings
+        return null;
+    }
+
+    return (
+        <div className="thalamus-system-prompt-block">
+            <button
+                className="thalamus-system-prompt-header"
+                onClick={() => setExpanded(!expanded)}
+                type="button"
+            >
+                <span className="thalamus-system-prompt-toggle">{expanded ? '▼' : '▸'}</span>
+                <span className="thalamus-system-prompt-label">IDENTITY CONTEXT</span>
+                {warnings.length > 0 && (
+                    <span className="thalamus-system-warnings-summary">
+                        {warnings.map((w, i) => {
+                            const isCritical = w.includes('CRITICAL');
+                            return (
+                                <span
+                                    key={i}
+                                    className={`thalamus-warning-badge ${isCritical ? 'critical' : 'warning'}`}
+                                >
+                                    {w}
+                                </span>
+                            );
+                        })}
+                    </span>
+                )}
+            </button>
+            {expanded && <div className="thalamus-system-prompt-content">{content}</div>}
+        </div>
+    );
+};
 
 function SessionThreadInner() {
+    const [systemPromptCache, setSystemPromptCache] = useState<SystemPromptCache | null>(null);
+    const [turnCounter, setTurnCounter] = useState(0);
+
     return (
         <ThreadPrimitive.Root className="thalamus-thread">
             <ThreadPrimitive.Viewport className="thalamus-viewport">
@@ -377,7 +537,7 @@ function SessionThreadInner() {
                     </div>
                 </AuiIf>
                 <ThreadPrimitive.Messages>
-                    {({ message }) => {
+                    {({ message, messageIndex }) => {
                         // Narrowed cast: we only pass assistant content to CustomMessageTools,
                         // and only when the role is actually 'assistant'.
                         const assistantContent: readonly ThreadAssistantMessagePart[] =
@@ -385,19 +545,78 @@ function SessionThreadInner() {
                                 ? (message.content as readonly ThreadAssistantMessagePart[])
                                 : [];
 
+                        // Detect system message for prompt deduplication
+                        let systemContent = '';
+                        let isSystemPrompt = false;
+                        if (message.role === 'assistant') {
+                            for (const part of assistantContent) {
+                                if (part.type === 'text') {
+                                    const text = 'text' in part ? part.text : '';
+                                    if (text.includes('IDENTITY CONTEXT') || text.includes('ReasoningSession')) {
+                                        systemContent = text;
+                                        isSystemPrompt = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Handle system prompt deduplication
+                        let shouldRenderSystemPrompt = true;
+                        let systemWarnings: string[] = [];
+                        if (isSystemPrompt) {
+                            if (!systemPromptCache) {
+                                setSystemPromptCache({
+                                    firstContent: systemContent,
+                                    isFirstShown: true,
+                                });
+                            } else {
+                                const similarity = computeContentSimilarity(systemPromptCache.firstContent, systemContent);
+                                if (similarity > 0.8) {
+                                    shouldRenderSystemPrompt = false;
+                                    systemWarnings = extractSystemWarnings(systemContent);
+                                }
+                            }
+                        }
+
+                        // Detect turn boundaries (after tool result, when system message appears)
+                        let isTurnBoundary = false;
+                        if (messageIndex > 0 && isSystemPrompt) {
+                            isTurnBoundary = true;
+                            setTurnCounter(c => c + 1);
+                        }
+
+                        const turnData: TurnMarkerData = {
+                            turnNumber: turnCounter,
+                            timestamp: 320, // Placeholder timing
+                            tokenCount: 155, // Placeholder token count
+                        };
+
                         return (
-                            <div className={`thalamus-message thalamus-message--${message.role}`}>
-                                <MessagePrimitive.Root>
-                                    <div className="thalamus-message-text">
-                                        <MessagePrimitive.Parts
-                                            components={{ ChainOfThought }}
-                                        />
-                                        {message.role === 'assistant' && (
-                                            <CustomMessageTools content={assistantContent} />
-                                        )}
+                            <React.Fragment key={message.id}>
+                                {isTurnBoundary && turnCounter > 0 && <TurnMarker data={turnData} />}
+
+                                {isSystemPrompt && shouldRenderSystemPrompt && (
+                                    <SystemPromptBlock
+                                        content={systemContent}
+                                        isFirst={!systemPromptCache || !systemPromptCache.isFirstShown}
+                                        warnings={systemWarnings}
+                                    />
+                                )}
+
+                                {!isSystemPrompt && (
+                                    <div className={`thalamus-message thalamus-message--${message.role}`}>
+                                        <MessagePrimitive.Root>
+                                            <div className="thalamus-message-text">
+                                                <MessagePrimitive.Parts components={{ ChainOfThought }} />
+                                                {message.role === 'assistant' && (
+                                                    <CustomMessageTools content={assistantContent} />
+                                                )}
+                                            </div>
+                                        </MessagePrimitive.Root>
                                     </div>
-                                </MessagePrimitive.Root>
-                            </div>
+                                )}
+                            </React.Fragment>
                         );
                     }}
                 </ThreadPrimitive.Messages>
