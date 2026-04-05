@@ -230,44 +230,52 @@ function BrainRegion(props: BrainRegionProps) {
 /*  AS Mesh logo — lightweight fallback when workers are running      */
 /* ------------------------------------------------------------------ */
 
+/* Map FBX mesh names to their known Blender colors */
+const LOGO_COLORS: Record<string, string> = {
+    'Plane012': '#08007b',  /* A — deep blue */
+    'Plane011': '#6fbada',  /* S — light blue */
+};
+
 function LogoMeshInner({ visible }: { visible: boolean }) {
     const groupRef = useRef<THREE.Group>(null);
     const opacityRef = useRef(0);
 
     const fbx = useLoader(FBXLoader, `${MODEL_BASE}AreSelflogo.001.fbx`);
 
-    const material = useMemo(() => {
-        return new THREE.MeshStandardMaterial({
-            color: new THREE.Color('#38bdf8'),
-            emissive: new THREE.Color('#38bdf8'),
-            emissiveIntensity: 0.3,
-            roughness: 0.3,
-            metalness: 0.8,
-            transparent: true,
-            opacity: 0,
-            depthWrite: false,
-        });
-    }, []);
-
-    const clone = useMemo(() => {
+    const { clone, mats } = useMemo(() => {
         const c = fbx.clone(true);
+        const m: THREE.MeshStandardMaterial[] = [];
         c.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
-                (child as THREE.Mesh).material = material;
+                const hex = LOGO_COLORS[child.name] || '#6fbada';
+                const mat = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(hex),
+                    emissive: new THREE.Color(hex),
+                    emissiveIntensity: 0.5,
+                    roughness: 0.3,
+                    metalness: 0.8,
+                    transparent: true,
+                    opacity: 0,
+                    depthWrite: false,
+                });
+                (child as THREE.Mesh).material = mat;
+                m.push(mat);
             }
         });
-        return c;
-    }, [fbx, material]);
+        return { clone: c, mats: m };
+    }, [fbx]);
 
     useFrame(() => {
         const target = visible ? 1 : 0;
-        opacityRef.current += (target - opacityRef.current) * 0.03;
-        material.opacity = opacityRef.current;
-        material.depthWrite = opacityRef.current > 0.5;
+        opacityRef.current += (target - opacityRef.current) * 0.05;
+        for (let i = 0; i < mats.length; i++) {
+            mats[i].opacity = opacityRef.current;
+            mats[i].depthWrite = opacityRef.current > 0.5;
+        }
     });
 
     return (
-        <group ref={groupRef} scale={0.05} position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, -Math.PI]}>
+        <group ref={groupRef} scale={0.05} position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, -Math.PI / 2]}>
             <primitive object={clone} />
         </group>
     );
@@ -294,7 +302,6 @@ export interface BrainPlaceholderProps {
 
 export const BrainPlaceholder = ({ onLobeClick, hoveredLobe, setHoveredLobe, showBrain }: BrainPlaceholderProps) => {
     useCursor(hoveredLobe !== null, 'pointer', 'auto');
-    showBrain = false;
     return (
         <group>
             <group rotation={UNREAL_ROTATION}>
@@ -313,3 +320,5 @@ export const BrainPlaceholder = ({ onLobeClick, hoveredLobe, setHoveredLobe, sho
         </group>
     );
 };
+
+export default BrainPlaceholder;
