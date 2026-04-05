@@ -27,6 +27,7 @@ import { EnvironmentEditor } from './pages/EnvironmentEditor';
 import { HippocampusPage } from './pages/HippocampusPage';
 import { HypothalamusPage } from './pages/HypothalamusPage';
 import { PFCEditPage } from './pages/PFCEditPage';
+import { EffectorEditorPage } from './pages/EffectorEditorPage';
 
 function App() {
     return (
@@ -52,6 +53,8 @@ function App() {
                                     <Route path="spiketrain/:spiketrainId" element={<CNSMonitorPage />} />
                                     <Route path="spike/:spikeId" element={<CNSSpikeForensics />} />
                                     <Route path="spikeset" element={<CNSSpikeSet />} />
+                                    <Route path="effector" element={<EffectorEditorPage />} />
+                                    <Route path="effector/:effectorId/edit" element={<EffectorEditorPage />} />
                                 </Route>
                                 <Route path="temporal" element={<TemporalStub />} />
                                 <Route path="pfc">

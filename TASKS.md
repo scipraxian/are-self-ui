@@ -11,7 +11,7 @@ blackboard. This decouples Are-Self from any specific backend (InvokeAI, ComfyUI
 Frontend implications: the CNS monitoring views already show effector execution. New needs: image preview
 in spike forensics when the effector result is an image path, audio playback widget for WAV/MP3 results,
 and potentially a "modality" indicator on Identity Loadout showing what each disc is attuned to (art,
-audio, code). The Effector Editor (backend task) will need a frontend counterpart.
+audio, code). The Effector Editor is built (Session 9) — see completed items below.
 
 ## Ship-Blocking
 
@@ -139,6 +139,30 @@ audio, code). The Effector Editor (backend task) will need a frontend counterpar
   selection highlights.
 - [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
 - [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.
+
+## Recently Completed (April 5, 2026 — Session 9)
+
+- [x] **Effector Editor page (`/cns/effector/:effectorId/edit`).** Full-page editor for Effectors
+  and their associated Executables. Three-panel layout: left panel lists all effectors with create
+  button, center panel has full form with all fields. Features:
+  - Name, description, distribution mode (dropdown), executable (dropdown with inline editor)
+  - Executable inline editor: name, description, path, log path, switches (read-only table),
+    argument assignments (add/remove/reorder with up/down arrows and order input)
+  - Effector argument assignments: same full CRUD as executable args (add/remove/reorder)
+  - Context entries: key/value CRUD with inline editing
+  - Full command preview (`rendered_full_command` from backend `Effector.get_full_command()`)
+  - Argument definition creation: inline form to create new `ExecutableArgument` records
+  - All mutations use imperative `fetchDetail(id)` pattern for reliable UI refresh
+  - Uncontrolled inputs (`defaultValue` + `key` + `onBlur`) for order fields to avoid stale state
+  - Delete effector with confirmation dialog
+  - Breadcrumbs wired via BreadcrumbProvider
+  - CSS matches existing glass-panel dark theme (`EffectorEditorPage.css`)
+- [x] **Double-click NeuronNode → navigate to Effector Editor.** CNSEditor.tsx `onNodeDoubleClick`
+  extracts `effectorId` from node data. CNSEditPage.tsx wires the handler to `navigate()`.
+  Routes added to App.tsx: `/cns/effector` and `/cns/effector/:effectorId/edit`.
+- [x] **Inline editing of argument definitions.** NAME and ARGUMENT columns in `renderArgTable`
+  now use uncontrolled `<input>` elements (`defaultValue` + `key` + `onBlur`) that PATCH to
+  `/api/v2/executable-arguments/{id}/` on blur, then `fetchDetail` refreshes the UI.
 
 ## Recently Completed (April 4, 2026 — Session 7)
 

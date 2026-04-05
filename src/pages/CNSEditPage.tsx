@@ -58,6 +58,7 @@ export function CNSEditPage() {
                     pathwayId={pathwayId}
                     onDrillDown={(id) => navigate(`/cns/pathway/${id}/edit`)}
                     onNodeSelect={setSelectedNode}
+                    onNodeDoubleClick={(effectorId) => navigate(`/cns/effector/${effectorId}/edit`)}
                     onLaunch={(trainId) => navigate(`/cns/spiketrain/${trainId}`)}
                     isMonitorMode={false}
                 />

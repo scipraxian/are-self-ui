@@ -20,6 +20,8 @@ interface CNSEditorProps {
     pathwayId: string;
     onDrillDown?: (pathwayId: string) => void;
     onNodeSelect?: (node: any) => void;
+    /** Called when a node is double-clicked — navigates to the Effector Editor. */
+    onNodeDoubleClick?: (effectorId: number) => void;
     /** Called after a successful launch with the new SpikeTrain ID. */
     onLaunch?: (spikeTrainId: string) => void;
     /**
@@ -45,6 +47,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
     pathwayId,
     onDrillDown,
     onNodeSelect,
+    onNodeDoubleClick,
     onLaunch,
     isMonitorMode = false,
 }) => {
@@ -261,6 +264,13 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
         if (onNodeSelect) onNodeSelect(node.sourceData);
     };
 
+    const onNodeDoubleClickHandler = useCallback((_event: React.MouseEvent, node: any) => {
+        const effectorId = node.sourceData?.effector ?? node.data?.effectorId;
+        if (effectorId && onNodeDoubleClick) {
+            onNodeDoubleClick(effectorId);
+        }
+    }, [onNodeDoubleClick]);
+
     // Listen for external deletion events from the Inspector
     useEffect(() => {
         const handleExternalDelete = (e: any) => {
@@ -283,6 +293,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeClick={onNodeClick}
+                onNodeDoubleClick={onNodeDoubleClickHandler}
                 onNodeDragStop={onNodeDragStop}
                 onConnect={onConnect}
                 onNodesDelete={onNodesDelete}

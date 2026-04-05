@@ -19,16 +19,26 @@ all necessary context. The CLAUDE.md file is read first by Claude Code every ses
 
 A React + Vite + TypeScript frontend for **Are-Self**, an open-source AI reasoning engine with
 neurologically-inspired architecture. Every UI component maps to a brain region. The backend is
-Django REST Framework (repo: `are-self`, under `scipraxian` on GitHub). The frontend
+Django REST Framework (repo: `are-self-api`, under `scipraxian` on GitHub). The frontend
 consumes the DRF API.
 
 **Mission:** Empower underprivileged youth in remote areas with free access to AI technology.
-MIT licensed. The interface must be approachable, intuitive, and beautiful.
+MIT licensed. The interface must be approachable, intuitive, and beautiful. Released by
+Michael personally under [scipraxian](https://github.com/scipraxian).
 
 **Target user:** A 10-year-old with no money (or their grandma). Every design decision flows
 from this. If it requires a credit card, a powerful GPU, or a CS degree — it's wrong. The
 system must run on whatever hardware they have, use free models, and be approachable enough
 that a child can make art and games with it.
+
+## The Four Repositories
+
+| Repo | Purpose |
+|------|---------|
+| [are-self-api](https://github.com/scipraxian/are-self-api) | Django backend |
+| [are-self-ui](https://github.com/scipraxian/are-self-ui) | React frontend (this repo) |
+| [are-self-docs](https://github.com/scipraxian/are-self-docs) | Docusaurus documentation site → [are-self.com](https://are-self.com) |
+| [are-self-research](https://github.com/scipraxian/are-self-research) | LaTeX whitepapers (APA 7th edition) |
 
 ## The Complete App Flow
 
@@ -95,6 +105,7 @@ session concludes or yields → control returns up the spike chain.
 | `/cns/pathway/:pathwayId` | Train timeline (spike bars) | "What happened recently?" |
 | `/cns/spiketrain/:spiketrainId` | Live graph (spike overlay on ReactFlow) | "How is this execution flowing?" |
 | `/cns/spike/:spikeId` | Dual-terminal forensics (xterm.js) | "What exactly did this spike do?" |
+| `/cns/effector/:effectorId/edit` | Effector editor (full CRUD) | "How is this effector configured?" |
 | `/cns/spikeset?s1=&s2=` | Multi-spike comparison | "How do these streams compare?" |
 | `/frontal` | Session list | "What sessions exist?" |
 | `/frontal/:sessionId` | 3D graph or chat view | "What did this session think/do?" |
@@ -127,6 +138,8 @@ Bookmarkable, refreshable, shareable. F5 returns exactly where you were.
 /cns/pathway/:pathwayId/edit        → CNSEditPage (ReactFlow graph editor)
 /cns/spiketrain/:spiketrainId      → CNSMonitorPage (live execution graph)
 /cns/spike/:spikeId                 → CNSSpikeForensics (dual terminal)
+/cns/effector                       → EffectorEditorPage (effector list)
+/cns/effector/:effectorId/edit     → EffectorEditorPage (full editor)
 /cns/spikeset?s1=uuid&s2=uuid      → CNSSpikeSet (multi-spike comparison)
 /pfc                                → PFCPage (board/backlog toggle)
 /pfc/epic/:epicId                   → PFCDetailPage (epic with child items)
@@ -579,6 +592,15 @@ The debounced refetch coalesces events. **Design rule:** the thalamus `broadcast
 always uses `instance.id` as `dendrite_id`. Frontend subscriptions must match this — subscribe
 to the correct receptor_class and either pass `null` or the exact instance ID. Do not assume
 parent IDs will be used as dendrite_id.
+
+Session 9: Effector Editor page (`EffectorEditorPage.tsx` + `.css`). Three-panel layout with
+full CRUD on all Effector fields: name, description, distribution mode, executable (with inline
+editor), switches, argument assignments (add/remove/reorder), context entries (key/value CRUD),
+full command preview. Double-click NeuronNode on CNS graph → navigates to effector editor.
+Routes: `/cns/effector` and `/cns/effector/:effectorId/edit`. Imperative `fetchDetail` pattern
+for reliable refresh after mutations. Uncontrolled inputs for order fields. Argument definition
+creation inline. Argument name and text fields are inline-editable in the table (uncontrolled inputs, PATCH on
+blur to `executable-arguments` endpoint).
 
 Session 7: SystemControlPanel on PNS page, debug node red in editor, retry_delay key fix,
 getSpikeStatus duplicate return fix, 68 logic node tests. Session 6: effector palette overhaul,

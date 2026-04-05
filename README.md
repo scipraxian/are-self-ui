@@ -2,7 +2,7 @@
 
 **The brain you can see.**
 
-React frontend for [Are-Self](https://github.com/scipraxian/are-self), an open-source AI reasoning engine with
+React frontend for [Are-Self](https://github.com/scipraxian/are-self-api), an open-source AI reasoning engine with
 neurologically-inspired architecture. Every UI component maps to a brain region. The backend is Django REST Framework —
 this repo consumes the DRF API.
 
@@ -11,7 +11,7 @@ this repo consumes the DRF API.
 ### Prerequisites
 
 - Node.js 20+
-- The Are-Self backend running (see [are-self](https://github.com/scipraxian/are-self))
+- The Are-Self backend running (see [are-self-api](https://github.com/scipraxian/are-self-api))
 
 ### Install and run
 
