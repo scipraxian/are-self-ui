@@ -19,6 +19,10 @@
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
+  /* Brand Identity */
+  --brand-deep: #08007b;       /* ARE — deep blue (logo A mesh) */
+  --brand-stem: #6fbada;       /* SELF — stem blue (logo S mesh) */
+
   /* Neon Accents (The Neural Colors) */
   --accent-blue: #38bdf8;
   --accent-purple: #a855f7;
@@ -26,6 +30,18 @@
   --accent-orange: #f99f1b;
   --accent-green: #4ade80;
   --accent-red: #ef4444;
+
+  /* Brain Region Colors */
+  --region-prefrontal: #ef4444;
+  --region-hippocampus: #f472b6;
+  --region-hypothalamus: #fbbf24;
+  --region-parietal: #f99f1b;
+  --region-occipital: #a855f7;
+  --region-pons: #06b6d4;
+  --region-cns: #38bdf8;
+  --region-pns: #14b8a6;
+  --region-reptilian: #64748b;
+  --region-reptilian-emissive: #818cf8;
 
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
