@@ -554,63 +554,40 @@ The Frontal Lobe was moved from PK 171 to PK 8 in Session 5 for consistency with
 - Do not delete AIModel or AIModelProvider records — disable them instead (enabled=False, is_enabled=False).
 - Do not mix fixture data across apps — each Django app has its own `fixtures/initial_data.json`.
 
-## Current State (April 2026)
+## Current State (April 5, 2026)
 
 **What works:** Every brain region has a functional UI. The full drill chain works: Identity →
 Temporal → PFC → CNS → Frontal → Hippocampus. Real-time updates via useDendrite throughout.
 Hypothalamus model catalog with sync, pull, routing, and budget tabs. All navigation is
-URL-driven and bookmarkable.
+URL-driven and bookmarkable. Root dashboard (BloodBrainBarrier) with stats cards and quick nav.
+4 custom neuron nodes (Gate, Retry, Delay, Frontal Lobe) with inline editing and PK-based type
+resolution. Effector Editor page with full CRUD. Effector palette grouped by role with search.
+Reasoning view with three-tier turn inspector, Parietal Activity tab, tool call rendering with
+thought extraction, graph hover cards. Tool formatting via shared `toolFormatters.ts`. Monitor
+view with live dendrite refresh (debounced 500ms coalesce). SystemControlPanel on PNS page.
+Expanded addon and tool editors. SelectionFilter and Budget click-throughs to Hypothalamus.
+Environment editor with inline context key creation.
 
-**Top priority:** Image and audio manipulation capabilities via CNS effectors. Frontend implications:
-image preview in spike forensics when effector result is an image path, audio playback widget for
-WAV/MP3 results, modality indicator on Identity Loadout showing what each disc is attuned to
-(art, audio, code). Generation effector node (awaiting backend PoC).
+**Top priority:** PNS expansion (multiple Ollama endpoint UI, live agent monitoring). Image/audio
+generation UI deferred to post-release.
 
-**What's in progress:** See TASKS.md. Key items: graph editor right-click context menu, temporal
-URL-driven selection, shutdown/restart controls (partially done — restart works, layout needs CSS fix).
-PNS page has large empty spaces from SystemControlPanel placement.
+**What's in progress:** See TASKS.md. Key items: PNS expansion, graph editor right-click context
+menu, temporal URL-driven selection, shutdown/restart CSS fix, PNS page layout, session chat
+delivery bug.
 
-**Session 8 — reasoning view rethink + critical fixes:**
+**Shared utility — toolFormatters.ts:** `src/utils/toolFormatters.ts` — semantic rendering for
+known tools (mcp_ticket, mcp_done, mcp_pass, etc). Use `summarizeTool()` for structured data,
+`toolOneLiner()` for compact strings. Always import from here when rendering tool calls.
 
-Reasoning view overhaul: inspector rewrite with session overview card and three-tier turn display
-(headline / Parietal Lobe narrative with thought field / filtered deep dive). New Parietal Activity
-tab (third tab, all tool calls chronologically). Chat improvements: turn markers, semantic tool
-one-liners via shared `toolFormatters.ts`, system prompt dedup. Graph hover cards on all node types.
-Backend `narrative_dump` endpoint for compact session briefings.
+**Design doc:** `REASONING_VIEW_RETHINK.md` in the repo root.
 
-**New shared utility:** `src/utils/toolFormatters.ts` — semantic rendering for known tools
-(mcp_ticket, mcp_done, mcp_pass, etc). Use `summarizeTool()` for structured data, `toolOneLiner()`
-for compact strings. Always import from here when rendering tool calls. Unknown tools get a
-generic fallback. The `thought` field is extracted and shown prominently (💭 prefix).
+**Critical dendrite design rule:** The thalamus `broadcast_status` signal always uses
+`instance.id` as `dendrite_id`. Frontend subscriptions must match this — subscribe to the correct
+receptor_class and either pass `null` or the exact instance ID. Do not assume parent IDs will be
+used as dendrite_id.
 
-**Design doc:** `REASONING_VIEW_RETHINK.md` in the monorepo root. Covers the full design rationale.
-
-Monitor view now refreshes live. Root cause was `useDendrite('Spike',
-spiketrainId)` — the thalamus sends `dendrite_id=spike.id` (individual spike UUID), not the
-train UUID, so the filter never matched. Changed to `useDendrite('Spike', null)` (unfiltered).
-The debounced refetch coalesces events. **Design rule:** the thalamus `broadcast_status` signal
-always uses `instance.id` as `dendrite_id`. Frontend subscriptions must match this — subscribe
-to the correct receptor_class and either pass `null` or the exact instance ID. Do not assume
-parent IDs will be used as dendrite_id.
-
-Session 9: Effector Editor page (`EffectorEditorPage.tsx` + `.css`). Three-panel layout with
-full CRUD on all Effector fields: name, description, distribution mode, executable (with inline
-editor), switches, argument assignments (add/remove/reorder), context entries (key/value CRUD),
-full command preview. Double-click NeuronNode on CNS graph → navigates to effector editor.
-Routes: `/cns/effector` and `/cns/effector/:effectorId/edit`. Imperative `fetchDetail` pattern
-for reliable refresh after mutations. Uncontrolled inputs for order fields. Argument definition
-creation inline. Argument name and text fields are inline-editable in the table (uncontrolled inputs, PATCH on
-blur to `executable-arguments` endpoint).
-
-Session 7: SystemControlPanel on PNS page, debug node red in editor, retry_delay key fix,
-getSpikeStatus duplicate return fix, 68 logic node tests. Session 6: effector palette overhaul,
-Frontal Lobe identity disc dropdown, gate CSS fix, run button → spike train navigation, spike train
-polling fix, debug node constants. Session 5: 4 custom neuron node components with inline editing
-and PK-based type resolution. Session 4: EnvironmentEditor "+ Key" button.
-
-**Legacy remnants:** The backend repo was recently renamed from `talos` to `are-self`. Some
-internal references may still use old naming. The backend CLAUDE.md has the full naming sweep
-status.
+**Legacy remnants:** Talos → Are-Self rename is complete (only migration history retains old
+names). The backend CLAUDE.md has full details.
 
 ## Documentation
 
