@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { List, LayoutGrid, RefreshCw, Download, Zap } from 'lucide-react';
+import { List, LayoutGrid, RefreshCw, Download, Cloud, Zap } from 'lucide-react';
 
 import { ThreePanel } from '../components/ThreePanel';
 import { HypothalamusModelInspector } from '../components/HypothalamusModelInspector';
@@ -175,6 +175,7 @@ export function HypothalamusPage() {
     const [pullingModels, setPullingModels] = useState<Set<string>>(new Set());
     const [syncing, setSyncing] = useState(false);
     const [fetching, setFetching] = useState(false);
+    const [syncingCatalog, setSyncingCatalog] = useState(false);
     const [actionMessage, setActionMessage] = useState<string | null>(null);
 
     // Breadcrumbs
@@ -526,6 +527,45 @@ export function HypothalamusPage() {
         } finally {
             setFetching(false);
             setTimeout(() => setActionMessage(null), 4000);
+        }
+    };
+
+    const handleSyncCatalog = async () => {
+        setSyncingCatalog(true);
+        setActionMessage(null);
+        try {
+            const res = await apiFetch('/api/v2/ai-models/sync_catalog/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const added = data.models_added ?? 0;
+                const pricesUpdated = data.prices_updated ?? 0;
+                const report = data.sync_report;
+                const proposed = report
+                    ? (report.proposed_families?.length ?? 0)
+                    + (report.proposed_creators?.length ?? 0)
+                    + (report.proposed_tags?.length ?? 0)
+                    + (report.proposed_versions?.length ?? 0)
+                    : 0;
+                let msg = `Catalog synced: ${added} added, ${pricesUpdated} prices updated`;
+                if (proposed > 0) {
+                    msg += ` (${proposed} proposed taxonomy items in report)`;
+                }
+                setActionMessage(msg);
+            } else if (res.status === 409) {
+                setActionMessage('Sync already running');
+            } else {
+                setActionMessage('Catalog sync failed');
+            }
+        } catch (err) {
+            console.error('Sync catalog failed', err);
+            setActionMessage('Catalog sync failed');
+        } finally {
+            setSyncingCatalog(false);
+            setTimeout(() => setActionMessage(null), 6000);
         }
     };
 
@@ -895,6 +935,16 @@ export function HypothalamusPage() {
                         >
                             {fetching ? <span className="hypothalamus-spinner" /> : <Download size={13} />}
                             <span>Fetch Catalog</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="hypothalamus-header-action hypothalamus-header-action-sync"
+                            onClick={handleSyncCatalog}
+                            disabled={syncingCatalog}
+                            title="Full sync: LiteLLM + OpenRouter + Ollama (safe mode)"
+                        >
+                            {syncingCatalog ? <span className="hypothalamus-spinner" /> : <Cloud size={13} />}
+                            <span>Sync Catalog</span>
                         </button>
                         <select
                             className="hypothalamus-sort-select"

@@ -1,15 +1,38 @@
 import { useEffect, useRef } from 'react';
 
+interface NeurotransmitterEnvelope {
+    receptor_class: string;
+    dendrite_id: string;
+    molecule: string;
+    activity?: string;
+    vesicle?: {
+        channel?: string;
+        message?: string;
+        status_id?: number;
+        [key: string]: unknown;
+    };
+    /** Top-level field on Dopamine / Cortisol molecules */
+    new_status?: string;
+    timestamp?: string;
+}
+
 interface UseSynapticCleftOptions {
     spikeId: string;
     onGlutamate: (payload: string) => void;
+    onDopamine?: (statusId: string, newStatus: string) => void;
+    onCortisol?: (statusId: string, newStatus: string) => void;
 }
 
 interface UseSynapticCleftResult {
     close: () => void;
 }
 
-export const useSynapticCleft = ({ spikeId, onGlutamate }: UseSynapticCleftOptions): UseSynapticCleftResult => {
+export const useSynapticCleft = ({
+    spikeId,
+    onGlutamate,
+    onDopamine,
+    onCortisol,
+}: UseSynapticCleftOptions): UseSynapticCleftResult => {
     const socketRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
@@ -17,29 +40,55 @@ export const useSynapticCleft = ({ spikeId, onGlutamate }: UseSynapticCleftOptio
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
-        const url = `${protocol}//${host}/ws/spikes/${encodeURIComponent(spikeId)}/stream/`;
+        const url = `${protocol}//${host}/ws/synapse/spike/`;
 
         const socket = new WebSocket(url);
         socketRef.current = socket;
 
         socket.onmessage = (event: MessageEvent) => {
-            // Glutamate payload: accept either plain text or JSON-wrapped { line }
             const raw = event.data;
-            let text: string | null = null;
 
-            if (typeof raw === 'string') {
-                try {
-                    const parsed = JSON.parse(raw);
-                    if (parsed && typeof parsed.line === 'string') {
-                        text = parsed.line;
-                    }
-                } catch {
-                    text = raw;
+            try {
+                const envelope: NeurotransmitterEnvelope = JSON.parse(raw);
+
+                // Filter by dendrite_id to only process messages for this spike
+                if (envelope.dendrite_id !== spikeId) {
+                    return;
                 }
-            }
 
-            if (text) {
-                onGlutamate(text);
+                // Route by molecule type
+                switch (envelope.molecule) {
+                    case 'Glutamate': {
+                        const message = envelope.vesicle?.message;
+                        if (message && typeof message === 'string') {
+                            onGlutamate(message);
+                        }
+                        break;
+                    }
+
+                    case 'Dopamine': {
+                        if (onDopamine && envelope.new_status) {
+                            onDopamine(
+                                String(envelope.vesicle?.status_id ?? ''),
+                                envelope.new_status,
+                            );
+                        }
+                        break;
+                    }
+
+                    case 'Cortisol': {
+                        if (onCortisol && envelope.new_status) {
+                            onCortisol(
+                                String(envelope.vesicle?.status_id ?? ''),
+                                envelope.new_status,
+                            );
+                        }
+                        break;
+                    }
+                }
+            } catch {
+                // Silently ignore parsing errors
+                return;
             }
         };
 
@@ -47,7 +96,7 @@ export const useSynapticCleft = ({ spikeId, onGlutamate }: UseSynapticCleftOptio
             socket.close();
             socketRef.current = null;
         };
-    }, [spikeId, onGlutamate]);
+    }, [spikeId, onGlutamate, onDopamine, onCortisol]);
 
     const close = () => {
         if (socketRef.current) {
