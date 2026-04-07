@@ -16,6 +16,7 @@ import { CNSMonitorPage } from './pages/CNSMonitorPage';
 import { CNSSpikeSet } from './pages/CNSSpikeSet';
 import { TemporalStub } from './pages/TemporalStub';
 import { PFCPage } from './pages/PFCPage';
+import { PFCDetailPage } from './pages/PFCDetailPage';
 import { IdentityStub } from './pages/IdentityStub';
 import { IdentityDetailStub } from './pages/IdentityDetailStub';
 import { PNSPage } from './pages/PNSPage';
@@ -23,6 +24,10 @@ import { PNSMonitorPage } from './pages/PNSMonitorPage';
 import { CNSTrainTimeline } from './pages/CNSTrainTimeline';
 import { CNSSpikeForensics } from './pages/CNSSpikeForensics';
 import { EnvironmentEditor } from './pages/EnvironmentEditor';
+import { HippocampusPage } from './pages/HippocampusPage';
+import { HypothalamusPage } from './pages/HypothalamusPage';
+import { PFCEditPage } from './pages/PFCEditPage';
+import { EffectorEditorPage } from './pages/EffectorEditorPage';
 
 function App() {
     return (
@@ -48,12 +53,25 @@ function App() {
                                     <Route path="spiketrain/:spiketrainId" element={<CNSMonitorPage />} />
                                     <Route path="spike/:spikeId" element={<CNSSpikeForensics />} />
                                     <Route path="spikeset" element={<CNSSpikeSet />} />
+                                    <Route path="effector" element={<EffectorEditorPage />} />
+                                    <Route path="effector/:effectorId/edit" element={<EffectorEditorPage />} />
                                 </Route>
                                 <Route path="temporal" element={<TemporalStub />} />
-                                <Route path="pfc" element={<PFCPage />} />
+                                <Route path="pfc">
+                                    <Route index element={<PFCPage />} />
+                                    <Route path="backlog" element={<PFCPage />} />
+                                    <Route path="epic/:epicId" element={<PFCDetailPage />} />
+                                    <Route path="epic/:epicId/edit" element={<PFCEditPage />} />
+                                    <Route path="story/:storyId" element={<PFCDetailPage />} />
+                                    <Route path="story/:storyId/edit" element={<PFCEditPage />} />
+                                    <Route path="task/:taskId" element={<PFCDetailPage />} />
+                                    <Route path="task/:taskId/edit" element={<PFCEditPage />} />
+                                </Route>
                                 <Route path="identity" element={<IdentityStub />} />
                                 <Route path="identity/:discId" element={<IdentityDetailStub />} />
                                 <Route path="environments" element={<EnvironmentEditor />} />
+                                <Route path="hippocampus" element={<HippocampusPage />} />
+                                <Route path="hypothalamus" element={<HypothalamusPage />} />
                                 <Route path="pns" element={<PNSPage />} />
                                 <Route path="pns/monitor" element={<PNSMonitorPage />} />
                             </Route>

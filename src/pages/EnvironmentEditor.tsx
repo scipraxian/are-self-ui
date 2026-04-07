@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Settings } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
@@ -41,6 +42,8 @@ export function EnvironmentEditor() {
     const [addingVar, setAddingVar] = useState(false);
     const [newVarKeyId, setNewVarKeyId] = useState<number>(0);
     const [newVarValue, setNewVarValue] = useState('');
+    const [newKeyName, setNewKeyName] = useState('');
+    const [creatingKey, setCreatingKey] = useState(false);
     const [selectError, setSelectError] = useState('');
 
     useEffect(() => {
@@ -234,6 +237,25 @@ export function EnvironmentEditor() {
         }
     };
 
+    const handleKeyCreate = async () => {
+        if (!newKeyName.trim()) return;
+        try {
+            const res = await apiFetch('/api/v2/context-keys/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newKeyName }),
+            });
+            if (!res.ok) return;
+            const created: ContextKey = await res.json();
+            setContextKeys(prev => [...prev, created]);
+            setNewVarKeyId(created.id);
+            setNewKeyName('');
+            setCreatingKey(false);
+        } catch (err) {
+            console.error('Failed to create context key', err);
+        }
+    };
+
     const handleVarAdd = async () => {
         if (!editingEnv || !newVarKeyId) return;
         try {
@@ -278,9 +300,12 @@ export function EnvironmentEditor() {
     );
 
     const center = editingEnv ? (
-        <div className="env-editor-detail">
+        <div className="env-editor-detail glass-surface">
             <div className="env-editor-detail-header">
-                <h2 className="env-editor-detail-title">{editingEnv.name}</h2>
+                <h2 className="env-editor-detail-title">
+                    <Settings size={18} style={{ color: '#94a3b8', marginRight: '8px', verticalAlign: 'middle' }} />
+                    {editingEnv.name}
+                </h2>
                 {!editingEnv.selected ? (
                     <button className="env-editor-btn-action" onClick={handleSetActive}>Set as Active</button>
                 ) : (
@@ -345,6 +370,24 @@ export function EnvironmentEditor() {
                     <button className="env-editor-btn-small" onClick={() => setAddingVar(true)}>+ Add Variable</button>
                 </div>
 
+                {creatingKey && (
+                    <div className="env-editor-key-form">
+                        <input
+                            className="env-editor-input env-editor-key-input"
+                            type="text"
+                            placeholder="New key name..."
+                            value={newKeyName}
+                            onChange={(e) => setNewKeyName(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleKeyCreate();
+                            }}
+                            autoFocus
+                        />
+                        <button className="env-editor-btn-small" onClick={handleKeyCreate}>Create</button>
+                        <button className="env-editor-btn-delete" onClick={() => { setCreatingKey(false); setNewKeyName(''); }}>×</button>
+                    </div>
+                )}
+
                 <table className="env-editor-contexts-table">
                     <thead>
                         <tr>
@@ -373,16 +416,19 @@ export function EnvironmentEditor() {
                         {addingVar && (
                             <tr className="env-editor-contexts-add-row">
                                 <td>
-                                    <select
-                                        className="env-editor-select"
-                                        value={newVarKeyId}
-                                        onChange={(e) => setNewVarKeyId(Number(e.target.value))}
-                                    >
-                                        <option value={0}>Select key...</option>
-                                        {contextKeys.map(k => (
-                                            <option key={k.id} value={k.id}>{k.name}</option>
-                                        ))}
-                                    </select>
+                                    <div className="env-editor-key-select-wrapper">
+                                        <select
+                                            className="env-editor-select"
+                                            value={newVarKeyId}
+                                            onChange={(e) => setNewVarKeyId(Number(e.target.value))}
+                                        >
+                                            <option value={0}>Select key...</option>
+                                            {contextKeys.map(k => (
+                                                <option key={k.id} value={k.id}>{k.name}</option>
+                                            ))}
+                                        </select>
+                                        <button className="env-editor-btn-small env-editor-btn-inline" onClick={() => setCreatingKey(true)} title="Create new context key">+ Key</button>
+                                    </div>
                                 </td>
                                 <td>
                                     <input
@@ -393,7 +439,7 @@ export function EnvironmentEditor() {
                                     />
                                 </td>
                                 <td className="env-editor-contexts-add-actions">
-                                    <button className="env-editor-btn-small" onClick={handleVarAdd}>Save</button>
+                                    <button className="env-editor-btn-small" onClick={handleVarAdd} disabled={!newVarKeyId}>Save</button>
                                     <button className="env-editor-btn-delete" onClick={() => { setAddingVar(false); setNewVarKeyId(0); setNewVarValue(''); }}>&times;</button>
                                 </td>
                             </tr>

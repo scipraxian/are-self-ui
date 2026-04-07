@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Network, MessageSquare } from 'lucide-react';
+import { Network, MessageSquare, Terminal } from 'lucide-react';
 import { ThreePanel } from '../components/ThreePanel';
 import { ReasoningSidebar, ReasoningInspector } from '../components/ReasoningPanels';
 import { ReasoningGraph3D } from '../components/ReasoningGraph3D';
 import { SessionChat } from '../components/SessionChat';
+import { ParietalActivityPanel } from '../components/ParietalActivityPanel';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
-import type { GraphNode } from '../types';
+import type { GraphNode, ReasoningSessionData } from '../types';
 import './FrontalSession.css';
 
 interface CortexStats {
@@ -24,10 +25,11 @@ export function FrontalSession() {
     const { registerEscapeHandler } = useGABA();
     const { setCrumbs } = useBreadcrumbs();
 
-    type SessionViewMode = 'graph' | 'chat';
+    type SessionViewMode = 'graph' | 'chat' | 'parietal';
     const [viewMode, setViewMode] = useState<SessionViewMode>('graph');
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [cortexStats, setCortexStats] = useState<CortexStats | null>(null);
+    const [sessionData, setSessionData] = useState<ReasoningSessionData | null>(null);
 
     // Breadcrumbs
     useEffect(() => {
@@ -47,10 +49,10 @@ export function FrontalSession() {
         }
     }, [sessionId, navigate]);
 
-    // ESC: switch from chat to graph first, then go back to /frontal
+    // ESC: switch back through modes, then go back to /frontal
     useEffect(() => {
         const unregister = registerEscapeHandler(() => {
-            if (viewMode === 'chat') {
+            if (viewMode === 'parietal' || viewMode === 'chat') {
                 setViewMode('graph');
             } else {
                 navigate('/frontal');
@@ -88,6 +90,12 @@ export function FrontalSession() {
                         >
                             <MessageSquare size={14} /> Chat
                         </button>
+                        <button
+                            className={`frontal-session-mode-tab ${viewMode === 'parietal' ? 'frontal-session-mode-tab--active' : ''}`}
+                            onClick={() => setViewMode('parietal')}
+                        >
+                            <Terminal size={14} /> Parietal
+                        </button>
                     </div>
                     <div className="frontal-session-stage">
                         {cortexStats && (
@@ -114,17 +122,26 @@ export function FrontalSession() {
                                 sessionId={sessionId}
                                 onNodeSelect={setSelectedNode}
                                 onStatsUpdate={setCortexStats}
+                                onSessionDataUpdate={setSessionData}
                             />
-                        ) : (
+                        ) : viewMode === 'chat' ? (
                             <SessionChat
                                 sessionId={sessionId}
                                 title="SESSION NEURAL LINK"
+                            />
+                        ) : (
+                            <ParietalActivityPanel
+                                sessionData={sessionData}
+                                onToolSelect={(turnNumber, toolIndex) => {
+                                    // Could expand to highlight specific tool in future
+                                    console.log(`Selected tool at T${turnNumber}:${toolIndex}`);
+                                }}
                             />
                         )}
                     </div>
                 </div>
             }
-            right={<ReasoningInspector node={selectedNode} />}
+            right={<ReasoningInspector node={selectedNode} sessionId={sessionId} />}
         />
     );
 }

@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { OctagonX, Square } from 'lucide-react';
+import { apiFetch } from '../api';
 import './CNSMonitorSidebar.css';
 import type { SpikeTrain } from '../types';
 
@@ -12,6 +15,8 @@ interface CNSMonitorSidebarProps {
     onEdit: () => void;
     onBack: () => void;
 }
+
+const ALIVE_STATUSES = ['created', 'pending', 'running', 'delegated', 'stopping'];
 
 function shortHash(id: number | string): string {
     return String(id).substring(0, 8);
@@ -38,6 +43,35 @@ export function CNSMonitorSidebar({
     onEdit,
     onBack,
 }: CNSMonitorSidebarProps) {
+    const [stopping, setStopping] = useState(false);
+
+    const trainIsAlive = train && ALIVE_STATUSES.includes((train.status_name || '').toLowerCase());
+    const trainIsStopping = train && (train.status_name || '').toLowerCase() === 'stopping';
+
+    const handleStop = async () => {
+        if (!train) return;
+        setStopping(true);
+        try {
+            await apiFetch(`/api/v2/spiketrains/${train.id}/stop/`, { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to stop train:', err);
+        } finally {
+            setStopping(false);
+        }
+    };
+
+    const handleTerminate = async () => {
+        if (!train) return;
+        setStopping(true);
+        try {
+            await apiFetch(`/api/v2/spiketrains/${train.id}/terminate/`, { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to terminate train:', err);
+        } finally {
+            setStopping(false);
+        }
+    };
+
     return (
         <div className="cns-monitor-sidebar">
             <h3 className="cns-monitor-sidebar-title font-display">{pathwayName}</h3>
@@ -72,6 +106,29 @@ export function CNSMonitorSidebar({
                 <button className="btn-action cns-monitor-sidebar-btn cns-monitor-sidebar-btn--launch" onClick={onLaunch}>
                     Launch New Train
                 </button>
+
+                {trainIsAlive && !trainIsStopping && (
+                    <button
+                        className="btn-ghost cns-monitor-sidebar-btn cns-monitor-sidebar-btn--stop"
+                        onClick={handleStop}
+                        disabled={stopping}
+                    >
+                        <Square size={14} />
+                        {stopping ? 'Stopping...' : 'Stop Train'}
+                    </button>
+                )}
+
+                {trainIsAlive && (
+                    <button
+                        className="btn-ghost cns-monitor-sidebar-btn cns-monitor-sidebar-btn--terminate"
+                        onClick={handleTerminate}
+                        disabled={stopping}
+                    >
+                        <OctagonX size={14} />
+                        {stopping ? 'Terminating...' : 'Terminate'}
+                    </button>
+                )}
+
                 <button className="btn-ghost cns-monitor-sidebar-btn" onClick={onEdit}>
                     Edit Graph
                 </button>

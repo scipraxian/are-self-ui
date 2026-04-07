@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Star, GripVertical, Cpu, ShieldAlert, Loader2 } from 'lucide-react';
+import { apiFetch } from '../api';
+import { useDendrite } from './SynapticCleft';
 import './IdentityRoster.css';
 
 interface BaseIdentity {
@@ -24,26 +26,35 @@ export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
     const [discs, setDiscs] = useState<IdentityDisc[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const discEvent = useDendrite('IdentityDisc', null);
+
     useEffect(() => {
-        const fetchRoster = async () => {
+        let cancelled = false;
+
+        const load = async () => {
             try {
-                const [idRes, discRes] = await Promise.all([ fetch('/api/v2/identities/'), fetch('/api/v2/identity-discs/') ]);
+                const [idRes, discRes] = await Promise.all([
+                    apiFetch('/api/v2/identities/'),
+                    apiFetch('/api/v2/identity-discs/')
+                ]);
+                if (cancelled) return;
                 if (idRes.ok && discRes.ok) {
                     const idData = await idRes.json();
                     const discData = await discRes.json();
+                    if (cancelled) return;
                     setTemplates(idData.results || idData);
                     setDiscs(discData.results || discData);
                 }
-            } catch (error) { console.error("Neural fetch failed:", error); }
-            finally { setIsLoading(false); }
+            } catch (error) {
+                console.error("Neural fetch failed:", error);
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
         };
 
-        fetchRoster();
-
-        // Listen for the custom event we will fire from TemporalMatrix
-        window.addEventListener('sync-roster', fetchRoster);
-        return () => window.removeEventListener('sync-roster', fetchRoster);
-    }, []);
+        load();
+        return () => { cancelled = true; };
+    }, [discEvent]);
 
     if (isLoading) {
         return (
@@ -69,7 +80,6 @@ export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
                     draggable={disc.available}
                     onDragStart={(e) => {
                         if (disc.available) {
-                            // Pack the Disc ID into the drag payload
                             e.dataTransfer.setData('application/json', JSON.stringify({ type: 'disc', id: disc.id }));
                         }
                     }}

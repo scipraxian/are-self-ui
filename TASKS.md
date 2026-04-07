@@ -1,179 +1,88 @@
-# Are-Self UI — Task List
+# Are-Self UI — Tasks
 
-Current state of the React frontend. Updated 2026-03-30.
+Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
-## Completed Work
+## Top Priority — PNS Expansion
 
-### Step 1 — Layout Shell & Routing ✅
-Decomposed BloodBrainBarrier God Component. Nested React Router. ThreePanel layout primitive.
+- [ ] **Multiple Ollama endpoints UI.** Hypothalamus needs an affordance to add/edit AIModelProvider
+  endpoints (host:port for secondary Ollama machines). Scanner UI similar to the executable scanner.
+  **Paired with backend task.**
+- [ ] **Live agent monitoring.** PNS should show active reasoning agents — which IdentityDiscs are
+  currently in a session, what they're doing, session duration, turn count. Real-time via dendrite.
 
-### Step 2 — Frontal Lobe Data Fix ✅
-types.ts updated for nested model_usage_record. Inspector shows real data. CSS classes renamed.
+## Ship-Blocking
 
-### Step 3 — PFC Agile Board ✅
-Inspector scroll. Card blink fix. PFCNavTree. Expand/collapse toggle. CSS classes renamed.
+- [ ] **Session chat — messages not delivered or persisted.** Typing in the Thalamus chat window of a
+  running Frontal Lobe session does not deliver the message (swarm_message_queue not receiving). On page
+  refresh, the typed message is gone — not persisted as a ReasoningTurn. Two bugs: delivery + persistence.
+  **Paired with backend task.**
+- [ ] **Shutdown / restart controls — CSS and lifecycle.** Backend endpoints done
+  (`/api/v2/system-control/`). SystemControlPanel exists on PNSPage. Restart works. **Remaining:** CSS
+  layout fix (huge empty spaces), full app lifecycle (close browser windows, restart webserver). Consider
+  moving controls to a global header/nav position instead of PNS-only.
 
-### Step 4 — CNS Overview Rebuild ✅
-CNSTrainList with expandable rows. CNSSpikeDetail right panel. Dead code deleted.
+## Open Tasks
 
-### Step 5 — Layout Height Fix ✅
-100vh constraint. min-height: 0 on flex chain. flex-shrink: 0 on train rows.
+- [ ] **Neural Pathway Graph Editor — right-click context menu.** Demo feedback: "in Unreal you can
+  right-click." Add right-click functionality with search of available items (neurons, effectors) for
+  adding to the pathway. Backend already supports the item catalog — this is a frontend UX feature.
+- [ ] **Neural Pathway Graph Editor — node inspector data reorganization.** The right-panel data when
+  clicking a node isn't useful enough. Needs organizational rethink — what data matters at a glance vs
+  what's detail.
+- [ ] **CNS Neuron admin link.** Node click-through to Django admin shows black screen. The access DB
+  record link is broken — verify the admin URL pattern for neurons.
+- [ ] **Temporal Lobe — delete iteration verification.** Delete button with confirmation dialog added
+  (TemporalMatrix.tsx). **Verify it works** — wired to `DELETE /api/v2/iterations/{id}/`.
+- [ ] **Temporal Lobe — URL-driven iteration selection.** Currently selecting an iteration/definition is
+  local state only. Needs URL params (`/temporal?iteration={id}` or `/temporal?definition={id}`) so
+  refresh preserves context.
+- [ ] **PNS worker preview — fill card area.** Worker preview cards on /pns should show more data.
+  Implementation started — verify and expand.
+- [ ] **PNS page layout.** SystemControlPanel at top of PNSPage creates large empty spaces. Needs CSS
+  work to make it compact/inline with the beat bar or styled as a minimal header strip.
+- [ ] **Navigation cleanup.** Hamburger menu has Hippocampus + Hypothalamus. Remaining brain regions TBD.
+- [ ] **Identity ledger layout.** Remove always-open empty right panel when nothing selected.
+- [ ] **Identity — remove redundant Model Routing Configuration section.** The Loadout tab has an inline
+  SelectionFilterEditor that duplicates the Hypothalamus routing inspector. Now that SelectionFilter and
+  Budget fields click through to the Hypothalamus, the embedded editor is redundant. Consider removing the
+  "Model Routing Configuration" section from IdentitySheet's Loadout tab entirely.
+- [ ] **EngramEditor — attach existing.** "Attach Existing" flow to link existing engrams to a disc.
+- [ ] **Hypothalamus — family filter sort + zero-count hiding.** Family chips in filter panel need
+  alphabetical sort. Consider hiding families with zero models (44 chips, 4 models on first load).
+- [ ] **Hypothalamus — budgets tab editing.** Currently read-only. Need inline editing for budget periods,
+  cost gates, spend limits.
+- [ ] **Hypothalamus — vectorization after first sync.** After sync_local detects installed models, they
+  need vectors for semantic routing. Could be a management command, a button, or auto-triggered after sync.
+  `AIModel.update_vector()` exists. Requires nomic-embed-text in Ollama.
+- [ ] **Environment filtering everywhere.** EnvironmentProvider and NavBar selector exist, but not all
+  views filter by environment yet. Ensure temporal, PFC, frontal, identity views all pass environment to
+  API calls.
+- [ ] **Standardize API URLs to hyphens.** Frontend counterpart to the backend URL rename. Coordinated
+  sweep — both repos change together.
+- [ ] **Frontal Lobe session Parietal tab — drill-through broken.** Items in the Parietal tab and Parietal
+  actions in the right window don't drill. Proposed fix: drill to zoom the matching 3D node so the full
+  call is visible.
 
-### Step 6a — CNS Pathway Dashboard ✅
-Responsive card grid with D3 sparklines. CNSDashboardSidebar with search, tags, starred.
-Zero-run cards hidden.
+## Backlog
 
-### Step 6b — CNS Train Timeline ✅
-Spike bars with proportional segments. Train sidebar with stats. Begin Play filtered.
+- [ ] **PNS historical view.** Currently live-only. Add past worker activity, task history from
+  `django_celery_results` tables, completed task list with duration/status.
+- [ ] **WebSocket coverage audit.** CNS dashboard may need live card updates when pathways run. Verify all
+  views showing status use Dendrite, not polling.
+- [ ] **Hypothalamus — standalone family/tag/category CRUD.** No dedicated CRUD for families, tags, or
+  categories as standalone entities. Currently only manageable via description relationship pills.
+- [ ] **Hypothalamus — subfamily routing UI.** Once backend supports prefer-subfamily routing, the routing
+  inspector may need UI to configure subfamily preferences.
 
-### Step 6d — CNS Spike Forensics ✅
-Dual terminal view. CNSTerminalPane with xterm.js + toolbar (copy/download/search/autoscroll).
+## Future
 
-### Step 7 — Unified Navigation Bar ✅
-NavBar with breadcrumbs + environment selector. BreadcrumbProvider context. document.title updates.
-
-### Step 8 — Bug Fixes ✅
-Background canvas pointer capture fixed. Temporal left panel restored. Identity views confirmed.
-PFC scroll arrows confirmed. xterm.css import confirmed.
-
-### Step 9 — Environment Wiring + Multi-Fix ✅
-Global EnvironmentProvider context. NavBar consumes it. CNS dashboard/timeline filter by env.
-Temporal two-phase flow restored (TemporalMatrix renders directly, no ThreePanel wrapper).
-Spike forensics pointer-events fixed. Breadcrumb nuclear rewrite (explicit setCrumbs per page).
-
-### Step 10 — CNS Live Execution Graph ✅
-NeuronMonitorNode with 5 visual states (unrun/running/success/failed/pending). Ghost-to-color
-overlay. Edge traversal animation. Auto-pan toggle. Right panel spike inspector. useDendrite
-real-time updates. ReactFlow read-only monitor mode.
-
-### Step 11 — Spike Set + Breadcrumb Fix ✅
-SpikeSetProvider context for multi-spike selection. SpikeSetBar below navbar with chips.
-Shift+click on spike bars and monitor nodes adds to set. CNSSpikeSet page with CSS grid
-terminal layout. Breadcrumbs rewritten: each page sets explicit crumb chain via setCrumbs.
-Sub-graph drill via double-click on monitor nodes.
-
-### Step 12 — CNS Route Restructure ✅
-URL-as-truth enforcement. /cns/edit/:pathwayId → /cns/pathway/:pathwayId/edit.
-/cns/monitor/:pathwayId → /cns/spiketrain/:spiketrainId. Train dropdown removed from monitor
-sidebar (train IS the URL). All navigation links updated. SpikeSet compare button fixed
-(Lucide icon). Full breadcrumb chains with train→pathway lookup.
-
-### Step 13 — Environment Editor + Selector Fix ✅
-EnvironmentProvider upgraded: selectEnvironment() calls POST /select/ on backend, auto-detects
-active environment on load, refreshEnvironments() for mutations. NavBar uses selectEnvironment.
-Full CRUD EnvironmentEditor page at /environments: environment list, detail editor with
-auto-save on blur, context variable table with inline editing/add/delete, Set as Active button,
-new/delete environment actions.
-
-### Step 14 — Frontal Session Chat + Thalamus Bubble ✅
-Graph/Chat mode toggle on FrontalSession: tab bar switches between ReasoningGraph3D and
-SessionChat. ThalamusBubble: floating chat icon (bottom-right, every page) expands to 400×500
-glassmorphic panel with ThalamusChat. ThalamusChat cleaned: hardcoded URLs removed, Tailwind
-classes moved to CSS.
-
-### Backend Fix — V2 SpikeTrainViewSet Filter ✅
-V2 viewset was missing filter_backends and filterset_class. Added DjangoFilterBackend +
-SpikeTrainFilter. ?pathway= filtering now works correctly.
-
-### Backend Fix — Spike Serializer ✅
-SpikeSerializer now includes spike_train field. Enables breadcrumb chain: spike → train → pathway.
-
-### Backend Fix — Spike Provenance Fields ✅
-SpikeSerializer now includes: invoked_pathway, child_trains, provenance, provenance_train.
-Enables sub-graph drill-through and parent context navigation.
-
-### Manual Fixes ✅
-- xterm.css import added to CNSTerminalPane
-- flex-shrink: 0 on .cns-train-row
-- PFC inspector: flex: none + overflow: visible on .pfc-inspector and .pfc-inspector-body
-- V2 SpikeViewSet missing filter configuration (backend, not frontend parameter naming)
-- types.ts: Spike/SpikeTrain IDs changed to string (UUIDs), all new API fields added, `any`
-  types replaced with proper interfaces
-- CNSMonitorPage: removed all `any` types, proper ReactFlow node typing, ESLint-compliant
-  data fetching pattern (async inside effect, dendrite events as deps)
-- Sub-graph drill passes parent context via React Router navigation state for breadcrumbs
-- SessionChat endpoint fixed: /resume/ not /interact/, body key: reply not message
-- Backend environment endpoints added: context-variables, context-keys, environment-types,
-  environment-statuses (all CRUD)
-
-## Known Bugs (Current)
-
-- [ ] **Spike Set terminals empty.** The Spike Set view fetches data (network calls visible)
-  but xterm terminals don't render content. Likely the same ResizeObserver/xterm init issue
-  or a missing xterm.css import in the Spike Set page context.
-
-- [ ] **Sub-graph drill not working in monitor.** Double-clicking a neuron with
-  `invoked_pathway_id` should navigate to `/cns/spiketrain/` for a child train, but the child
-  train ID isn't available from just the pathway. Needs to find the child SpikeTrain that was
-  spawned from the parent spike (via `parent_spike` FK on SpikeTrain model).
-
-- [ ] **Breadcrumbs still incomplete on some views.** The CLAUDE.md route table still references
-  old `/cns/monitor/:pathwayId/:trainId` format — needs to match actual routes.
-
-## P0 — Immediate Priorities
-
-- [ ] **Fix Spike Set terminal rendering.** Either xterm.css missing, ResizeObserver not firing,
-  or pointer-events blocking.
-
-- [ ] **Fix sub-graph drill on monitor.** When a neuron has `invoked_pathway_id`, find the child
-  SpikeTrain spawned by that spike (SpikeTrain.parent_spike FK) and navigate to
-  `/cns/spiketrain/:childTrainId`.
-
-- [ ] **Frontal Lobe Session Chat toggle.** Two modes for `/frontal/:sessionId`: Graph Mode
-  (current 3D force graph) and Chat Mode (SessionChat takes over center stage). Toggle via
-  tab bar. Re-integrate ThalamusChat as floating bubble or navbar action.
-
-## P1 — Remaining Lobe Views
-
-### Hypothalamus (`/hypothalamus`)
-AI Model management. Backend API: `/api/v2/ai-models/`, `/api/v2/model-providers/`,
-`/api/v2/usage-records/`, `/api/v2/model-ratings/`. Model catalog, circuit breakers, cost
-tracking, ELO ratings, selection configuration.
-
-### Hippocampus (`/hippocampus`)
-Engram browser/editor. Backend API: `/api/v2/engrams/`, `/api/v2/engram_tags/`. Search,
-vector similarity visualization, tag filtering, timeline view, create/edit.
-
-### PNS Fleet (`/pns`)
-Expand beyond heartbeat: neural terminal registry, Celery workers, telemetry, process
-launch/kill. APIs: `/api/v2/nerve_terminal_registry/`, `/api/v2/nerve_terminal_telemetry/`.
-
-### Temporal Lobe (`/temporal`)
-Working but needs URL-driven iteration selection (`/temporal/:iterationId` or query param).
-Currently iteration selection is internal state — lost on refresh.
-
-### Identity Ledger (`/identity`)
-Working stubs. Needs proper detail view with full disc configuration editing.
-
-## P2 — WebSocket & Real-Time
-
-- [ ] Replace polling in ReasoningGraph3D with useDendrite.
-- [ ] Verify CNS dashboard real-time with live execution.
-- [ ] Environment filtering on all views (temporal, PFC, frontal, identity).
-
-## P3 — Visual & UX
-
-- [ ] Brain mesh 3D background using FBX assets (PreFrontal, Hippo, CNS, Parietal, Pons,
-  Occipital, Hypothalamus, Peripheral, Reptilian — left and right hemispheres).
-- [ ] Consistent glassmorphic styling audit across all views.
-- [ ] UI Style Guide document.
-
-## URL Structure (Current After Step 12)
-
-```
-/                                   → BrainView (3D landing)
-/frontal                            → FrontalIndex (session list)
-/frontal/:sessionId                 → FrontalSession (3D graph + inspector)
-/cns                                → CNSPage (pathway dashboard with sparklines)
-/cns/pathway/:pathwayId             → CNSTrainTimeline (spike bars)
-/cns/pathway/:pathwayId/edit        → CNSEditPage (ReactFlow graph editor)
-/cns/spiketrain/:spiketrainId      → CNSMonitorPage (live execution graph)
-/cns/spike/:spikeId                 → CNSSpikeForensics (dual terminal)
-/cns/spikeset?s1=uuid&s2=uuid      → CNSSpikeSet (multi-spike comparison)
-/pfc                                → PFCPage (agile board)
-/temporal                           → TemporalStub (iteration matrix)
-/identity                           → IdentityStub
-/identity/:discId                   → IdentityDetailStub
-/pns                                → PNSStub (heartbeat)
-/environments                       → EnvironmentEditor (CRUD + context variables)
-```
+- [ ] **Image & audio manipulation UI.** Image preview in spike forensics when effector result is an image
+  path, audio playback widget for WAV/MP3 results, modality indicator on Identity Loadout. Generation
+  effector node component. Awaiting backend effector.
+- [ ] **Brain mesh 3D background.** Replace abstract 3D background with actual brain region meshes using
+  FBX assets. Regions: PreFrontal, Hippocampus, CNS, Parietal, Pons, Occipital, Hypothalamus, Peripheral,
+  Reptilian — left and right hemispheres. Interactive on root route, static/subtle on inner routes.
+- [ ] **Glassmorphic styling audit.** Consistent treatment across all views. Card styles, panel borders,
+  hover states, selection highlights.
+- [ ] **3D engram relationship graph.** Visual graph of engram relationships and provenance chains.
+- [ ] **Identity — vector embedding visualization.** Sparkline or badge showing embedding status.

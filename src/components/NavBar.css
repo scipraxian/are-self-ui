@@ -4,7 +4,7 @@
     align-items: center;
     padding: 0 12px;
     gap: 8px;
-    background: rgba(2, 6, 23, 0.85);
+    background: rgba(30, 35, 55, 0.92);
     border-bottom: 1px solid var(--border-glass);
     z-index: 50;
     pointer-events: auto;
@@ -38,13 +38,25 @@
 }
 
 .navbar-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.navbar-logo-img {
+    height: 22px;
+    width: auto;
+    object-fit: contain;
+}
+
+.navbar-logo-text {
     font-family: var(--font-display);
     font-weight: 900;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #e2e8f0;
-    text-decoration: none;
     letter-spacing: 0.1em;
     white-space: nowrap;
+    margin-left: 8px;
 }
 
 .navbar-crumbs {
@@ -137,7 +149,9 @@
 }
 
 .navbar-dropdown-item {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 10px 16px;
     color: #cbd5e1;
     text-decoration: none;
@@ -147,4 +161,84 @@
 
 .navbar-dropdown-item:hover {
     background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-dd-icon {
+    flex-shrink: 0;
+}
+
+.nav-dd-route {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.nav-dd-label {
+    color: #64748b;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.nav-dd-label::before {
+    content: '/ ';
+}
+
+.navbar-dropdown-divider {
+    height: 1px;
+    background: var(--border-glass);
+    margin: 4px 0;
+}
+
+.navbar-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 100ms ease;
+    user-select: none;
+}
+
+.navbar-dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.navbar-toggle-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.navbar-toggle-track {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    background: rgba(100, 116, 139, 0.4);
+    border-radius: 9px;
+    margin-left: auto;
+    transition: background 200ms ease;
+    flex-shrink: 0;
+}
+
+.navbar-toggle-checkbox:checked ~ .navbar-toggle-track {
+    background: rgba(56, 189, 248, 0.5);
+}
+
+.navbar-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: #94a3b8;
+    border-radius: 50%;
+    transition: transform 200ms ease, background 200ms ease;
+}
+
+.navbar-toggle-checkbox:checked ~ .navbar-toggle-track .navbar-toggle-thumb {
+    transform: translateX(14px);
+    background: #38bdf8;
 }

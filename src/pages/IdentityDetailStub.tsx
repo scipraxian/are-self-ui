@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Brain } from 'lucide-react';
 import { ThreePanel } from '../components/ThreePanel';
 import { IdentityRoster } from '../components/IdentityRoster';
 import { IdentitySheet } from '../components/IdentitySheet';
@@ -29,7 +30,10 @@ export function IdentityDetailStub() {
         <ThreePanel
             left={
                 <>
-                    <h2 className="glass-panel-title">IDENTITY ROSTER</h2>
+                    <h2 className="glass-panel-title">
+                        <Brain size={18} style={{ color: '#38bdf8', marginRight: '8px', verticalAlign: 'middle' }} />
+                        IDENTITY ROSTER
+                    </h2>
                     <IdentityRoster
                         onSelectIdentity={(id, t) => navigate(`/identity/${id}?type=${t}`)}
                     />
@@ -43,14 +47,7 @@ export function IdentityDetailStub() {
                     <IdentitySheet id={discId} type={type} />
                 </div>
             }
-            right={
-                <>
-                    <h2 className="glass-panel-title">CORTICAL TELEMETRY</h2>
-                    <div className="layout-placeholder font-mono text-sm">
-                        [Contextual Node Details]
-                    </div>
-                </>
-            }
+            right={null}
         />
     );
 }

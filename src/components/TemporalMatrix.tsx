@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2 } from 'lucide-react';
-import { apiFetch, getCookie } from '../api';
+import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2, X } from 'lucide-react';
+import { apiFetch } from '../api';
+import { useDendrite } from './SynapticCleft';
 import { IdentityRoster } from './IdentityRoster';
 import './TemporalMatrix.css';
 
@@ -40,6 +40,12 @@ interface IterationData {
 interface BlueprintData {
     id: number;
     name: string;
+}
+
+interface ShiftType {
+    id: number;
+    name: string;
+    default_turn_limit: number;
 }
 
 // Iteration definition detail (from IterationDefinitionSerializer)
@@ -81,6 +87,7 @@ function DefinitionEditor({
     definition,
     environments,
     selectedEnvironmentId,
+    shiftTypes,
     onEnvironmentChange,
     onNameSave,
     onDelete,
@@ -88,12 +95,15 @@ function DefinitionEditor({
     onSlotDisc,
     onIncept,
     onTurnLimitChange,
+    onRemoveShift,
+    onAddShift,
     onClose,
     isGestating
 }: {
     definition: IterationDefinitionDetail;
     environments: { id: string; name: string }[];
     selectedEnvironmentId: string;
+    shiftTypes: ShiftType[];
     onEnvironmentChange: (id: string) => void;
     onNameSave: (name: string) => void;
     onDelete: () => void;
@@ -103,16 +113,15 @@ function DefinitionEditor({
     onClose: () => void;
     isGestating: boolean;
     onTurnLimitChange: (shiftDefinitionId: number, turnLimit: number) => void;
+    onRemoveShift: (shiftDefinitionId: number) => void;
+    onAddShift: (shiftId: number, order: number) => void;
 }) {
     const [editingName, setEditingName] = useState(definition.name);
     const [dragOverShiftId, setDragOverShiftId] = useState<number | null>(null);
+    const [addShiftOpen, setAddShiftOpen] = useState(false);
     const boardRef = useRef<HTMLDivElement | null>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
-
-    useEffect(() => {
-        setEditingName(definition.name);
-    }, [definition.id, definition.name]);
 
     const handleDropOnDefinitionShift = (e: React.DragEvent, shiftDefinitionId: number) => {
         e.preventDefault();
@@ -154,6 +163,9 @@ function DefinitionEditor({
     }, [definition.id, definition.shift_definitions]);
 
     const sortedShifts = [...(definition.shift_definitions || [])].sort((a, b) => a.order - b.order);
+    const usedShiftIds = new Set(sortedShifts.map(sd => sd.shift.id));
+    const availableShiftTypes = shiftTypes.filter(st => !usedShiftIds.has(st.id));
+    const maxOrder = sortedShifts.length > 0 ? Math.max(...sortedShifts.map(sd => sd.order)) : 0;
 
     return (
         <div className="temporal-matrix-container active-matrix definition-editor">
@@ -206,22 +218,31 @@ function DefinitionEditor({
                         <div key={shiftDef.id} className="matrix-column">
                             <div className="matrix-column-header">
                                 <span className="matrix-column-title">{shiftDef.shift?.name || `Shift ${index + 1}`}</span>
-                                <div className="matrix-column-stats definition-turn-editor">
-                                    <span className="definition-turn-label">Turns</span>
-                                    <input
-                                        key={shiftDef.turn_limit}
-                                        className="definition-turn-input"
-                                        type="number"
-                                        min={1}
-                                        defaultValue={shiftDef.turn_limit}
-                                        onBlur={(e) => {
-                                            const raw = e.target.value;
-                                            const parsed = parseInt(raw, 10);
-                                            if (!Number.isNaN(parsed) && parsed !== shiftDef.turn_limit) {
-                                                onTurnLimitChange(shiftDef.id, parsed);
-                                            }
-                                        }}
-                                    />
+                                <div className="definition-column-actions">
+                                    <div className="matrix-column-stats definition-turn-editor">
+                                        <span className="definition-turn-label">Turns</span>
+                                        <input
+                                            key={shiftDef.turn_limit}
+                                            className="definition-turn-input"
+                                            type="number"
+                                            min={1}
+                                            defaultValue={shiftDef.turn_limit}
+                                            onBlur={(e) => {
+                                                const raw = e.target.value;
+                                                const parsed = parseInt(raw, 10);
+                                                if (!Number.isNaN(parsed) && parsed !== shiftDef.turn_limit) {
+                                                    onTurnLimitChange(shiftDef.id, parsed);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        className="definition-remove-shift-btn"
+                                        onClick={() => onRemoveShift(shiftDef.id)}
+                                        title="Remove shift column"
+                                    >
+                                        <X size={14} />
+                                    </button>
                                 </div>
                             </div>
                             <div
@@ -248,6 +269,39 @@ function DefinitionEditor({
                             </div>
                         </div>
                     ))}
+                    {availableShiftTypes.length > 0 && (
+                        <div className="definition-add-shift-column">
+                            {addShiftOpen ? (
+                                <div className="definition-add-shift-dropdown">
+                                    <span className="definition-add-shift-title font-mono text-xs">Add Shift</span>
+                                    {availableShiftTypes.map(st => (
+                                        <button
+                                            key={st.id}
+                                            className="definition-add-shift-option"
+                                            onClick={() => { onAddShift(st.id, maxOrder + 1); setAddShiftOpen(false); }}
+                                        >
+                                            {st.name}
+                                        </button>
+                                    ))}
+                                    <button
+                                        className="definition-add-shift-option definition-add-shift-cancel"
+                                        onClick={() => setAddShiftOpen(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    className="definition-add-shift-btn"
+                                    onClick={() => setAddShiftOpen(true)}
+                                    title="Add shift column"
+                                >
+                                    <Plus size={20} />
+                                    <span className="font-mono text-xs">Shift</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
                 {canScrollRight ? (
                     <button className="matrix-scroll-btn" onClick={() => scrollBoard('right')}>
@@ -277,25 +331,25 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     const [definitionDetail, setDefinitionDetail] = useState<IterationDefinitionDetail | null>(null);
     const [definitionDetailLoading, setDefinitionDetailLoading] = useState(false);
     const [blueprints, setBlueprints] = useState<BlueprintData[]>([]);
+    const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([]);
     const [environments, setEnvironments] = useState<{ id: string, name: string }[]>([]);
     const [selectedGestationEnvironmentId, setSelectedGestationEnvironmentId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [isGestating, setIsGestating] = useState(false);
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
+    const [confirmDeleteIterationId, setConfirmDeleteIterationId] = useState<number | null>(null);
+    const [isDeletingIteration, setIsDeletingIteration] = useState(false);
+
+    const iterationEvent = useDendrite('Iteration', null);
 
     const iteration = iterations.find(it => it.id === selectedIterationId) || null;
+    const hasSelection = selectedIterationId !== null || selectedDefinitionId !== null;
 
     useEffect(() => {
         if (onSelectionChange) {
             onSelectionChange(selectedIterationId !== null);
         }
     }, [selectedIterationId, onSelectionChange]);
-
-    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-    useEffect(() => {
-        setPortalTarget(document.getElementById('bbb-iteration-roster-portal'));
-    }, [selectedIterationId, selectedDefinitionId]);
-
 
     const checkScroll = () => {
         if (boardRef.current) {
@@ -313,30 +367,52 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     };
 
     useEffect(() => {
+        let cancelled = false;
         setIsLoading(true);
-        Promise.all([
-            fetch('/api/v2/iterations/').then(res => res.json()),
-            fetch('/api/v2/iteration-definitions/').then(res => res.json()),
-            fetch('/api/v1/environments/').then(res => res.json())
-        ]).then(([iterData, defData, envData]) => {
-            const results: IterationData[] = iterData.results || iterData;
-            setIterations(results);
-            if (results.length > 0) {
-                setSelectedIterationId(results[0].id);
+
+        const load = async () => {
+            try {
+                const [iterRes, defRes, envRes, shiftRes] = await Promise.all([
+                    apiFetch('/api/v2/iterations/'),
+                    apiFetch('/api/v2/iteration-definitions/'),
+                    apiFetch('/api/v1/environments/'),
+                    apiFetch('/api/v2/shifts/')
+                ]);
+                if (cancelled) return;
+                const iterData = await iterRes.json();
+                const defData = await defRes.json();
+                const envData = await envRes.json();
+                const shiftData = await shiftRes.json();
+                if (cancelled) return;
+
+                const results: IterationData[] = iterData.results || iterData;
+                setIterations(results);
+                if (results.length > 0) {
+                    setSelectedIterationId(results[0].id);
+                }
+                setBlueprints(defData.results || defData);
+                setShiftTypes(shiftData.results || shiftData);
+                setEnvironments(envData.results || envData);
+            } catch (err) {
+                console.error("Temporal fetch failed:", err);
+            } finally {
+                if (!cancelled) setIsLoading(false);
             }
-            setBlueprints(defData.results || defData);
-            setEnvironments(envData.results || envData);
-            setIsLoading(false);
-        }).catch(err => {
-            console.error("Temporal fetch failed:", err);
-            setIsLoading(false);
-        });
+        };
+
+        load();
+        return () => { cancelled = true; };
     }, []);
 
-    const refetchDefinitions = () => {
-        fetch('/api/v2/iteration-definitions/').then(res => res.json()).then(data => {
+    const refetchDefinitions = async () => {
+        try {
+            const res = await apiFetch('/api/v2/iteration-definitions/');
+            if (!res.ok) return;
+            const data = await res.json();
             setBlueprints(data.results || data);
-        }).catch(err => console.error('Failed to refetch definitions', err));
+        } catch (err) {
+            console.error('Failed to refetch definitions', err);
+        }
     };
 
     useEffect(() => {
@@ -344,17 +420,27 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             setDefinitionDetail(null);
             return;
         }
+        let cancelled = false;
         setDefinitionDetailLoading(true);
-        fetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`)
-            .then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to load definition')))
-            .then((data: IterationDefinitionDetail) => {
+
+        const load = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`);
+                if (cancelled) return;
+                if (!res.ok) throw new Error('Failed to load definition');
+                const data: IterationDefinitionDetail = await res.json();
+                if (cancelled) return;
                 setDefinitionDetail(data);
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error('Definition fetch failed:', err);
-                setDefinitionDetail(null);
-            })
-            .finally(() => setDefinitionDetailLoading(false));
+                if (!cancelled) setDefinitionDetail(null);
+            } finally {
+                if (!cancelled) setDefinitionDetailLoading(false);
+            }
+        };
+
+        load();
+        return () => { cancelled = true; };
     }, [selectedDefinitionId]);
 
     useEffect(() => {
@@ -363,51 +449,33 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         return () => window.removeEventListener('resize', checkScroll);
     }, [iteration]);
 
-    // Poll selected iteration so status/board update while running
+    // Refetch selected iteration when dendrite fires an Iteration event
     useEffect(() => {
         if (!selectedIterationId) return;
         let cancelled = false;
-        let intervalId: number | null = null;
 
-        const poll = async () => {
+        const load = async () => {
             try {
                 const res = await apiFetch(`/api/v2/iterations/${selectedIterationId}/`);
-                if (!res.ok) return;
+                if (!res.ok || cancelled) return;
                 const data: IterationData = await res.json();
                 if (cancelled) return;
                 updateIterationState(data);
-                // Stop polling when status is Finished (3), Cancelled (4), or Error (6)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const statusId = (data as any).status as number | undefined;
-                if (statusId === 3 || statusId === 4 || statusId === 6) {
-                    if (intervalId !== null) {
-                        window.clearInterval(intervalId);
-                    }
-                    cancelled = true;
-                }
             } catch {
                 // ignore transient errors
             }
         };
 
-        poll();
-        intervalId = window.setInterval(poll, 5000);
-        return () => {
-            cancelled = true;
-            if (intervalId !== null) {
-                window.clearInterval(intervalId);
-            }
-        };
-    }, [selectedIterationId]);
+        load();
+        return () => { cancelled = true; };
+    }, [selectedIterationId, iterationEvent]);
 
     const handleIncept = async (definitionId: number) => {
         setIsGestating(true);
-        const csrfToken = getCookie('csrftoken');
-
         try {
-            const res = await fetch('/api/v2/iterations/incept/', {
+            const res = await apiFetch('/api/v2/iterations/incept/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     definition_id: definitionId,
                     environment_id: selectedGestationEnvironmentId
@@ -434,31 +502,28 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
 
     const handleRemoveWorker = async (shiftId: number, discId: number) => {
         if (!iteration) return;
-        const csrfToken = getCookie('csrftoken');
-
         try {
-            const res = await fetch(`/api/v2/iterations/${iteration.id}/remove_disc/`, {
+            const res = await apiFetch(`/api/v2/iterations/${iteration.id}/remove_disc/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ shift_id: shiftId, disc_id: discId })
             });
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
                 updateIterationState(updatedIteration);
-                window.dispatchEvent(new Event('sync-roster'));
             }
         } catch (err) {
             console.error("Failed to remove worker:", err);
         }
     };
+
     const handleInitiate = async () => {
         if (!iteration) return;
         if (iteration.status_name !== 'Waiting') return;
-        const csrfToken = getCookie('csrftoken');
         try {
-            const res = await fetch(`/api/v2/iterations/${iteration.id}/initiate/`, {
+            const res = await apiFetch(`/api/v2/iterations/${iteration.id}/initiate/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' }
+                headers: { 'Content-Type': 'application/json' }
             });
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
@@ -470,6 +535,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             console.error("Network error:", err);
         }
     };
+
     const handleDrop = async (e: React.DragEvent, shiftId: number) => {
         e.preventDefault();
         setDragOverShift(null);
@@ -484,19 +550,16 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         if (type === 'disc') payloadBody.disc_id = droppedId;
         if (type === 'base') payloadBody.base_id = droppedId;
 
-        const csrfToken = getCookie('csrftoken');
-
         try {
-            const res = await fetch(`/api/v2/iterations/${iteration.id}/slot_disc/`, {
+            const res = await apiFetch(`/api/v2/iterations/${iteration.id}/slot_disc/`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payloadBody)
             });
 
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
                 updateIterationState(updatedIteration);
-                window.dispatchEvent(new Event('sync-roster'));
             }
         } catch (err) {
             console.error("Neural slotting failed:", err);
@@ -555,6 +618,33 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         }
     };
 
+    const deleteIteration = async (id: number) => {
+        try {
+            setIsDeletingIteration(true);
+            const res = await apiFetch(`/api/v2/iterations/${id}/`, { method: 'DELETE' });
+            if (res.ok) {
+                setSelectedIterationId(null);
+                setConfirmDeleteIterationId(null);
+                // Refetch iterations after delete
+                const iterRes = await apiFetch('/api/v2/iterations/');
+                if (iterRes.ok) {
+                    const iterData = await iterRes.json();
+                    const results: IterationData[] = iterData.results || iterData;
+                    setIterations(results);
+                    if (results.length > 0) {
+                        setSelectedIterationId(results[0].id);
+                    }
+                }
+            } else {
+                console.error('Failed to delete iteration');
+            }
+        } catch (err) {
+            console.error('Delete iteration failed:', err);
+        } finally {
+            setIsDeletingIteration(false);
+        }
+    };
+
     const updateShiftDefinitionTurnLimit = async (shiftDefinitionId: number, turnLimit: number) => {
         try {
             const res = await apiFetch(`/api/v2/iteration-shift-definitions/${shiftDefinitionId}/`, {
@@ -564,8 +654,6 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             });
             if (res.ok) {
                 const updated = await res.json();
-                // Some backends return the updated shift-definition, not the full definition.
-                // Only set definition detail if the payload looks like a definition; otherwise refetch the active definition.
                 if (updated && typeof updated === 'object' && 'shift_definitions' in updated) {
                     setDefinitionDetail(updated as IterationDefinitionDetail);
                 } else if (selectedDefinitionId) {
@@ -619,6 +707,45 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         }
     };
 
+    const definitionRemoveShift = async (shiftDefinitionId: number) => {
+        if (!selectedDefinitionId) return;
+        try {
+            const res = await apiFetch(`/api/v2/iteration-shift-definitions/${shiftDefinitionId}/`, { method: 'DELETE' });
+            if (res.ok) {
+                const defRes = await apiFetch(`/api/v2/iteration-definitions/${selectedDefinitionId}/`);
+                if (defRes.ok) {
+                    const defData: IterationDefinitionDetail = await defRes.json();
+                    setDefinitionDetail(defData);
+                }
+            } else {
+                console.error('Failed to remove shift definition');
+            }
+        } catch (err) {
+            console.error('Remove shift definition failed:', err);
+        }
+    };
+
+    const definitionAddShift = async (definitionId: number, shiftId: number, order: number) => {
+        try {
+            const res = await apiFetch('/api/v2/iteration-shift-definitions/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ definition: definitionId, shift: shiftId, order, turn_limit: 1 })
+            });
+            if (res.ok) {
+                const defRes = await apiFetch(`/api/v2/iteration-definitions/${definitionId}/`);
+                if (defRes.ok) {
+                    const defData: IterationDefinitionDetail = await defRes.json();
+                    setDefinitionDetail(defData);
+                }
+            } else {
+                console.error('Failed to add shift definition');
+            }
+        } catch (err) {
+            console.error('Add shift definition failed:', err);
+        }
+    };
+
     const definitionIncept = async (definitionId: number, environmentId: string, customName?: string) => {
         setIsGestating(true);
         try {
@@ -654,13 +781,12 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     }
 
     const iterationRosterSidebar = (
-        <div className="iteration-roster-sidebar" style={{ borderRight: 'none', background: 'transparent', width: '100%', padding: '0 0 16px 0' }}>
+        <div className="iteration-roster-sidebar">
             <div className="roster-section">
                 <h3 className="roster-section-title">Definitions</h3>
                 <button
                     className="btn-new-iteration"
                     onClick={createDefinition}
-                    style={{ marginBottom: '8px' }}
                 >
                     <Plus size={16} /> New Definition
                 </button>
@@ -681,7 +807,6 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                 <button
                     className="btn-new-iteration btn-ghost-secondary"
                     onClick={() => { setSelectedIterationId(null); setSelectedDefinitionId(null); }}
-                    style={{ marginBottom: '8px' }}
                 >
                     Gestation Chamber
                 </button>
@@ -701,15 +826,9 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
         </div>
     );
 
-    const sidebarContent = selectedDefinitionId && definitionDetail
-        ? (
-            <IdentityRoster onSelectIdentity={() => { }} />
-        )
-        : iterationRosterSidebar;
-
     return (
         <div className="temporal-matrix-layout">
-            {portalTarget && createPortal(sidebarContent, portalTarget)}
+            {iterationRosterSidebar}
 
             <div className="temporal-matrix-main" style={{ padding: (selectedIterationId || selectedDefinitionId) ? '24px' : '0' }}>
                 {definitionDetailLoading && selectedDefinitionId ? (
@@ -718,9 +837,11 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                     </div>
                 ) : definitionDetail && selectedDefinitionId ? (
                     <DefinitionEditor
+                        key={definitionDetail.id}
                         definition={definitionDetail}
                         environments={environments}
                         selectedEnvironmentId={selectedGestationEnvironmentId}
+                        shiftTypes={shiftTypes}
                         onEnvironmentChange={setSelectedGestationEnvironmentId}
                         onNameSave={(name) => patchDefinitionName(definitionDetail.id, name)}
                         onDelete={() => deleteDefinition(definitionDetail.id)}
@@ -728,6 +849,8 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                         onSlotDisc={(shiftDefId, payload) => definitionSlotDisc(definitionDetail.id, shiftDefId, payload)}
                         onIncept={(envId, customName) => definitionIncept(definitionDetail.id, envId, customName)}
                         onTurnLimitChange={(shiftDefId, turnLimit) => updateShiftDefinitionTurnLimit(shiftDefId, turnLimit)}
+                        onRemoveShift={(shiftDefId) => definitionRemoveShift(shiftDefId)}
+                        onAddShift={(shiftId, order) => definitionAddShift(definitionDetail.id, shiftId, order)}
                         onClose={() => { setSelectedDefinitionId(null); setDefinitionDetail(null); }}
                         isGestating={isGestating}
                     />
@@ -796,26 +919,58 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                                     )}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button
-                                    className="btn-ghost"
-                                    onClick={() => setSelectedIterationId(null)}
-                                    style={{ fontSize: '0.85rem' }}
-                                >
-                                    ✕ Close Iteration
-                                </button>
-                                <button
-                                    className="btn-action initiate-btn"
-                                    onClick={handleInitiate}
-                                    disabled={iteration.status_name !== 'Waiting'}
-                                    style={{
-                                        opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
-                                        cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
-                                    }}
-                                >
-                                    <Play size={14} fill="currentColor" />
-                                    INITIATE
-                                </button>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                {confirmDeleteIterationId === iteration.id ? (
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <span className="font-mono text-xs" style={{ color: 'var(--accent-red)' }}>Delete iteration?</span>
+                                        <button
+                                            className="btn-action btn-danger"
+                                            onClick={() => deleteIteration(iteration.id)}
+                                            disabled={isDeletingIteration}
+                                            style={{ fontSize: '0.85rem' }}
+                                        >
+                                            {isDeletingIteration ? <Loader2 className="animate-spin" size={12} /> : 'Yes'}
+                                        </button>
+                                        <button
+                                            className="btn-secondary-outline"
+                                            onClick={() => setConfirmDeleteIterationId(null)}
+                                            disabled={isDeletingIteration}
+                                            style={{ fontSize: '0.85rem' }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <button
+                                            className="btn-ghost"
+                                            onClick={() => setConfirmDeleteIterationId(iteration.id)}
+                                            style={{ fontSize: '0.85rem' }}
+                                            title="Delete this iteration"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                        <button
+                                            className="btn-ghost"
+                                            onClick={() => setSelectedIterationId(null)}
+                                            style={{ fontSize: '0.85rem' }}
+                                        >
+                                            ✕ Close Iteration
+                                        </button>
+                                        <button
+                                            className="btn-action initiate-btn"
+                                            onClick={handleInitiate}
+                                            disabled={iteration.status_name !== 'Waiting'}
+                                            style={{
+                                                opacity: iteration.status_name !== 'Waiting' ? 0.5 : 1,
+                                                cursor: iteration.status_name !== 'Waiting' ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            <Play size={14} fill="currentColor" />
+                                            INITIATE
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -891,6 +1046,13 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                     </div>
                 )}
             </div>
+
+            {hasSelection && (
+                <div className="temporal-identity-panel">
+                    <h3 className="roster-section-title">Identity Roster</h3>
+                    <IdentityRoster onSelectIdentity={() => {}} />
+                </div>
+            )}
         </div>
     );
 };

@@ -1,0 +1,1316 @@
+/* src/pages/HypothalamusPage.css */
+
+/* --- Left Panel: Filters & Tabs --- */
+
+.hypothalamus-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+}
+
+.hypothalamus-mode-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.hypothalamus-mode-tab {
+    flex: 1;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-mode-tab:hover {
+    background: rgba(56, 189, 248, 0.06);
+}
+
+.hypothalamus-mode-tab-active {
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+.hypothalamus-search {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.hypothalamus-search::placeholder {
+    color: var(--text-muted);
+}
+
+.hypothalamus-filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hypothalamus-filter-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.hypothalamus-status-toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.hypothalamus-status-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-status-btn-selected {
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--accent-green);
+    border-color: rgba(52, 211, 153, 0.4);
+}
+
+.hypothalamus-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.hypothalamus-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    background: rgba(139, 92, 246, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-chip:hover {
+    background: rgba(139, 92, 246, 0.12);
+}
+
+.hypothalamus-chip-selected {
+    background: rgba(139, 92, 246, 0.15);
+    color: rgb(167, 139, 250);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.hypothalamus-chip-badge {
+    font-size: 0.6rem;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: rgba(139, 92, 246, 0.2);
+    color: rgb(167, 139, 250);
+    min-width: 14px;
+    text-align: center;
+}
+
+.hypothalamus-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding-top: 4px;
+}
+
+/* --- Left Panel: Routing / Budget Lists --- */
+
+.hypothalamus-side-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hypothalamus-side-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-side-item:hover {
+    background: rgba(56, 189, 248, 0.04);
+    border-color: var(--border-glass-strong);
+}
+
+.hypothalamus-side-item-selected {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(56, 189, 248, 0.06);
+}
+
+.hypothalamus-side-item-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+.hypothalamus-side-item-meta {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+/* --- Center Panel --- */
+
+.hypothalamus-center {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.hypothalamus-center-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-glass);
+    flex-shrink: 0;
+}
+
+.hypothalamus-center-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.hypothalamus-center-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hypothalamus-sort-select {
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 4px 8px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+}
+
+.hypothalamus-view-btn {
+    padding: 4px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-view-btn:hover {
+    color: var(--text-secondary);
+}
+
+.hypothalamus-view-btn-active {
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(56, 189, 248, 0.08);
+}
+
+/* --- Card Grid & List --- */
+
+.hypothalamus-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
+}
+
+.hypothalamus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
+}
+
+.hypothalamus-empty {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 16px;
+    grid-column: 1 / -1;
+}
+
+/* --- Model Card (Grid) --- */
+
+.hypothalamus-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    padding: 14px;
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hypothalamus-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-glass-strong);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.hypothalamus-card-selected {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+}
+
+.hypothalamus-card-disabled {
+    opacity: 0.5;
+}
+
+.hypothalamus-card-breaker {
+    border-left: 3px solid rgba(239, 68, 68, 0.5);
+}
+
+.hypothalamus-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.hypothalamus-card-provider {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.hypothalamus-card-cost {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(52, 211, 153, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.hypothalamus-card-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hypothalamus-card-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.hypothalamus-card-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.hypothalamus-pill {
+    display: inline-flex;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    background: rgba(139, 92, 246, 0.08);
+    color: var(--text-muted);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.hypothalamus-pill-role {
+    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(56, 189, 248, 0.12);
+}
+
+.hypothalamus-card-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.hypothalamus-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+}
+
+.hypothalamus-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.hypothalamus-dot-installed {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+}
+
+.hypothalamus-dot-available {
+    background: var(--text-muted);
+}
+
+.hypothalamus-dot-breaker {
+    background: rgb(239, 68, 68);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+.hypothalamus-dot-disabled {
+    background: var(--text-muted);
+    opacity: 0.5;
+}
+
+.hypothalamus-status-text-installed {
+    color: var(--accent-green);
+}
+
+.hypothalamus-status-text-available {
+    color: var(--text-muted);
+}
+
+.hypothalamus-status-text-breaker {
+    color: rgb(239, 68, 68);
+}
+
+.hypothalamus-status-text-disabled {
+    color: var(--text-muted);
+}
+
+.hypothalamus-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.hypothalamus-action-btn {
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-action-btn:hover {
+    border-color: var(--border-glass-strong);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.hypothalamus-action-btn-pull {
+    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--accent-green);
+}
+
+.hypothalamus-action-btn-pull:hover {
+    background: rgba(52, 211, 153, 0.08);
+}
+
+.hypothalamus-action-btn-remove {
+    border-color: rgba(248, 113, 113, 0.3);
+    color: rgba(248, 113, 113, 0.8);
+}
+
+.hypothalamus-action-btn-remove:hover {
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.hypothalamus-action-btn-reset {
+    border-color: rgba(250, 204, 21, 0.4);
+    color: var(--accent-gold);
+}
+
+.hypothalamus-action-btn-reset:hover {
+    background: rgba(250, 204, 21, 0.08);
+}
+
+/* --- List Row --- */
+
+.hypothalamus-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: var(--bg-panel);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-row:hover {
+    border-color: var(--border-glass-strong);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.hypothalamus-row-selected {
+    border-color: rgba(56, 189, 248, 0.5);
+}
+
+.hypothalamus-row-disabled {
+    opacity: 0.5;
+}
+
+.hypothalamus-row-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    flex: 2;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hypothalamus-row-family {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.hypothalamus-row-creator {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.hypothalamus-row-size {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    width: 60px;
+    text-align: right;
+}
+
+.hypothalamus-row-status {
+    width: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.hypothalamus-row-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* --- Spinner --- */
+
+.hypothalamus-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(52, 211, 153, 0.2);
+    border-top-color: var(--accent-green);
+    border-radius: 50%;
+    animation: hypothalamus-spin 0.6s linear infinite;
+}
+
+@keyframes hypothalamus-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- Right Panel: Inspector --- */
+
+.hypothalamus-inspector {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    flex: none;
+    overflow: visible;
+}
+
+.hypothalamus-inspector-empty {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 16px;
+}
+
+.hypothalamus-inspector-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hypothalamus-inspector-close {
+    align-self: flex-end;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-inspector-close:hover {
+    color: var(--text-primary);
+    border-color: var(--border-glass-strong);
+}
+
+.hypothalamus-inspector-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.hypothalamus-inspector-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.hypothalamus-inspector-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.hypothalamus-inspector-section-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.hypothalamus-inspector-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.hypothalamus-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.hypothalamus-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-glass);
+}
+
+.hypothalamus-stat-value {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.hypothalamus-stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.hypothalamus-inspector-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.hypothalamus-inspector-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hypothalamus-toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.hypothalamus-toggle-active {
+    background: rgba(52, 211, 153, 0.3);
+    border-color: rgba(52, 211, 153, 0.5);
+}
+
+.hypothalamus-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 200ms ease;
+}
+
+.hypothalamus-toggle-active .hypothalamus-toggle-knob {
+    left: 18px;
+    background: var(--accent-green);
+}
+
+/* Provider status in inspector */
+.hypothalamus-provider-status {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hypothalamus-provider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.hypothalamus-provider-value {
+    color: var(--text-primary);
+}
+
+.hypothalamus-breaker-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.04);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.hypothalamus-breaker-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgb(239, 68, 68);
+}
+
+.hypothalamus-breaker-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.hypothalamus-breaker-value {
+    color: var(--text-primary);
+}
+
+.hypothalamus-pricing-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.hypothalamus-pricing-value {
+    color: var(--text-primary);
+}
+
+.hypothalamus-free-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    background: rgba(52, 211, 153, 0.12);
+    color: var(--accent-green);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.hypothalamus-inspector-action {
+    width: 100%;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-inspector-action:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-glass-strong);
+}
+
+.hypothalamus-inspector-action-pull {
+    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--accent-green);
+}
+
+.hypothalamus-inspector-action-pull:hover {
+    background: rgba(52, 211, 153, 0.08);
+}
+
+.hypothalamus-inspector-action-remove {
+    border-color: rgba(248, 113, 113, 0.3);
+    color: rgba(248, 113, 113, 0.8);
+}
+
+.hypothalamus-inspector-action-remove:hover {
+    background: rgba(248, 113, 113, 0.08);
+}
+
+/* --- Routing Inspector --- */
+
+.hypothalamus-step-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hypothalamus-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.hypothalamus-step-number {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.15);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.hypothalamus-step-arrow {
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    margin-left: 26px;
+}
+
+/* --- Budget Inspector --- */
+
+.hypothalamus-budget-bar-container {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid var(--border-glass);
+    overflow: hidden;
+}
+
+.hypothalamus-budget-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent-blue);
+    transition: width 300ms ease;
+}
+
+.hypothalamus-budget-bar-warning {
+    position: relative;
+}
+
+.hypothalamus-free-tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    background: rgba(52, 211, 153, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+/* --- Header Action Buttons (Sync Local / Fetch Catalog) --- */
+
+.hypothalamus-header-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 120ms ease;
+    white-space: nowrap;
+}
+
+.hypothalamus-header-action:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-glass-strong);
+}
+
+.hypothalamus-header-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.hypothalamus-header-action-sync {
+    border-color: rgba(56, 189, 248, 0.4);
+    color: var(--accent-blue);
+}
+
+.hypothalamus-header-action-sync:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.08);
+}
+
+.hypothalamus-header-action-fetch {
+    border-color: rgba(139, 92, 246, 0.4);
+    color: rgb(167, 139, 250);
+}
+
+.hypothalamus-header-action-fetch:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.hypothalamus-action-message {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent-green);
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+/* --- Inspector Section Header (Edit button inline) --- */
+
+.hypothalamus-inspector-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.hypothalamus-inline-btn {
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-inline-btn:hover {
+    border-color: var(--border-glass-strong);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.hypothalamus-inline-btn-save {
+    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--accent-green);
+}
+
+.hypothalamus-inline-btn-save:hover {
+    background: rgba(52, 211, 153, 0.08);
+}
+
+.hypothalamus-inline-btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Description Editing --- */
+
+.hypothalamus-desc-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hypothalamus-desc-textarea {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 8px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.hypothalamus-desc-textarea:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.5);
+}
+
+.hypothalamus-desc-edit-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.hypothalamus-desc-source {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* --- Collapsible Toggle --- */
+
+.hypothalamus-collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+
+.hypothalamus-collapse-toggle:hover {
+    color: var(--text-primary);
+}
+
+/* --- Description Relationships Panel --- */
+
+.hypothalamus-relationships {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.hypothalamus-rel-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hypothalamus-rel-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.hypothalamus-rel-pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.hypothalamus-rel-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.hypothalamus-rel-pill-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 120ms ease;
+    line-height: 1;
+}
+
+.hypothalamus-rel-pill-remove:hover {
+    color: rgb(248, 113, 113);
+}
+
+.hypothalamus-rel-add-wrap {
+    position: relative;
+}
+
+.hypothalamus-rel-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px dashed var(--border-glass);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-rel-add-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.hypothalamus-rel-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    min-width: 200px;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass-strong);
+    background: rgba(15, 23, 42, 0.98);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+}
+
+.hypothalamus-rel-dropdown-search {
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid var(--border-glass);
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.hypothalamus-rel-dropdown-search:focus {
+    outline: none;
+}
+
+.hypothalamus-rel-dropdown-search::placeholder {
+    color: var(--text-muted);
+}
+
+.hypothalamus-rel-dropdown-item {
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 80ms ease;
+}
+
+.hypothalamus-rel-dropdown-item:hover {
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--text-primary);
+}
+
+.hypothalamus-rel-dropdown-empty {
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* --- Edit Select (Routing Inspector dropdowns) --- */
+
+.hypothalamus-edit-select {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.hypothalamus-edit-select:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.5);
+}
+
+/* --- Toggleable Pills (Routing Inspector) --- */
+
+.hypothalamus-toggle-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.hypothalamus-toggle-pill {
+    display: inline-flex;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    background: rgba(139, 92, 246, 0.06);
+    color: var(--text-muted);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.hypothalamus-toggle-pill:hover {
+    background: rgba(139, 92, 246, 0.12);
+}
+
+.hypothalamus-toggle-pill-active {
+    background: rgba(139, 92, 246, 0.18);
+    color: rgb(167, 139, 250);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.15);
+}
+
+.hypothalamus-toggle-pill-role {
+    background: rgba(56, 189, 248, 0.06);
+    border-color: rgba(56, 189, 248, 0.12);
+}
+
+.hypothalamus-toggle-pill-role:hover {
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.hypothalamus-toggle-pill-role-active {
+    background: rgba(56, 189, 248, 0.18);
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
+}
+
+.hypothalamus-toggle-pill-ban {
+    background: rgba(248, 113, 113, 0.04);
+    border-color: rgba(248, 113, 113, 0.1);
+}
+
+.hypothalamus-toggle-pill-ban:hover {
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.hypothalamus-toggle-pill-ban-active {
+    background: rgba(248, 113, 113, 0.12);
+    color: rgba(248, 113, 113, 0.9);
+    border-color: rgba(248, 113, 113, 0.35);
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.15);
+}
+
+/* --- Save Action (Routing Inspector) --- */
+
+.hypothalamus-inspector-action-save {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--accent-green);
+}
+
+.hypothalamus-inspector-action-save:hover {
+    background: rgba(52, 211, 153, 0.08);
+}

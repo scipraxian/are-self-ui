@@ -1,9 +1,13 @@
 import './CNSSpikeSet.css';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Grid3x3, ListOrdered, Network } from 'lucide-react';
 import { CNSTerminalPane } from '../components/CNSTerminalPane';
+import { SpikeCorrelatedTimeline } from '../components/SpikeCorrelatedTimeline';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { apiFetch } from '../api';
+
+type SpikeSetMode = 'raw' | 'correlated';
 
 interface SpikeDetail {
     id: string;
@@ -53,6 +57,7 @@ export function CNSSpikeSet() {
         .map(key => searchParams.get(key))
         .filter(Boolean) as string[];
 
+    const [mode, setMode] = useState<SpikeSetMode>('raw');
     const [spikes, setSpikes] = useState<(SpikeDetail | null)[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [logFields, setLogFields] = useState<Record<string, 'application_log' | 'execution_log'>>({});
@@ -129,56 +134,77 @@ export function CNSSpikeSet() {
     return (
         <div className="spikeset-page">
             <div className="spikeset-header">
-                <span className="spikeset-header-title">Spike Set</span>
+                <span className="spikeset-header-title">
+                    <Network size={16} style={{ color: '#22d3ee', marginRight: '8px', verticalAlign: 'middle' }} />
+                    Spike Set
+                </span>
                 <span className="spikeset-header-count">{spikeIds.length} spike{spikeIds.length !== 1 ? 's' : ''}</span>
+                <div className="spikeset-mode-bar">
+                    <button
+                        className={`spikeset-mode-tab ${mode === 'raw' ? 'spikeset-mode-tab--active' : ''}`}
+                        onClick={() => setMode('raw')}
+                    >
+                        <Grid3x3 size={14} /> Raw
+                    </button>
+                    <button
+                        className={`spikeset-mode-tab ${mode === 'correlated' ? 'spikeset-mode-tab--active' : ''}`}
+                        onClick={() => setMode('correlated')}
+                    >
+                        <ListOrdered size={14} /> Correlated
+                    </button>
+                </div>
             </div>
-            <div className={gridClass}>
-                {spikeIds.map((id, i) => {
-                    const spike = spikes[i];
-                    if (!spike) {
+            {mode === 'raw' ? (
+                <div className={gridClass}>
+                    {spikeIds.map((id, i) => {
+                        const spike = spikes[i];
+                        if (!spike) {
+                            return (
+                                <div key={id} className="spikeset-cell">
+                                    <div className="spikeset-cell-header">
+                                        <span className="spikeset-cell-effector">Spike not found</span>
+                                        <span className="spikeset-cell-status">#{id.slice(0, 6)}</span>
+                                    </div>
+                                    <div className="spikeset-cell-terminal" />
+                                </div>
+                            );
+                        }
+
+                        const logField = logFields[id] || 'execution_log';
+                        const variant = getStatusVariant(spike.status_name);
+                        const running = isRunningStatus(spike.status_name);
+
                         return (
                             <div key={id} className="spikeset-cell">
                                 <div className="spikeset-cell-header">
-                                    <span className="spikeset-cell-effector">Spike not found</span>
-                                    <span className="spikeset-cell-status">#{id.slice(0, 6)}</span>
+                                    <span className="spikeset-cell-effector">{spike.effector_name}</span>
+                                    <span className={`spikeset-cell-status spikeset-cell-status--${variant}`}>
+                                        {spike.status_name}
+                                    </span>
+                                    <span className="spikeset-cell-duration">{formatDuration(spike)}</span>
+                                    <button
+                                        className="spikeset-cell-toggle"
+                                        onClick={() => toggleLogField(id)}
+                                    >
+                                        {logField === 'execution_log' ? 'EXEC' : 'APP'}
+                                    </button>
                                 </div>
-                                <div className="spikeset-cell-terminal" />
+                                <div className="spikeset-cell-terminal">
+                                    <CNSTerminalPane
+                                        title={logField === 'execution_log' ? 'Execution Log' : 'Application Log'}
+                                        spikeId={id}
+                                        logField={logField}
+                                        initialContent={spike[logField] || ''}
+                                        isRunning={running}
+                                    />
+                                </div>
                             </div>
                         );
-                    }
-
-                    const logField = logFields[id] || 'execution_log';
-                    const variant = getStatusVariant(spike.status_name);
-                    const running = isRunningStatus(spike.status_name);
-
-                    return (
-                        <div key={id} className="spikeset-cell">
-                            <div className="spikeset-cell-header">
-                                <span className="spikeset-cell-effector">{spike.effector_name}</span>
-                                <span className={`spikeset-cell-status spikeset-cell-status--${variant}`}>
-                                    {spike.status_name}
-                                </span>
-                                <span className="spikeset-cell-duration">{formatDuration(spike)}</span>
-                                <button
-                                    className="spikeset-cell-toggle"
-                                    onClick={() => toggleLogField(id)}
-                                >
-                                    {logField === 'execution_log' ? 'EXEC' : 'APP'}
-                                </button>
-                            </div>
-                            <div className="spikeset-cell-terminal">
-                                <CNSTerminalPane
-                                    title={logField === 'execution_log' ? 'Execution Log' : 'Application Log'}
-                                    spikeId={id}
-                                    logField={logField}
-                                    initialContent={spike[logField] || ''}
-                                    isRunning={running}
-                                />
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+                    })}
+                </div>
+            ) : (
+                <SpikeCorrelatedTimeline spikeIds={spikeIds} />
+            )}
         </div>
     );
 }

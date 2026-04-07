@@ -1,0 +1,31 @@
+.system-control-panel {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.system-control-panel__title {
+    margin-bottom: 20px;
+}
+
+.system-control-panel__status {
+    margin-bottom: 8px;
+}
+
+.system-control-panel__status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.system-control-panel__actions {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.system-control-panel__error {
+    max-width: 420px;
+    line-height: 1.4;
+}

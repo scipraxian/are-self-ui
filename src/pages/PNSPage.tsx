@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useWorkerSet } from '../context/WorkerSetProvider';
 import { useDendrite } from '../components/SynapticCleft';
+import { SystemControlPanel } from '../components/SystemControlPanel';
 import { apiFetch } from '../api';
 import type { CeleryTask, NorepinephrineEvent } from '../types';
 
@@ -17,6 +18,9 @@ interface WorkerCardState {
     recentLogs: string[];
     sw_ident: string | null;
     sw_ver: string | null;
+    prefetchCount: number | null;
+    pool: Record<string, unknown> | null;
+    rusage: Record<string, unknown> | null;
 }
 
 interface BeatStatus {
@@ -102,6 +106,9 @@ export function PNSPage() {
                         recentLogs: existing?.recentLogs ?? [],
                         sw_ident: existing?.sw_ident ?? null,
                         sw_ver: existing?.sw_ver ?? null,
+                        prefetchCount: w.prefetch_count ?? null,
+                        pool: (w.pool as Record<string, unknown>) ?? null,
+                        rusage: (w.rusage as Record<string, unknown>) ?? null,
                     });
                 }
                 setWorkers(newMap);
@@ -133,6 +140,9 @@ export function PNSPage() {
                 recentLogs: [],
                 sw_ident: null,
                 sw_ver: null,
+                prefetchCount: null,
+                pool: null,
+                rusage: null,
             };
 
             const updated = { ...existing };
@@ -232,6 +242,8 @@ export function PNSPage() {
 
     return (
         <div className="pns-page">
+            <SystemControlPanel />
+
             <div className="pns-beat-bar">
                 <div className="pns-beat-status">
                     <span className={`pns-beat-dot ${beatRunning ? 'pns-beat-dot--active' : ''}`} />
@@ -295,6 +307,18 @@ export function PNSPage() {
                                         <span className="pns-card-stat-label">Load</span>
                                     </div>
                                 )}
+                                {worker.pid && (
+                                    <div className="pns-card-stat">
+                                        <span className="pns-card-stat-value">{worker.pid}</span>
+                                        <span className="pns-card-stat-label">PID</span>
+                                    </div>
+                                )}
+                                {worker.prefetchCount != null && (
+                                    <div className="pns-card-stat">
+                                        <span className="pns-card-stat-value">{worker.prefetchCount}</span>
+                                        <span className="pns-card-stat-label">Prefetch</span>
+                                    </div>
+                                )}
                             </div>
 
                             {worker.activeTasks.length > 0 && (
@@ -305,6 +329,29 @@ export function PNSPage() {
                                     <span className="pns-card-task-elapsed">
                                         {formatElapsed(worker.activeTasks[0].time_start)}
                                     </span>
+                                </div>
+                            )}
+
+                            {(worker.pool || worker.rusage) && (
+                                <div className="pns-card-sysinfo">
+                                    {worker.pool && (typeof worker.pool === 'object' && worker.pool.max_concurrency != null) && (
+                                        <div className="pns-card-sysinfo-row">
+                                            <span className="pns-card-sysinfo-label">Concurrency:</span>
+                                            <span className="pns-card-sysinfo-value">{worker.pool.max_concurrency}</span>
+                                        </div>
+                                    )}
+                                    {worker.rusage && (typeof worker.rusage === 'object' && worker.rusage.utime != null) && (
+                                        <div className="pns-card-sysinfo-row">
+                                            <span className="pns-card-sysinfo-label">CPU (user):</span>
+                                            <span className="pns-card-sysinfo-value">{Number(worker.rusage.utime).toFixed(1)}s</span>
+                                        </div>
+                                    )}
+                                    {worker.rusage && (typeof worker.rusage === 'object' && worker.rusage.stime != null) && (
+                                        <div className="pns-card-sysinfo-row">
+                                            <span className="pns-card-sysinfo-label">CPU (sys):</span>
+                                            <span className="pns-card-sysinfo-value">{Number(worker.rusage.stime).toFixed(1)}s</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

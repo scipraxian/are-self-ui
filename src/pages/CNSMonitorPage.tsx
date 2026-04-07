@@ -1,6 +1,7 @@
 import './CNSMonitorPage.css';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Network } from 'lucide-react';
 import ReactFlow, {
     Background,
     Controls,
@@ -34,6 +35,7 @@ interface PathwayDetail {
 interface NeuronMonitorData {
     label: string;
     effectorName: string | null;
+    effectorId: number | null;
     is_root: boolean;
     invoked_pathway_name: string | null;
     invoked_pathway_id: string | null;
@@ -69,7 +71,8 @@ function getSpikeStatus(statusName: string): SpikeStatus {
     if (s.includes('success') || s.includes('completed') || s.includes('done')) return 'success';
     if (s.includes('fail') || s.includes('error') || s.includes('abort')) return 'failed';
     if (s.includes('running') || s.includes('active') || s.includes('executing')) return 'running';
-    if (s.includes('pending') || s.includes('queued') || s.includes('waiting')) return 'pending';
+    if (s.includes('pending') || s.includes('queued') || s.includes('waiting') || s.includes('created')) return 'pending';
+    if (s.includes('delegated')) return 'running';
     return 'unrun';
 }
 
@@ -143,8 +146,22 @@ function MonitorGraph({
         const map = new Map<string, Spike>();
         if (train?.spikes) {
             for (const spike of train.spikes) {
-                if (spike.neuron) {
-                    map.set(String(spike.neuron), spike);
+                if (!spike.neuron) continue;
+                const key = String(spike.neuron);
+                const existing = map.get(key);
+                if (!existing) {
+                    map.set(key, spike);
+                    continue;
+                }
+                // Prioritize non-terminal spikes (running/pending/created)
+                // so the pulse shows on the active node, not a stale success.
+                const existingStatus = getSpikeStatus(existing.status_name);
+                const newStatus = getSpikeStatus(spike.status_name);
+                const isExistingAlive = existingStatus === 'running' || existingStatus === 'pending';
+                const isNewAlive = newStatus === 'running' || newStatus === 'pending';
+                if (isNewAlive || (!isExistingAlive && !isNewAlive)) {
+                    // Prefer alive spikes; among terminal, keep the latest
+                    map.set(key, spike);
                 }
             }
         }
@@ -163,6 +180,7 @@ function MonitorGraph({
                 data: {
                     label: neuron.invoked_pathway_name || neuron.effector_name || 'Action Node',
                     effectorName: neuron.effector_name,
+                    effectorId: neuron.effector ?? null,
                     is_root: neuron.is_root,
                     invoked_pathway_name: neuron.invoked_pathway_name,
                     invoked_pathway_id: neuron.invoked_pathway,
@@ -268,28 +286,38 @@ export function CNSMonitorPage() {
     const [pathwayId, setPathwayId] = useState<string>('');
     const [selectedSpike, setSelectedSpike] = useState<Spike | null>(null);
     const [selectedNeuron, setSelectedNeuron] = useState<Neuron | null>(null);
-    const [autoPan, setAutoPan] = useState(false);
+    const [autoPan, setAutoPan] = useState(true);
 
-// Remove refetchTick state entirely
-// Remove the two dendrite useEffect blocks entirely
-
-// Real-time events — these change reference when a new event fires
+    // Real-time events — these change reference when a new event fires
+    // Listen to ALL spike events (unfiltered) — the thalamus broadcasts
+    // dendrite_id=spike.id, not spike_train_id, so we cannot filter here.
+    // The debounced refetch below coalesces rapid events into one GET.
     const spikeEvent = useDendrite('Spike', null);
-    const trainEvent = useDendrite('SpikeTrain', null);
+    const trainEvent = useDendrite('SpikeTrain', spiketrainId || null);
 
-// Single effect that refetches when spiketrainId OR any dendrite event changes
+    // Debounce ref: coalesce rapid dendrite events into a single refetch.
+    // Without this, every spike status change triggers an immediate GET, flooding
+    // the server during active execution.
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const trainTerminalRef = useRef(false);
+
+    // Fetch the pathway blueprint ONCE when the spiketrainId changes.
+    // Pathways are blueprints — they don't change during execution.
     useEffect(() => {
         if (!spiketrainId) return;
-
         let cancelled = false;
+        trainTerminalRef.current = false;
 
-        const load = async () => {
+        const loadPathway = async () => {
             try {
                 const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
                 if (!res.ok || cancelled) return;
                 const trainData = (await res.json()) as SpikeTrain;
                 if (cancelled) return;
                 setTrain(trainData);
+                if (isTerminalStatus(trainData.status_name)) {
+                    trainTerminalRef.current = true;
+                }
                 const pwId = String(trainData.pathway);
                 setPathwayId(pwId);
 
@@ -299,12 +327,41 @@ export function CNSMonitorPage() {
                 if (cancelled) return;
                 setPathway(pwData);
             } catch (err) {
-                console.error('Failed to fetch train/pathway', err);
+                console.error('Failed to fetch pathway', err);
             }
         };
 
-        load();
+        loadPathway();
         return () => { cancelled = true; };
+    }, [spiketrainId]);
+
+    // Refetch ONLY the train (with nested spikes) on dendrite events.
+    // Debounced: waits 500ms after the last event before fetching, coalescing
+    // rapid-fire spike status changes into a single request.
+    // Stops refetching once the train reaches terminal status.
+    useEffect(() => {
+        if (!spiketrainId || (!spikeEvent && !trainEvent)) return;
+        if (trainTerminalRef.current) return;
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        debounceRef.current = setTimeout(async () => {
+            try {
+                const res = await apiFetch(`/api/v2/spiketrains/${encodeURIComponent(spiketrainId)}/`);
+                if (!res.ok) return;
+                const trainData = (await res.json()) as SpikeTrain;
+                setTrain(trainData);
+                if (isTerminalStatus(trainData.status_name)) {
+                    trainTerminalRef.current = true;
+                }
+            } catch (err) {
+                console.error('Failed to refresh train', err);
+            }
+        }, 500);
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
     }, [spiketrainId, spikeEvent, trainEvent]);
 
     // Breadcrumbs — include parent context if we drilled from a parent train
@@ -431,6 +488,7 @@ export function CNSMonitorPage() {
                 (selectedSpike || selectedNeuron) ? (
                     <div className="cns-monitor-inspector">
                         <h4 className="cns-monitor-inspector-title font-display">
+                            <Network size={16} style={{ color: '#22d3ee', marginRight: '8px', verticalAlign: 'middle' }} />
                             {selectedSpike ? 'Spike Detail' : 'Neuron Blueprint'}
                         </h4>
 

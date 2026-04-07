@@ -1,7 +1,11 @@
+import { useState } from 'react';
+import { OctagonX, Square } from 'lucide-react';
 import './CNSTrainSidebar.css';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api';
 import type { NeuralPathway, SpikeTrain } from '../types';
+
+const ALIVE_STATUSES = ['created', 'pending', 'running', 'delegated', 'stopping'];
 
 interface CNSTrainSidebarProps {
     pathway: NeuralPathway | null;
@@ -45,6 +49,7 @@ const formatTimeAgo = (dateStr: string): string => {
 
 export const CNSTrainSidebar = ({ pathway, trains, pathwayId }: CNSTrainSidebarProps) => {
     const navigate = useNavigate();
+    const [stopping, setStopping] = useState(false);
 
     const totalRuns = trains.length;
 
@@ -62,11 +67,39 @@ export const CNSTrainSidebar = ({ pathway, trains, pathwayId }: CNSTrainSidebarP
 
     const lastRun = trains.length > 0 ? trains[0].modified : null;
 
+    // Find the most recent alive train for stop controls
+    const aliveTrain = trains.find(t => ALIVE_STATUSES.includes((t.status_name || '').toLowerCase()));
+    const aliveTrainIsStopping = aliveTrain && (aliveTrain.status_name || '').toLowerCase() === 'stopping';
+
     const handleLaunch = async () => {
         try {
             await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/launch/`, { method: 'POST' });
         } catch {
             // ignore
+        }
+    };
+
+    const handleStop = async () => {
+        if (!aliveTrain) return;
+        setStopping(true);
+        try {
+            await apiFetch(`/api/v2/spiketrains/${aliveTrain.id}/stop/`, { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to stop train:', err);
+        } finally {
+            setStopping(false);
+        }
+    };
+
+    const handleTerminate = async () => {
+        if (!aliveTrain) return;
+        setStopping(true);
+        try {
+            await apiFetch(`/api/v2/spiketrains/${aliveTrain.id}/terminate/`, { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to terminate train:', err);
+        } finally {
+            setStopping(false);
         }
     };
 
@@ -84,6 +117,29 @@ export const CNSTrainSidebar = ({ pathway, trains, pathwayId }: CNSTrainSidebarP
                 <button className="cns-train-sidebar-action cns-train-sidebar-action--launch" onClick={handleLaunch}>
                     &#9654; Launch New Train
                 </button>
+
+                {aliveTrain && !aliveTrainIsStopping && (
+                    <button
+                        className="cns-train-sidebar-action cns-train-sidebar-action--stop"
+                        onClick={handleStop}
+                        disabled={stopping}
+                    >
+                        <Square size={12} />
+                        {stopping ? 'Stopping...' : 'Stop Train'}
+                    </button>
+                )}
+
+                {aliveTrain && (
+                    <button
+                        className="cns-train-sidebar-action cns-train-sidebar-action--terminate"
+                        onClick={handleTerminate}
+                        disabled={stopping}
+                    >
+                        <OctagonX size={12} />
+                        {stopping ? 'Terminating...' : 'Terminate'}
+                    </button>
+                )}
+
                 <button className="cns-train-sidebar-action" onClick={() => navigate(`/cns/pathway/${pathwayId}/edit`)}>
                     &#9998; Edit Graph
                 </button>

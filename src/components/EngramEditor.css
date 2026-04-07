@@ -1,0 +1,481 @@
+/* src/components/EngramEditor.css */
+
+.engram-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.engram-create-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(52, 211, 153, 0.6);
+    background: radial-gradient(circle at top left, rgba(22, 163, 74, 0.2), rgba(15, 23, 42, 0.95));
+    color: var(--accent-green);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 140ms ease-out, box-shadow 140ms ease-out;
+}
+
+.engram-create-toggle:hover {
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.4);
+}
+
+.engram-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.engram-create-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.engram-create-field-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.engram-create-input {
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.engram-create-textarea {
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.engram-create-relevance {
+    width: 70px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 4px 6px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+/* --- Engram Cards --- */
+
+.engram-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.engram-card {
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: rgba(15, 23, 42, 0.95);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 200ms ease;
+}
+
+.engram-card-inactive {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.engram-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.engram-card-title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.engram-card-title-input {
+    flex: 1;
+    min-width: 0;
+    border-radius: 6px;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 3px 6px;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.engram-card-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.engram-card-relevance {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.engram-card-relevance-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.engram-card-relevance-input {
+    width: 48px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 2px 4px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+/* Toggle switch */
+.engram-toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+    flex-shrink: 0;
+}
+
+.engram-toggle-active {
+    background: rgba(52, 211, 153, 0.4);
+    border-color: rgba(52, 211, 153, 0.7);
+}
+
+.engram-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    transition: transform 150ms ease, background 150ms ease;
+}
+
+.engram-toggle-active .engram-toggle-knob {
+    transform: translateX(14px);
+    background: var(--accent-green);
+}
+
+/* Description */
+.engram-card-description {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+    cursor: pointer;
+    white-space: pre-wrap;
+}
+
+.engram-card-description-empty {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.engram-card-description-input {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    resize: vertical;
+    min-height: 40px;
+}
+
+/* Tag pills */
+.engram-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.engram-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 16px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    background: rgba(250, 204, 21, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(250, 204, 21, 0.15);
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.engram-tag-pill-active {
+    background: rgba(250, 204, 21, 0.15);
+    color: var(--accent-gold);
+    border-color: rgba(250, 204, 21, 0.35);
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+}
+
+.engram-tag-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.engram-tag-add-input {
+    width: 80px;
+    height: 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 0 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+}
+
+.engram-tag-add-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Provenance */
+.engram-card-provenance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.engram-provenance-chip {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.engram-provenance-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.engram-provenance-link:hover {
+    text-decoration: underline;
+}
+
+/* Card footer */
+.engram-card-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.engram-detach-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    background: transparent;
+    color: var(--accent-red);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.engram-detach-btn:hover {
+    opacity: 1;
+    border-color: rgba(248, 113, 113, 0.7);
+}
+
+/* Saving indicator */
+.engram-saving {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--accent-blue);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.engram-empty {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 12px;
+    text-align: center;
+}
+
+/* Action bar (New Memory + Attach Existing) */
+.engram-action-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.engram-attach-toggle {
+    border-color: rgba(56, 189, 248, 0.6);
+    color: var(--accent-blue);
+    background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.95));
+}
+
+.engram-attach-toggle:hover {
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+}
+
+/* Attach panel */
+.engram-attach-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.engram-attach-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.engram-attach-search-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    color: var(--text-secondary);
+}
+
+.engram-attach-search {
+    flex: 1;
+}
+
+.engram-attach-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.engram-attach-close:hover {
+    color: var(--text-primary);
+    border-color: rgba(148, 163, 184, 0.6);
+}
+
+.engram-attach-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.engram-attach-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.engram-attach-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.engram-attach-card-name {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.engram-attach-card-desc {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.engram-attach-btn {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+}

@@ -1,0 +1,322 @@
+/* src/components/SelectionFilterEditor.css */
+
+.selection-filter-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    color: var(--text-secondary);
+}
+
+.filter-create-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0.95));
+    color: var(--accent-blue);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 140ms ease-out, box-shadow 140ms ease-out;
+}
+
+.filter-create-toggle:hover {
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.4);
+}
+
+.filter-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.filter-create-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.filter-create-field-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.filter-create-input {
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.filter-create-error {
+    padding: 8px;
+    border-radius: 6px;
+    border-left: 2px solid var(--accent-red);
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--accent-red);
+}
+
+.filter-btn-create,
+.filter-btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.filter-btn-create {
+    border-color: rgba(59, 130, 246, 0.5);
+    color: var(--accent-blue);
+}
+
+.filter-btn-create:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.8);
+}
+
+.filter-btn-create:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.filter-btn-cancel:hover {
+    background: rgba(148, 163, 184, 0.1);
+}
+
+/* --- Filter Cards --- */
+
+.filter-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-card {
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: rgba(15, 23, 42, 0.95);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 200ms ease;
+}
+
+.filter-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.filter-card-title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-card-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.filter-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    background: transparent;
+    color: var(--accent-red);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.filter-delete-btn:hover {
+    opacity: 1;
+    border-color: rgba(248, 113, 113, 0.7);
+}
+
+.filter-delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.filter-confirm-btn {
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.filter-confirm-yes {
+    border-color: rgba(248, 113, 113, 0.6);
+    color: var(--accent-red);
+}
+
+.filter-confirm-yes:hover {
+    background: rgba(248, 113, 113, 0.1);
+}
+
+.filter-confirm-no {
+    border-color: rgba(52, 211, 153, 0.6);
+    color: var(--accent-green);
+}
+
+.filter-confirm-no:hover {
+    background: rgba(52, 211, 153, 0.1);
+}
+
+/* Saving indicator */
+.filter-saving {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--accent-blue);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* Empty state */
+.filter-empty {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 12px;
+    text-align: center;
+}
+
+/* Filter fields */
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-field-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+}
+
+.filter-field-select {
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.filter-field-select:hover {
+    border-color: rgba(148, 163, 184, 0.8);
+}
+
+.filter-field-select:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Pill buttons for M2M selections */
+.filter-pill-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 120ms ease;
+}
+
+.filter-pill:hover {
+    border-color: rgba(148, 163, 184, 0.7);
+    background: rgba(148, 163, 184, 0.1);
+}
+
+.filter-pill-selected {
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--accent-blue);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.filter-pill-soft {
+    border-color: rgba(139, 92, 246, 0.4);
+    color: rgba(139, 92, 246, 0.8);
+}
+
+.filter-pill-soft:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.filter-pill-soft.filter-pill-selected {
+    border-color: var(--accent-purple);
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--accent-purple);
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+}

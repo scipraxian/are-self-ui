@@ -1,11 +1,13 @@
 import "./NeuronNode.css";
 import { Handle, Position } from 'reactflow';
 import { Eye, Play, Square } from 'lucide-react';
+import { EFFECTOR_STYLE } from './nodeConstants';
 
 // The data injected by React Flow when mapping your Django Neurons
 interface NeuronNodeData {
     label: string;
     effectorName: string | null;
+    effectorId?: number | null;
     status?: string;
     is_root?: boolean;
     invoked_pathway_name?: string | null;
@@ -20,6 +22,7 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
     // Determine colors & styling based on node type
     const isRoot = !!data.is_root;
     const isSubgraph = !!data.invoked_pathway_id;
+    const effectorStyle = data.effectorId ? EFFECTOR_STYLE[data.effectorId] : null;
 
     // Display names
     const displayName = isSubgraph ? data.invoked_pathway_name || 'Sub-Graph' : data.label;
@@ -29,8 +32,19 @@ export const NeuronNode = ({ data, id }: { data: NeuronNodeData, id: string }) =
     return (
         <div className="glass-panel neuronnode-ui-106">
             {/* CARD HEADER */}
-            <div className={`glass-panel-header neuronnode-header ${headerVariantClass}`}>
+            <div
+                className={`glass-panel-header neuronnode-header ${headerVariantClass}`}
+                style={effectorStyle ? { borderTop: `3px solid ${effectorStyle.color}` } : undefined}
+            >
                 <div className="common-layout-15">
+                    {effectorStyle && (
+                        <span
+                            className="font-mono text-xs"
+                            style={{ color: effectorStyle.color, fontWeight: 700, marginRight: 6 }}
+                        >
+                            {effectorStyle.label}
+                        </span>
+                    )}
                     <span className="font-display neuronnode-ui-105">
                         {isSubgraph && '🌀 '}{displayName}
                     </span>

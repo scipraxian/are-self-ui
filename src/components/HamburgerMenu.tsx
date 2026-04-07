@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import {
+    Activity, BookOpen, Brain, Clock, Home, LayoutGrid, Menu,
+    Network, Settings, TrendingUp, X, Zap
+} from 'lucide-react';
 import { useGABA } from '../context/GABAProvider';
 import './HamburgerMenu.css';
 
@@ -37,7 +40,11 @@ export const HamburgerMenu = () => {
         <div className="hamburger-root" ref={rootRef}>
             <div className="hamburger-logo">
                 <Link to="/" className="hamburger-logo-link">
-                    ARE-SELF
+                    <img
+                        src="/Are-SelfLogo-transparent.png"
+                        alt="Are-Self"
+                        className="hamburger-logo-img"
+                    />
                 </Link>
             </div>
             <button
@@ -52,38 +59,53 @@ export const HamburgerMenu = () => {
                 <nav className="hamburger-menu glass-panel">
                     <ul className="hamburger-list">
                         <li>
+                            <Link to="/cns" onClick={() => setOpen(false)}>
+                                <Network size={16} className="hamburger-icon hamburger-icon--cns" /> Central Nervous System / Graphs
+                            </Link>
+                        </li>
+                        <li>
                             <Link to="/" onClick={() => setOpen(false)}>
-                                Cortex
+                                <Home size={16} className="hamburger-icon hamburger-icon--cortex" /> Cortex / Dashboard
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/environments" onClick={() => setOpen(false)}>
+                                <Settings size={16} className="hamburger-icon hamburger-icon--environments" /> Environments / Config
                             </Link>
                         </li>
                         <li>
                             <Link to="/frontal" onClick={() => setOpen(false)}>
-                                Frontal Lobe / Reasoning
+                                <TrendingUp size={16} className="hamburger-icon hamburger-icon--frontal" /> Frontal Lobe / Reasoning
                             </Link>
                         </li>
                         <li>
-                            <Link to="/temporal" onClick={() => setOpen(false)}>
-                                Temporal Lobe / Iterations
+                            <Link to="/hippocampus" onClick={() => setOpen(false)}>
+                                <BookOpen size={16} className="hamburger-icon hamburger-icon--hippocampus" /> Hippocampus / Memory
                             </Link>
                         </li>
                         <li>
-                            <Link to="/cns" onClick={() => setOpen(false)}>
-                                Central Nervous System
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to="/pfc" onClick={() => setOpen(false)}>
-                                Prefrontal Cortex
+                            <Link to="/hypothalamus" onClick={() => setOpen(false)}>
+                                <Zap size={16} className="hamburger-icon hamburger-icon--hypothalamus" /> Hypothalamus / Models
                             </Link>
                         </li>
                         <li>
                             <Link to="/identity" onClick={() => setOpen(false)}>
-                                Identity Ledger
+                                <Brain size={16} className="hamburger-icon hamburger-icon--identities" /> Identity / Personas
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/pfc" onClick={() => setOpen(false)}>
+                                <LayoutGrid size={16} className="hamburger-icon hamburger-icon--pfc" /> Prefrontal Cortex / Tools
                             </Link>
                         </li>
                         <li>
                             <Link to="/pns" onClick={() => setOpen(false)}>
-                                Peripheral Nervous System / Fleet
+                                <Activity size={16} className="hamburger-icon hamburger-icon--pns" /> Peripheral Nervous System / Fleet
+                            </Link>
+                        </li>
+                        <li>
+                            <Link to="/temporal" onClick={() => setOpen(false)}>
+                                <Clock size={16} className="hamburger-icon hamburger-icon--temporal" /> Temporal Lobe / Iterations
                             </Link>
                         </li>
                     </ul>

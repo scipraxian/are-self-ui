@@ -1,12 +1,20 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, Settings, X } from 'lucide-react';
+import {
+    Activity, BookOpen, Brain, Clock, Home, LayoutGrid, Menu,
+    Network, Settings, TrendingUp, X, Zap
+} from 'lucide-react';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import './NavBar.css';
 
-export const NavBar = () => {
+interface NavBarProps {
+    gpuSaver: boolean;
+    onGpuSaverChange: (value: boolean) => void;
+}
+
+export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -48,7 +56,10 @@ export const NavBar = () => {
                 <button className="navbar-hamburger" onClick={toggleMenu} aria-label="Open navigation">
                     {menuOpen ? <X size={16} /> : <Menu size={16} />}
                 </button>
-                <Link to="/" className="navbar-logo">ARE-SELF</Link>
+                <Link to="/" className="navbar-logo">
+                    <img src="/Are-SelfLogo-transparent.png" alt="Are-Self" className="navbar-logo-img" />
+                    <span className="navbar-logo-text">ARE-SELF</span>
+                </Link>
             </div>
 
             <div className="navbar-crumbs">
@@ -87,29 +98,72 @@ export const NavBar = () => {
             {menuOpen && (
                 <div className="navbar-dropdown">
                     <Link to="/cns" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Central Nervous System
+                        <Network size={15} className="nav-dd-icon" style={{ color: '#22d3ee' }} />
+                        <span className="nav-dd-route">CNS</span>
+                        <span className="nav-dd-label">Graphs</span>
                     </Link>
                     <Link to="/" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Cortex
+                        <Home size={15} className="nav-dd-icon" style={{ color: '#ffffff' }} />
+                        <span className="nav-dd-route">Cortex</span>
+                        <span className="nav-dd-label">Dashboard</span>
                     </Link>
                     <Link to="/environments" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Environments
+                        <Settings size={15} className="nav-dd-icon" style={{ color: '#94a3b8' }} />
+                        <span className="nav-dd-route">Environments</span>
+                        <span className="nav-dd-label">Config</span>
                     </Link>
                     <Link to="/frontal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Frontal Lobe / Reasoning
+                        <TrendingUp size={15} className="nav-dd-icon" style={{ color: '#a78bfa' }} />
+                        <span className="nav-dd-route">Frontal Lobe</span>
+                        <span className="nav-dd-label">Reasoning</span>
+                    </Link>
+                    <Link to="/hippocampus" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        <BookOpen size={15} className="nav-dd-icon" style={{ color: '#fbbf24' }} />
+                        <span className="nav-dd-route">Hippocampus</span>
+                        <span className="nav-dd-label">Memory</span>
+                    </Link>
+                    <Link to="/hypothalamus" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        <Zap size={15} className="nav-dd-icon" style={{ color: '#34d399' }} />
+                        <span className="nav-dd-route">Hypothalamus</span>
+                        <span className="nav-dd-label">Models</span>
                     </Link>
                     <Link to="/identity" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Identity Ledger
-                    </Link>
-                    <Link to="/pns" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Peripheral Nervous System / Fleet
+                        <Brain size={15} className="nav-dd-icon" style={{ color: '#38bdf8' }} />
+                        <span className="nav-dd-route">Identity</span>
+                        <span className="nav-dd-label">Personas</span>
                     </Link>
                     <Link to="/pfc" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Prefrontal Cortex
+                        <LayoutGrid size={15} className="nav-dd-icon" style={{ color: '#fb7185' }} />
+                        <span className="nav-dd-route">Prefrontal Cortex</span>
+                        <span className="nav-dd-label">Tools</span>
+                    </Link>
+                    <Link to="/pns" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        <Activity size={15} className="nav-dd-icon" style={{ color: '#fb923c' }} />
+                        <span className="nav-dd-route">PNS</span>
+                        <span className="nav-dd-label">Fleet</span>
                     </Link>
                     <Link to="/temporal" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
-                        Temporal Lobe / Iterations
+                        <Clock size={15} className="nav-dd-icon" style={{ color: '#818cf8' }} />
+                        <span className="nav-dd-route">Temporal Lobe</span>
+                        <span className="nav-dd-label">Iterations</span>
                     </Link>
+
+                    <div className="navbar-dropdown-divider" />
+
+                    <label className="navbar-dropdown-toggle">
+                        <Brain size={14} className="nav-dd-icon" style={{ color: gpuSaver ? '#64748b' : '#38bdf8' }} />
+                        <span className="nav-dd-route">GPU Saver</span>
+                        <span className="nav-dd-label">During runs</span>
+                        <input
+                            type="checkbox"
+                            className="navbar-toggle-checkbox"
+                            checked={gpuSaver}
+                            onChange={(e) => onGpuSaverChange(e.target.checked)}
+                        />
+                        <span className="navbar-toggle-track">
+                            <span className="navbar-toggle-thumb" />
+                        </span>
+                    </label>
                 </div>
             )}
         </nav>

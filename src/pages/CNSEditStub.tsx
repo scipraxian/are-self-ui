@@ -38,6 +38,7 @@ export function CNSEditStub() {
                     pathwayId={pathwayId}
                     onDrillDown={(id) => navigate(`/cns/edit/${id}`)}
                     onNodeSelect={setSelectedNode}
+                    onLaunch={(trainId) => navigate(`/cns/spiketrain/${trainId}`)}
                     isMonitorMode={false}
                 />
             }

@@ -2,9 +2,11 @@ import './PNSMonitorPage.css';
 import 'xterm/css/xterm.css';
 import { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Activity } from 'lucide-react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { useTerminal } from '../hooks/useTerminal';
+import { SystemControlPanel } from '../components/SystemControlPanel';
 import type { NorepinephrineEvent } from '../types';
 
 interface TerminalPaneProps {
@@ -95,9 +97,11 @@ export function PNSMonitorPage() {
         if (!writer) return;
 
         switch (event.activity) {
-            case 'log':
-                writer(event.vesicle.message as string);
+            case 'log': {
+                const msg = event.vesicle.message as string;
+                writer(msg.endsWith('\n') ? msg.replace(/\n/g, '\r\n') : msg + '\r\n');
                 break;
+            }
             case 'task_started':
                 writer(`\x1b[33m▶ ${event.vesicle.name} [${(event.vesicle.uuid as string).slice(0, 8)}]\x1b[0m\r\n`);
                 break;
@@ -115,8 +119,11 @@ export function PNSMonitorPage() {
 
     if (workerHostnames.length === 0) {
         return (
-            <div className="pns-monitor-empty">
-                <p>No workers selected. Go to the fleet view and Shift+click workers to select them.</p>
+            <div className="pns-monitor-page">
+                <SystemControlPanel />
+                <div className="pns-monitor-empty">
+                    <p>No workers selected. Go to the fleet view and Shift+click workers to select them.</p>
+                </div>
             </div>
         );
     }
@@ -126,11 +133,15 @@ export function PNSMonitorPage() {
     return (
         <div className="pns-monitor-page">
             <div className="pns-monitor-header">
-                <span className="pns-monitor-header-title">Worker Monitor</span>
+                <span className="pns-monitor-header-title">
+                    <Activity size={16} style={{ color: '#fb923c', marginRight: '8px', verticalAlign: 'middle' }} />
+                    Worker Monitor
+                </span>
                 <span className="pns-monitor-header-count">
                     {count} worker{count !== 1 ? 's' : ''}
                 </span>
             </div>
+            <SystemControlPanel />
             <div className="pns-monitor-grid" data-count={count}>
                 {workerHostnames.slice(0, 4).map(hostname => (
                     <PNSTerminalPane

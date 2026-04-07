@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cpu, Loader2, Database, Wrench, Zap, Activity } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2, RefreshCw, Settings } from 'lucide-react';
 import { apiFetch } from '../api';
+import { EngramEditor } from './EngramEditor';
+import { AddonEditor } from './AddonEditor';
+import { ToolEditor } from './ToolEditor';
+import { SelectionFilterEditor } from './SelectionFilterEditor';
 import './IdentitySheet.css';
 import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
@@ -20,6 +25,8 @@ interface BaseIdentityData {
     tags: OutlierData[];
     identity_type?: OutlierData | null;
     ai_model?: OutlierData | null;
+    selection_filter?: OutlierData | null;
+    budget?: OutlierData | null;
 }
 
 interface Engram {
@@ -72,9 +79,21 @@ interface IdentitySheetProps {
 
 type ActiveTab = 'telemetry' | 'loadout' | 'memories' | 'flight';
 
+interface ModelPreview {
+    model_provider: number | null;
+    ai_model_id: string | null;
+    model_name: string | null;
+    provider_name: string | null;
+    provider_model_id: string | null;
+    input_cost_per_token: string | null;
+    output_cost_per_token: string | null;
+    reason?: string;
+}
+
 interface IdentityFormState {
     name: string;
-    ai_model_id: string | number | null;
+    selection_filter_id: string | number | null;
+    budget_id: string | number | null;
     system_prompt_template: string;
     enabled_tool_ids: (string | number)[];
     addon_ids: (string | number)[];
@@ -82,17 +101,33 @@ interface IdentityFormState {
 }
 
 export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
+    const navigate = useNavigate();
     const [data, setData] = useState<BaseIdentityData | IdentityDiscData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [activeTab, setActiveTab] = useState<ActiveTab>('telemetry');
     const [isEditMode, setIsEditMode] = useState(false);
     const [formState, setFormState] = useState<IdentityFormState | null>(null);
 
-    const [models, setModels] = useState<OutlierData[]>([]);
+    const [modelPreview, setModelPreview] = useState<ModelPreview | null>(null);
+    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
     const [isModelsLoading, setIsModelsLoading] = useState(false);
+
+    const [allTools, setAllTools] = useState<OutlierData[]>([]);
+    const [allAddons, setAllAddons] = useState<OutlierData[]>([]);
+    const [allIdentityTags, setAllIdentityTags] = useState<OutlierData[]>([]);
+    const [selectionFilters, setSelectionFilters] = useState<OutlierData[]>([]);
+    const [budgets, setBudgets] = useState<OutlierData[]>([]);
+
+    // Editor visibility states
+    const [showAddonEditor, setShowAddonEditor] = useState(false);
+    const [showToolEditor, setShowToolEditor] = useState(false);
+    const [showFilterEditor, setShowFilterEditor] = useState(false);
 
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
@@ -121,7 +156,8 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const base = current as BaseIdentityData;
         const next: IdentityFormState = {
             name: base.name,
-            ai_model_id: base.ai_model?.id ?? null,
+            selection_filter_id: base.selection_filter?.id ?? null,
+            budget_id: base.budget?.id ?? null,
             system_prompt_template: base.system_prompt_template ?? '',
             enabled_tool_ids: (base.enabled_tools ?? []).map(t => t.id),
             addon_ids: (base.addons ?? []).map(a => a.id),
@@ -153,25 +189,86 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         }
     }, [hydrateFormFromData, id, type]);
 
+    const fetchModelPreview = useCallback(async () => {
+        if (type !== 'disc') return;
+        setIsPreviewLoading(true);
+        try {
+            const res = await apiFetch(`/api/v2/identity-discs/${id}/model-preview/`);
+            if (res.ok) {
+                setModelPreview(await res.json());
+            }
+        } catch (err) {
+            console.error('Model preview fetch failed:', err);
+        } finally {
+            setIsPreviewLoading(false);
+        }
+    }, [id, type]);
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     useEffect(() => {
-        const loadModels = async () => {
+        fetchModelPreview();
+    }, [fetchModelPreview]);
+
+    const refreshCatalogs = useCallback(async () => {
+        try {
+            const [toolRes, addonRes] = await Promise.all([
+                apiFetch('/api/v2/tool-definitions/'),
+                apiFetch('/api/v2/identity_addons/'),
+            ]);
+            if (toolRes.ok) {
+                const json = await toolRes.json();
+                setAllTools(json.results ?? json);
+            }
+            if (addonRes.ok) {
+                const json = await addonRes.json();
+                setAllAddons(json.results ?? json);
+            }
+        } catch (err) {
+            console.error('Catalog refresh failed', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        const loadCatalogs = async () => {
             try {
                 setIsModelsLoading(true);
-                const res = await apiFetch('/api/v2/model_registry/');
-                if (!res.ok) return;
-                const json = await res.json();
-                setModels(json.results ?? json);
+                const [toolRes, addonRes, tagRes, filterRes, budgetRes] = await Promise.all([
+                    apiFetch('/api/v2/tool-definitions/'),
+                    apiFetch('/api/v2/identity_addons/'),
+                    apiFetch('/api/v2/identity-tags/'),
+                    apiFetch('/api/v2/selection-filters/'),
+                    apiFetch('/api/v2/identity-budgets/'),
+                ]);
+                if (toolRes.ok) {
+                    const json = await toolRes.json();
+                    setAllTools(json.results ?? json);
+                }
+                if (addonRes.ok) {
+                    const json = await addonRes.json();
+                    setAllAddons(json.results ?? json);
+                }
+                if (tagRes.ok) {
+                    const json = await tagRes.json();
+                    setAllIdentityTags(json.results ?? json);
+                }
+                if (filterRes.ok) {
+                    const json = await filterRes.json();
+                    setSelectionFilters(json.results ?? json);
+                }
+                if (budgetRes.ok) {
+                    const json = await budgetRes.json();
+                    setBudgets(json.results ?? json);
+                }
             } catch (err) {
-                console.error('Model registry fetch failed', err);
+                console.error('Catalog fetch failed', err);
             } finally {
                 setIsModelsLoading(false);
             }
         };
-        loadModels();
+        loadCatalogs();
     }, []);
 
     const toggleIdInList = (list: (string | number)[], value: string | number) => {
@@ -191,11 +288,12 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
 
             const payload: any = {
                 name: formState.name,
-                ai_model: formState.ai_model_id,
+                selection_filter_id: formState.selection_filter_id,
+                budget_id_write: formState.budget_id,
                 system_prompt_template: formState.system_prompt_template,
-                enabled_tools: formState.enabled_tool_ids,
-                addons: formState.addon_ids,
-                tags: formState.tag_ids,
+                enabled_tool_ids: formState.enabled_tool_ids,
+                addon_ids: formState.addon_ids,
+                tag_ids: formState.tag_ids,
             };
 
             const res = await apiFetch(endpoint, {
@@ -211,6 +309,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             }
 
             await fetchData();
+            await fetchModelPreview();
             setIsEditMode(false);
         } catch (err: any) {
             console.error('Save failed', err);
@@ -236,6 +335,26 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         }
     };
 
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        setError(null);
+        try {
+            const endpoint = type === 'disc'
+                ? `/api/v2/identity-discs/${id}/`
+                : `/api/v2/identities/${id}/`;
+            const res = await apiFetch(endpoint, { method: 'DELETE' });
+            if (!res.ok && res.status !== 204) {
+                throw new Error(`Delete failed (${res.status})`);
+            }
+            navigate('/identity');
+        } catch (err) {
+            console.error('Delete failed', err);
+            setError(err instanceof Error ? err.message : 'Failed to delete.');
+            setIsDeleting(false);
+            setConfirmDelete(false);
+        }
+    };
+
     if (isLoading || !data) {
         return (
             <div className="identity-sheet-container">
@@ -247,12 +366,8 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         );
     }
 
-    const currentModelName =
-        models.find(m => m.id === (formState?.ai_model_id ?? baseData?.ai_model?.id))?.name ||
-        baseData?.ai_model?.name ||
-        'Unassigned Model';
+    const currentModelName = modelPreview?.model_name ?? 'No model resolved';
 
-    const memories = discData?.memories ?? [];
     const sessions = discData?.reasoning_session ?? [];
 
     return (
@@ -282,12 +397,44 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     <button
                         type="button"
                         className={`btn-action ${isEditMode ? 'btn-action-active' : ''}`}
-                        onClick={() => setIsEditMode(prev => !prev)}
+                        onClick={() => { setIsEditMode(prev => !prev); setConfirmDelete(false); }}
                         disabled={isSaving}
                     >
                         <Cpu size={14} fill="currentColor" />
                         {isEditMode ? 'EXIT EDIT MODE' : 'EDIT MODE'}
                     </button>
+                    {isEditMode && (
+                        confirmDelete ? (
+                            <div className="sheet-delete-confirm">
+                                <span className="font-mono text-xs" style={{ color: 'var(--accent-red)' }}>Confirm?</span>
+                                <button
+                                    type="button"
+                                    className="btn-action btn-danger"
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? <Loader2 className="animate-spin" size={12} /> : 'Yes, Delete'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-secondary-outline"
+                                    onClick={() => setConfirmDelete(false)}
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn-action btn-danger"
+                                onClick={() => setConfirmDelete(true)}
+                            >
+                                <Trash2 size={14} />
+                                DELETE
+                            </button>
+                        )
+                    )}
                 </div>
             </div>
 
@@ -428,27 +575,105 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                 )}
                             </div>
                             <div className="loadout-field">
-                                <label className="metric-label">AI Model</label>
+                                <label className="metric-label">
+                                    Hypothalamus Route
+                                    <button
+                                        type="button"
+                                        className="btn-icon-inline"
+                                        title="Refresh model preview"
+                                        onClick={fetchModelPreview}
+                                        disabled={isPreviewLoading}
+                                        style={{ marginLeft: 6, opacity: isPreviewLoading ? 0.4 : 0.7, cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+                                    >
+                                        <RefreshCw size={12} className={isPreviewLoading ? 'animate-spin' : ''} />
+                                    </button>
+                                </label>
+                                <div className="loadout-text" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    {isPreviewLoading ? (
+                                        <span className="font-mono text-xs text-muted">Resolving...</span>
+                                    ) : modelPreview?.model_name ? (
+                                        <>
+                                            <Link
+                                                to={`/hypothalamus?model=${modelPreview.ai_model_id}`}
+                                                className="font-mono text-sm loadout-model-link"
+                                            >
+                                                {modelPreview.model_name}
+                                            </Link>
+                                            <span className="font-mono text-xs text-muted">
+                                                via {modelPreview.provider_name}
+                                                {modelPreview.input_cost_per_token && modelPreview.input_cost_per_token !== '0' && (
+                                                    <> &middot; ${modelPreview.input_cost_per_token}/tok in</>
+                                                )}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="font-mono text-xs text-muted">
+                                            {modelPreview?.reason ?? 'No model resolved'}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="loadout-field">
+                                <label className="metric-label">Model Selection Filter</label>
                                 {isEditMode ? (
                                     <select
                                         className="loadout-input"
                                         disabled={isModelsLoading}
-                                        value={formState?.ai_model_id ?? ''}
+                                        value={formState?.selection_filter_id ?? ''}
                                         onChange={e => setFormState(prev => prev ? {
                                             ...prev,
-                                            ai_model_id: e.target.value === '' ? null : e.target.value,
+                                            selection_filter_id: e.target.value === '' ? null : e.target.value,
                                         } : prev)}
                                     >
-                                        <option value="">Select model...</option>
-                                        {models.map(model => (
-                                            <option key={model.id} value={model.id}>
-                                                {model.name}
+                                        <option value="">No filter (use default routing)</option>
+                                        {selectionFilters.map(sf => (
+                                            <option key={sf.id} value={sf.id}>
+                                                {sf.name}
                                             </option>
                                         ))}
                                     </select>
+                                ) : baseData?.selection_filter ? (
+                                    <Link
+                                        to={`/hypothalamus?tab=routing&filter=${baseData.selection_filter.id}`}
+                                        className="loadout-text loadout-link"
+                                    >
+                                        {baseData.selection_filter.name}
+                                    </Link>
                                 ) : (
-                                    <div className="loadout-text">
-                                        {currentModelName}
+                                    <div className="loadout-text loadout-text-empty">
+                                        No filter assigned
+                                    </div>
+                                )}
+                            </div>
+                            <div className="loadout-field">
+                                <label className="metric-label">Budget Allocation</label>
+                                {isEditMode ? (
+                                    <select
+                                        className="loadout-input"
+                                        disabled={isModelsLoading}
+                                        value={formState?.budget_id ?? ''}
+                                        onChange={e => setFormState(prev => prev ? {
+                                            ...prev,
+                                            budget_id: e.target.value === '' ? null : e.target.value,
+                                        } : prev)}
+                                    >
+                                        <option value="">No budget assigned</option>
+                                        {budgets.map(budget => (
+                                            <option key={budget.id} value={budget.id}>
+                                                {budget.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : baseData?.budget ? (
+                                    <Link
+                                        to={`/hypothalamus?tab=budgets&budget=${baseData.budget.id}`}
+                                        className="loadout-text loadout-link"
+                                    >
+                                        {baseData.budget.name}
+                                    </Link>
+                                ) : (
+                                    <div className="loadout-text loadout-text-empty">
+                                        No budget assigned
                                     </div>
                                 )}
                             </div>
@@ -456,65 +681,133 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     </div>
 
                     <div className="sheet-section">
-                        <h3 className="sheet-section-title common-layout-15">
-                            <Wrench size={14} /> Enabled Tools
-                        </h3>
+                        <div className="sheet-section-title-row">
+                            <h3 className="sheet-section-title common-layout-15">
+                                <Cpu size={14} /> Model Routing Configuration
+                            </h3>
+                            <button
+                                type="button"
+                                className="sheet-manage-btn"
+                                onClick={() => setShowFilterEditor(!showFilterEditor)}
+                                title="Configure selection filters"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
+                        {showFilterEditor && (
+                            <div className="sheet-editor-panel">
+                                <SelectionFilterEditor onRefresh={() => {
+                                    const loadCatalogs = async () => {
+                                        try {
+                                            const filterRes = await apiFetch('/api/v2/selection-filters/');
+                                            if (filterRes.ok) {
+                                                const json = await filterRes.json();
+                                                setSelectionFilters(json.results ?? json);
+                                            }
+                                        } catch (err) {
+                                            console.error('Failed to refresh filters', err);
+                                        }
+                                    };
+                                    loadCatalogs();
+                                }} />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="sheet-section">
+                        <div className="sheet-section-title-row">
+                            <h3 className="sheet-section-title common-layout-15">
+                                <Wrench size={14} /> Enabled Tools
+                            </h3>
+                            <button
+                                type="button"
+                                className="sheet-manage-btn"
+                                onClick={() => setShowToolEditor(!showToolEditor)}
+                                title="Manage tool registry"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
                         <div className="badge-container">
-                            {baseData?.enabled_tools?.length ? (
-                                baseData.enabled_tools.map(tool => {
+                            {isEditMode ? (
+                                allTools.length ? allTools.map(tool => {
                                     const checked = !!formState?.enabled_tool_ids.includes(tool.id);
                                     return (
                                         <button
                                             key={`tool-${tool.id}`}
                                             type="button"
-                                            className={`badge badge-tool ${isEditMode && checked ? 'badge-selected' : ''}`}
-                                            onClick={() => isEditMode && setFormState(prev => prev ? ({
+                                            className={`badge badge-tool ${checked ? 'badge-selected' : ''}`}
+                                            onClick={() => setFormState(prev => prev ? ({
                                                 ...prev,
                                                 enabled_tool_ids: toggleIdInList(prev.enabled_tool_ids, tool.id),
                                             }) : prev)}
                                         >
-                                            {isEditMode && (
-                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            )}
+                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
                                             {tool.name}
                                         </button>
                                     );
-                                })
+                                }) : <span className="font-mono text-xs text-muted">No tools available.</span>
                             ) : (
-                                <span className="font-mono text-xs text-muted">No tools configured.</span>
+                                baseData?.enabled_tools?.length ? baseData.enabled_tools.map(tool => (
+                                    <button key={`tool-${tool.id}`} type="button" className="badge badge-tool">
+                                        {tool.name}
+                                    </button>
+                                )) : <span className="font-mono text-xs text-muted">No tools configured.</span>
                             )}
                         </div>
+                        {showToolEditor && (
+                            <div className="sheet-editor-panel">
+                                <ToolEditor onRefresh={refreshCatalogs} />
+                            </div>
+                        )}
                     </div>
 
                     <div className="sheet-section">
-                        <h3 className="sheet-section-title common-layout-15">
-                            <Zap size={14} /> Neural Addons
-                        </h3>
+                        <div className="sheet-section-title-row">
+                            <h3 className="sheet-section-title common-layout-15">
+                                <Zap size={14} /> Neural Addons
+                            </h3>
+                            <button
+                                type="button"
+                                className="sheet-manage-btn"
+                                onClick={() => setShowAddonEditor(!showAddonEditor)}
+                                title="Manage addon catalog"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
                         <div className="badge-container">
-                            {baseData?.addons?.length ? (
-                                baseData.addons.map(addon => {
+                            {isEditMode ? (
+                                allAddons.length ? allAddons.map(addon => {
                                     const checked = !!formState?.addon_ids.includes(addon.id);
                                     return (
                                         <button
                                             key={`addon-${addon.id}`}
                                             type="button"
-                                            className={`badge badge-addon ${isEditMode && checked ? 'badge-selected' : ''}`}
-                                            onClick={() => isEditMode && setFormState(prev => prev ? ({
+                                            className={`badge badge-addon ${checked ? 'badge-selected' : ''}`}
+                                            onClick={() => setFormState(prev => prev ? ({
                                                 ...prev,
                                                 addon_ids: toggleIdInList(prev.addon_ids, addon.id),
                                             }) : prev)}
                                         >
-                                            {isEditMode && (
-                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            )}
+                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
                                             {addon.name}
                                         </button>
                                     );
-                                })
+                                }) : <span className="font-mono text-xs text-muted">No addons available.</span>
                             ) : (
-                                <span className="font-mono text-xs text-muted">No addons active.</span>
+                                baseData?.addons?.length ? baseData.addons.map(addon => (
+                                    <button key={`addon-${addon.id}`} type="button" className="badge badge-addon">
+                                        {addon.name}
+                                    </button>
+                                )) : <span className="font-mono text-xs text-muted">No addons active.</span>
                             )}
                         </div>
+                        {showAddonEditor && (
+                            <div className="sheet-editor-panel">
+                                <AddonEditor onRefresh={refreshCatalogs} />
+                            </div>
+                        )}
                     </div>
 
                     <div className="sheet-section">
@@ -522,28 +815,30 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                             <Database size={14} /> Taxonomy Tags
                         </h3>
                         <div className="badge-container">
-                            {baseData?.tags?.length ? (
-                                baseData.tags.map(tag => {
+                            {isEditMode ? (
+                                allIdentityTags.length ? allIdentityTags.map(tag => {
                                     const checked = !!formState?.tag_ids.includes(tag.id);
                                     return (
                                         <button
                                             key={`tag-${tag.id}`}
                                             type="button"
-                                            className={`badge badge-tag ${isEditMode && checked ? 'badge-selected' : ''}`}
-                                            onClick={() => isEditMode && setFormState(prev => prev ? ({
+                                            className={`badge badge-tag ${checked ? 'badge-selected' : ''}`}
+                                            onClick={() => setFormState(prev => prev ? ({
                                                 ...prev,
                                                 tag_ids: toggleIdInList(prev.tag_ids, tag.id),
                                             }) : prev)}
                                         >
-                                            {isEditMode && (
-                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            )}
+                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
                                             {tag.name}
                                         </button>
                                     );
-                                })
+                                }) : <span className="font-mono text-xs text-muted">No tags available.</span>
                             ) : (
-                                <span className="font-mono text-xs text-muted">Uncategorized.</span>
+                                baseData?.tags?.length ? baseData.tags.map(tag => (
+                                    <button key={`tag-${tag.id}`} type="button" className="badge badge-tag">
+                                        {tag.name}
+                                    </button>
+                                )) : <span className="font-mono text-xs text-muted">Uncategorized.</span>
                             )}
                         </div>
                     </div>
@@ -579,25 +874,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     {isDisc ? (
                         <div className="sheet-section">
                             <h3 className="sheet-section-title">Engram Stream</h3>
-                            {memories.length === 0 ? (
-                                <div className="prompt-box">
-                                    No memories linked to this Disc yet.
-                                </div>
-                            ) : (
-                                <div className="memory-list">
-                                    {memories.map(memory => (
-                                        <div key={memory.id} className="memory-item">
-                                            <div className="memory-meta font-mono text-xs">
-                                                <span>{memory.id}</span>
-                                                <span>{new Date(memory.created).toLocaleString()}</span>
-                                            </div>
-                                            <div className="memory-summary">
-                                                {memory.summary}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <EngramEditor discId={id} />
                         </div>
                     ) : (
                         <div className="sheet-section">
@@ -624,7 +901,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                     {sessions.map(session => {
                                         const sessionClassId = safeCssIdent(session.id);
                                         return (
-                                            <div key={session.id} className="session-item">
+                                            <Link key={session.id} to={`/frontal/${session.id}`} className="session-item session-item-link">
                                                 <div className="session-header">
                                                     <span className="font-mono text-xs">Session {session.id}</span>
                                                     <span className="session-status">{session.status?.name}</span>
@@ -644,7 +921,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                                                         </span>
                                                     )}
                                                 </div>
-                                            </div>
+                                            </Link>
                                         );
                                     })}
                                 </div>

@@ -1,0 +1,141 @@
+.pfc-page-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    pointer-events: auto;
+}
+
+.pfc-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    gap: 12px;
+    pointer-events: auto;
+    min-height: 0;
+}
+
+/* Filter bar */
+.pfc-filter-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+}
+
+.pfc-filter-bar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pfc-view-toggle {
+    display: flex;
+    gap: 2px;
+}
+
+.pfc-view-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    color: #64748b;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 120ms ease, background 120ms ease;
+}
+
+.pfc-view-toggle-btn:hover {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.pfc-view-toggle-btn--active {
+    color: #e2e8f0;
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.pfc-filter-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-glass);
+    flex-shrink: 0;
+}
+
+.pfc-filter-select {
+    background: rgba(15, 15, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 6px 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+.pfc-filter-clear {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.pfc-filter-clear:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Main content area */
+.pfc-main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    gap: 16px;
+}
+
+.pfc-stage {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Inspector right panel */
+.pfc-inspector-panel {
+    flex: 0 0 350px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    min-height: 0;
+    transition: flex-basis 0.25s ease;
+}
+
+.pfc-inspector-panel::-webkit-scrollbar {
+    display: none;
+}
+
+.pfc-inspector-panel--expanded {
+    flex: 0 0 600px;
+}

@@ -2,6 +2,8 @@ import "./ReasoningGraph3D.css";
 import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
+import { useDendrite } from './SynapticCleft';
+import { summarizeTool, toolOneLiner } from '../utils/toolFormatters';
 import type {
     GraphLink,
     GraphNode,
@@ -53,22 +55,77 @@ const extractNodeThought = (node: GraphNode): string => {
     return thought;
 };
 
+const generateHoverCardLines = (node: GraphNode): string[] => {
+    const lines: string[] = [];
+
+    if (node.type === 'turn') {
+        const turnData = node as ReasoningTurnData & { id: string };
+        const durationStr = turnData.model_usage_record?.query_time || turnData.delta || '?';
+        const status = turnData.status_name || 'Unknown';
+        lines.push(`Turn ${turnData.turn_number} · ${durationStr} · ${status}`);
+
+        if (turnData.tool_calls && turnData.tool_calls.length > 0) {
+            lines.push(toolOneLiner(turnData.tool_calls[0]));
+        }
+
+        const thought = extractNodeThought(node);
+        if (thought) {
+            lines.push(`💭 "${thought}"`);
+        }
+    } else if (node.type === 'tool') {
+        const toolData = node as ToolCallData & { id: string };
+        const summary = summarizeTool(toolData);
+        const status = toolData.status_name || 'Unknown';
+        lines.push(`⚙ ${toolData.tool_name} · ${status}`);
+        lines.push(summary.action);
+    } else if (node.type === 'engram') {
+        const engramData = node as TalosEngramData & { id: string };
+        lines.push(`◆ "${engramData.name}"`);
+        const relevance = (engramData.relevance_score || 0).toFixed(2);
+        const sourceTurn = engramData.source_turns?.[0] || '?';
+        lines.push(`relevance ${relevance} · from Turn ${sourceTurn}`);
+    } else if (node.type === 'goal') {
+        const goalData = node as ReasoningGoalData & { id: string };
+        const status = goalData.status_name || 'Unknown';
+        lines.push(`⊕ Goal · ${status}`);
+        const goalPreview = goalData.rendered_goal?.slice(0, 100) || '';
+        lines.push(`"${goalPreview}"`);
+    } else if (node.type === 'conclusion') {
+        const conclusionData = node as any; // SessionConclusionData
+        const status = conclusionData.outcome_status || conclusionData.status_name || 'Complete';
+        lines.push(`◼ ${status}`);
+        const summaryPreview = conclusionData.summary?.slice(0, 100) || '';
+        lines.push(`"${summaryPreview}"`);
+    }
+
+    return lines;
+};
+
 interface BubblePosition {
     x: number;
     y: number;
     text: string;
 }
 
+interface HoverCard {
+    nodeId: string;
+    x: number;
+    y: number;
+    lines: string[];
+}
+
 interface ReasoningGraphProps {
     sessionId: string;
     onNodeSelect: (node: GraphNode) => void;
     onStatsUpdate: (stats: { level: number, focus: string, xp: number, status: string, latestThought: string }) => void;
+    onSessionDataUpdate?: (data: ReasoningSessionData) => void;
 }
 
 export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     sessionId,
     onNodeSelect,
     onStatsUpdate,
+    onSessionDataUpdate,
 }: ReasoningGraphProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
@@ -77,6 +134,8 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
     const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
+    const [hoverCard, setHoverCard] = useState<HoverCard | null>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const parseDuration = (str: string) => {
         if (!str) return 0;
@@ -87,119 +146,128 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         return parseFloat(clean) || 0;
     };
 
-    const fetchGraphData = async () => {
-        try {
-            const res = await fetch(`/api/v1/reasoning_sessions/${sessionId}/graph_data/`);
-            if (!res.ok) return;
-            const data: ReasoningSessionData = await res.json();
-
-            let latestThought = "Awaiting cortex synchronization...";
-            let totalSeconds = 0;
-            let validTurnsCount = 0;
-
-            if (data.turns && data.turns.length > 0) {
-                for (let i = data.turns.length - 1; i >= 0; i--) {
-                    const thought = extractThoughtFromUsageRecord(data.turns[i].model_usage_record);
-                    if (thought) {
-                        latestThought = thought;
-                        break;
-                    }
-                }
-                data.turns.forEach((t: ReasoningTurnData) => {
-                    const timeStr = t.model_usage_record?.query_time || t.delta || '';
-                    const sec = parseDuration(timeStr);
-                    if (sec > 0) {
-                        totalSeconds += sec;
-                        validTurnsCount++;
-                    }
-                });
-            }
-
-            const avgDelta = validTurnsCount > 0 ? totalSeconds / validTurnsCount : 1.0;
-
-            onStatsUpdate({
-                level: data.current_level || 1,
-                focus: `${data.current_focus || 0} / ${data.max_focus || 10}`,
-                xp: data.total_xp || 0,
-                status: data.status_name,
-                latestThought
-            });
-
-            const newNodes: GraphNode[] = [];
-            const newLinks: GraphLink[] = [];
-
-            if (data.goals) {
-                data.goals.forEach((g: ReasoningGoalData) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
-            }
-
-            if (data.turns) {
-                data.turns.forEach((t: ReasoningTurnData, index: number) => {
-                    const tId = `turn-${t.id}`;
-
-                    const sec = parseDuration(t.model_usage_record?.query_time || t.delta || '');
-                    let ratio = sec / avgDelta;
-                    if (isNaN(ratio) || ratio === 0) ratio = 1;
-                    ratio = Math.max(0.3, Math.min(ratio, 4.0));
-
-                    newNodes.push({ ...t, id: tId, type: 'turn', label: `Turn ${t.turn_number}`, sizeRatio: ratio });
-
-                    if (index > 0) {
-                        newLinks.push({ source: `turn-${data.turns[index - 1].id}`, target: tId, type: 'sequence' });
-                    }
-
-                    if (t.tool_calls) {
-                        t.tool_calls.forEach((c: ToolCallData, cIdx: number) => {
-                            const cId = `tool-${t.id}-${cIdx}`;
-                            newNodes.push({ ...c, id: cId, type: 'tool', label: c.tool_name });
-                            newLinks.push({ source: tId, target: cId, type: 'tool_call' });
-                        });
-                    }
-                });
-            }
-
-            if (data.engrams) {
-                data.engrams.forEach((e: TalosEngramData) => {
-                    const eId = `engram-${e.id}`;
-                    newNodes.push({ ...e, id: eId, type: 'engram', label: e.name });
-                    if (e.source_turns) {
-                        e.source_turns.forEach((st: number) => newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' }));
-                    }
-                });
-            }
-
-            if (data.conclusion) {
-                const cId = `conclusion-${data.conclusion.id}`;
-                newNodes.push({ ...data.conclusion, id: cId, type: 'conclusion', label: 'Final Report' });
-                if (data.turns && data.turns.length > 0) {
-                    newLinks.push({ source: `turn-${data.turns[data.turns.length - 1].id}`, target: cId, type: 'sequence' });
-                }
-            }
-
-            const validIds = new Set(newNodes.map(n => n.id));
-            const safeLinks = newLinks.filter(l => validIds.has(l.source as string) && validIds.has(l.target as string));
-
-            const topologySignature = JSON.stringify({
-                nodes: newNodes.map(n => ({ id: n.id, status: n.status_name, ratio: n.sizeRatio })),
-                links: safeLinks.length
-            });
-
-            if (topologySignature !== prevDataRef.current) {
-                prevDataRef.current = topologySignature;
-                activeMeshesRef.current = [];
-                setGraphData({ nodes: newNodes, links: safeLinks });
-            }
-
-        } catch (err) {
-            console.error("Graph fetch failed:", err);
-        }
-    };
+    // Real-time: refetch when any ReasoningTurn changes
+    const turnEvent = useDendrite('ReasoningTurn', null);
+    const sessionEvent = useDendrite('ReasoningSession', sessionId);
 
     useEffect(() => {
+        if (!sessionId) return;
+        let cancelled = false;
+
+        const load = async () => {
+            try {
+                const res = await fetch(`/api/v1/reasoning_sessions/${sessionId}/graph_data/`);
+                if (!res.ok || cancelled) return;
+                const data: ReasoningSessionData = await res.json();
+                if (cancelled) return;
+
+                let latestThought = "Awaiting cortex synchronization...";
+                let totalSeconds = 0;
+                let validTurnsCount = 0;
+
+                if (data.turns && data.turns.length > 0) {
+                    for (let i = data.turns.length - 1; i >= 0; i--) {
+                        const thought = extractThoughtFromUsageRecord(data.turns[i].model_usage_record);
+                        if (thought) {
+                            latestThought = thought;
+                            break;
+                        }
+                    }
+                    data.turns.forEach((t: ReasoningTurnData) => {
+                        const timeStr = t.model_usage_record?.query_time || t.delta || '';
+                        const sec = parseDuration(timeStr);
+                        if (sec > 0) {
+                            totalSeconds += sec;
+                            validTurnsCount++;
+                        }
+                    });
+                }
+
+                const avgDelta = validTurnsCount > 0 ? totalSeconds / validTurnsCount : 1.0;
+
+                onStatsUpdate({
+                    level: data.current_level || 1,
+                    focus: `${data.current_focus || 0} / ${data.max_focus || 10}`,
+                    xp: data.total_xp || 0,
+                    status: data.status_name,
+                    latestThought
+                });
+
+                onSessionDataUpdate?.(data);
+
+                const newNodes: GraphNode[] = [];
+                const newLinks: GraphLink[] = [];
+
+                if (data.goals) {
+                    data.goals.forEach((g: ReasoningGoalData) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
+                }
+
+                if (data.turns) {
+                    data.turns.forEach((t: ReasoningTurnData, index: number) => {
+                        const tId = `turn-${t.id}`;
+
+                        const sec = parseDuration(t.model_usage_record?.query_time || t.delta || '');
+                        let ratio = sec / avgDelta;
+                        if (isNaN(ratio) || ratio === 0) ratio = 1;
+                        ratio = Math.max(0.3, Math.min(ratio, 4.0));
+
+                        newNodes.push({ ...t, id: tId, type: 'turn', label: `Turn ${t.turn_number}`, sizeRatio: ratio });
+
+                        if (index > 0) {
+                            newLinks.push({ source: `turn-${data.turns[index - 1].id}`, target: tId, type: 'sequence' });
+                        }
+
+                        if (t.tool_calls) {
+                            t.tool_calls.forEach((c: ToolCallData, cIdx: number) => {
+                                const cId = `tool-${t.id}-${cIdx}`;
+                                newNodes.push({ ...c, id: cId, type: 'tool', label: c.tool_name });
+                                newLinks.push({ source: tId, target: cId, type: 'tool_call' });
+                            });
+                        }
+                    });
+                }
+
+                if (data.engrams) {
+                    data.engrams.forEach((e: TalosEngramData) => {
+                        const eId = `engram-${e.id}`;
+                        newNodes.push({ ...e, id: eId, type: 'engram', label: e.name });
+                        if (e.source_turns) {
+                            e.source_turns.forEach((st: number) => newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' }));
+                        }
+                    });
+                }
+
+                if (data.conclusion) {
+                    const cId = `conclusion-${data.conclusion.id}`;
+                    newNodes.push({ ...data.conclusion, id: cId, type: 'conclusion', label: 'Final Report' });
+                    if (data.turns && data.turns.length > 0) {
+                        newLinks.push({ source: `turn-${data.turns[data.turns.length - 1].id}`, target: cId, type: 'sequence' });
+                    }
+                }
+
+                const validIds = new Set(newNodes.map(n => n.id));
+                const safeLinks = newLinks.filter(l => validIds.has(l.source as string) && validIds.has(l.target as string));
+
+                const topologySignature = JSON.stringify({
+                    nodes: newNodes.map(n => ({ id: n.id, status: n.status_name, ratio: n.sizeRatio })),
+                    links: safeLinks.length
+                });
+
+                if (topologySignature !== prevDataRef.current) {
+                    prevDataRef.current = topologySignature;
+                    activeMeshesRef.current = [];
+                    setGraphData({ nodes: newNodes, links: safeLinks });
+                }
+
+            } catch (err) {
+                console.error("Graph fetch failed:", err);
+            }
+        };
+
         prevDataRef.current = "";
-        fetchGraphData();
-        const interval = setInterval(fetchGraphData, 3000);
-        return () => clearInterval(interval);
-    }, [sessionId]);
+        load();
+        return () => { cancelled = true; };
+    }, [sessionId, turnEvent, sessionEvent, onStatsUpdate, onSessionDataUpdate]);
 
     useEffect(() => {
         let frameId: number;
@@ -274,6 +342,52 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
         return () => cancelAnimationFrame(frameId);
     }, [graphData]);
+
+    const handleNodeHover = useCallback((nodeObj: object | null) => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+
+        if (!nodeObj) {
+            setHoverCard(null);
+            return;
+        }
+
+        const node = nodeObj as GraphNode;
+        const fg = fgRef.current;
+        if (!fg) return;
+
+        hoverTimeoutRef.current = setTimeout(() => {
+            const camera = fg.camera();
+            const renderer = fg.renderer();
+
+            if (!camera || !renderer) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            const { width, height } = rect;
+
+            const vector = new THREE.Vector3(
+                (node.x as number) || 0,
+                (node.y as number) || 0,
+                (node.z as number) || 0
+            );
+
+            vector.project(camera);
+
+            const x = (vector.x * 0.5 + 0.5) * width + 15;
+            const y = (-vector.y * 0.5 + 0.5) * height + 15;
+
+            const lines = generateHoverCardLines(node);
+
+            setHoverCard({
+                nodeId: node.id,
+                x,
+                y,
+                lines
+            });
+        }, 200);
+    }, []);
 
     const renderNode = useCallback((nodeObj: object) => {
         const node = nodeObj as GraphNode;
@@ -350,6 +464,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                 }}
                 linkDirectionalParticleWidth={2}
                 linkDirectionalParticleSpeed={0.005}
+                onNodeHover={handleNodeHover}
                 onNodeClick={(nodeObj: object) => {
                     const node = nodeObj as GraphNode;
                     const distance = 60;
@@ -387,6 +502,18 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                     );
                 })}
             </div>
+            {hoverCard && (
+                <div
+                    className="reasoninggraph3d-hover-card"
+                    style={{ left: `${hoverCard.x}px`, top: `${hoverCard.y}px` }}
+                >
+                    {hoverCard.lines.map((line, idx) => (
+                        <div key={idx} className="reasoninggraph3d-hover-card-line">
+                            {line}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 });
