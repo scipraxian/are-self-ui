@@ -6,6 +6,14 @@ React frontend for [Are-Self](https://github.com/scipraxian/are-self-api), an op
 neurologically-inspired architecture. Every UI component maps to a brain region. The backend is Django REST Framework —
 this repo consumes the DRF API.
 
+## 📺 See It In Action
+
+[![Are-Self — The Grid Is Free](https://img.youtube.com/vi/UUX-T2aTZlI/maxresdefault.jpg)](https://youtu.be/UUX-T2aTZlI)
+
+**Full documentation, guides, and FAQ:** [are-self.com](https://are-self.com)
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -145,6 +153,7 @@ src/
 
 See [FEATURES.md](FEATURES.md) for a complete list of what's built.
 See [TASKS.md](TASKS.md) for what's next.
+See [are-self.com](https://are-self.com) for the full documentation site with guides, FAQ, and videos.
 
 ## License
 
