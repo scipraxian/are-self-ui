@@ -35,6 +35,17 @@ export const useSynapticCleft = ({
 }: UseSynapticCleftOptions): UseSynapticCleftResult => {
     const socketRef = useRef<WebSocket | null>(null);
 
+    // Store callbacks in refs so the WebSocket effect only depends on spikeId.
+    // This prevents tearing down and reconnecting the socket every time
+    // a callback identity changes (e.g. when autoScroll state toggles).
+    const onGlutamateRef = useRef(onGlutamate);
+    const onDopamineRef = useRef(onDopamine);
+    const onCortisolRef = useRef(onCortisol);
+
+    onGlutamateRef.current = onGlutamate;
+    onDopamineRef.current = onDopamine;
+    onCortisolRef.current = onCortisol;
+
     useEffect(() => {
         if (!spikeId) return;
 
@@ -61,14 +72,14 @@ export const useSynapticCleft = ({
                     case 'Glutamate': {
                         const message = envelope.vesicle?.message;
                         if (message && typeof message === 'string') {
-                            onGlutamate(message);
+                            onGlutamateRef.current(message);
                         }
                         break;
                     }
 
                     case 'Dopamine': {
-                        if (onDopamine && envelope.new_status) {
-                            onDopamine(
+                        if (onDopamineRef.current && envelope.new_status) {
+                            onDopamineRef.current(
                                 String(envelope.vesicle?.status_id ?? ''),
                                 envelope.new_status,
                             );
@@ -77,8 +88,8 @@ export const useSynapticCleft = ({
                     }
 
                     case 'Cortisol': {
-                        if (onCortisol && envelope.new_status) {
-                            onCortisol(
+                        if (onCortisolRef.current && envelope.new_status) {
+                            onCortisolRef.current(
                                 String(envelope.vesicle?.status_id ?? ''),
                                 envelope.new_status,
                             );
@@ -96,7 +107,7 @@ export const useSynapticCleft = ({
             socket.close();
             socketRef.current = null;
         };
-    }, [spikeId, onGlutamate, onDopamine, onCortisol]);
+    }, [spikeId]);
 
     const close = () => {
         if (socketRef.current) {
@@ -107,4 +118,3 @@ export const useSynapticCleft = ({
 
     return { close };
 };
-

@@ -1,10 +1,11 @@
 import './CNSSpikeForensics.css';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { CNSTerminalPane } from '../components/CNSTerminalPane';
 import { CNSMetaPill } from '../components/CNSMetaPill';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { useDendrite } from '../components/SynapticCleft';
 
 interface SpikeDetail {
     id: string;
@@ -60,23 +61,39 @@ export function CNSSpikeForensics() {
     const [spike, setSpike] = useState<SpikeDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchSpike = useCallback(async () => {
-        if (!spikeId) return;
-        try {
-            const res = await apiFetch(`/api/v2/spikes/${encodeURIComponent(spikeId)}/`);
-            if (!res.ok) return;
-            const data = await res.json();
-            setSpike(data);
-        } catch (err) {
-            console.error('Failed to fetch spike detail', err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [spikeId]);
+    // Subscribe to neurotransmitters for this spike. The dendrite hook fires
+    // on all molecules (Glutamate, Dopamine, Cortisol, etc.). We only want to
+    // refetch from the API on status-change events — Glutamate streaming is
+    // handled directly by CNSTerminalPane's useSynapticCleft.
+    const spikeEvent = useDendrite('Spike', spikeId ?? null);
+    const hasLoadedRef = useRef(false);
 
     useEffect(() => {
-        fetchSpike();
-    }, [fetchSpike]);
+        if (!spikeId) return;
+        // After initial load, skip Glutamate-triggered refetches — streaming
+        // data flows directly into the terminal panes via their own WebSocket.
+        if (hasLoadedRef.current && spikeEvent?.molecule === 'Glutamate') return;
+
+        let cancelled = false;
+
+        const load = async () => {
+            try {
+                const res = await apiFetch(`/api/v2/spikes/${encodeURIComponent(spikeId)}/`);
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setSpike(data);
+                hasLoadedRef.current = true;
+            } catch (err) {
+                console.error('Failed to fetch spike detail', err);
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        };
+
+        load();
+        return () => { cancelled = true; };
+    }, [spikeId, spikeEvent]);
 
 
     // breadcrumbs
