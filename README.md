@@ -6,12 +6,81 @@ React frontend for [Are-Self](https://github.com/scipraxian/are-self-api), an op
 neurologically-inspired architecture. Every UI component maps to a brain region. The backend is Django REST Framework —
 this repo consumes the DRF API.
 
+## 📺 See It In Action
+
+[![Are-Self — The Grid Is Free](https://img.youtube.com/vi/UUX-T2aTZlI/maxresdefault.jpg)](https://youtu.be/UUX-T2aTZlI)
+
+**Full documentation, guides, and FAQ:** [are-self.com](https://are-self.com)
+
+---
+
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 20+
+- **Node.js 20+**
+- **Python 3.12+** (required by the backend)
+- **Docker Desktop** (required by the backend for PostgreSQL + Redis)
 - The Are-Self backend running (see [are-self-api](https://github.com/scipraxian/are-self-api))
+
+#### Installing Node.js
+
+1. Go to [https://nodejs.org](https://nodejs.org)
+2. Download the **LTS** version (make sure it's 20 or higher — it will say the version number on the button).
+3. Run the installer:
+   - **Windows:** Run the `.msi` file. Click Next through the prompts. Make sure "Add to PATH" is checked (it is by default).
+   - **Mac:** Run the `.pkg` file. Follow the prompts — it installs everything you need.
+   - **Linux:** The easiest way is through NodeSource. Run these commands in your terminal:
+     ```bash
+     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+     sudo apt-get install -y nodejs
+     ```
+     For other distros, see [https://nodejs.org/en/download/package-manager](https://nodejs.org/en/download/package-manager).
+4. Verify it works by opening a **new** terminal window and running:
+   ```
+   node --version
+   ```
+   You should see `v20.x.x` or higher.
+
+#### Installing Python
+
+Python is needed by the Are-Self backend. Even though you're setting up the frontend here, the backend won't run without it.
+
+1. Go to [https://www.python.org/downloads/](https://www.python.org/downloads/)
+2. Download Python **3.12 or higher** (the big yellow button usually has the latest version — check that the number starts with 3.12 or above).
+3. Run the installer:
+   - **Windows:** Run the `.exe` file. **Important:** On the very first screen, check the box that says "Add python.exe to PATH" — this is easy to miss and things will break without it. Then click "Install Now".
+   - **Mac:** Run the `.pkg` file and follow the prompts. If you have Homebrew, you can also run:
+     ```bash
+     brew install python@3.12
+     ```
+   - **Linux (Ubuntu/Debian):**
+     ```bash
+     sudo apt update
+     sudo apt install python3.12 python3.12-venv python3-pip
+     ```
+     For other distros, see [https://www.python.org/downloads/](https://www.python.org/downloads/) or use your package manager.
+4. Verify it works by opening a **new** terminal window and running:
+   ```
+   python --version
+   ```
+   You should see `Python 3.12.x` or higher. On Linux/Mac you may need to use `python3 --version` instead.
+
+#### Installing Docker Desktop
+
+Docker is needed by the Are-Self backend to run PostgreSQL and Redis. Even though you're setting up the frontend here, the backend won't start without it.
+
+1. Go to [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+2. Download the installer for your operating system:
+   - **Windows:** Click "Download for Windows". Run the `.exe` installer and follow the prompts. You may need to enable WSL 2 when asked — the installer will guide you.
+   - **Mac:** Click "Download for Mac". Choose **Apple chip** if you have an M1/M2/M3/M4 Mac, or **Intel chip** if you have an older Mac. Open the `.dmg` file and drag Docker to your Applications folder.
+   - **Linux:** Follow the instructions for your distro at [https://docs.docker.com/desktop/install/linux/](https://docs.docker.com/desktop/install/linux/). For Ubuntu/Debian, there's a `.deb` package you can download and install directly.
+3. Open Docker Desktop after installing. It needs to be running before you start the Are-Self backend.
+4. Verify it works by opening a terminal and running:
+   ```
+   docker --version
+   ```
+   You should see something like `Docker version 27.x.x`.
 
 ### Install and run
 
@@ -84,6 +153,7 @@ src/
 
 See [FEATURES.md](FEATURES.md) for a complete list of what's built.
 See [TASKS.md](TASKS.md) for what's next.
+See [are-self.com](https://are-self.com) for the full documentation site with guides, FAQ, and videos.
 
 ## License
 

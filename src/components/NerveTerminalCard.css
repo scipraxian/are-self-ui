@@ -1,0 +1,168 @@
+.pns-nerve-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pns-nerve-card:hover {
+    border-color: var(--border-glass-strong);
+}
+
+.pns-nerve-card--offline {
+    opacity: 0.7;
+}
+
+.pns-nerve-card--active {
+    border-color: rgba(248, 113, 113, 0.5);
+    box-shadow: 0 0 12px rgba(248, 113, 113, 0.1);
+}
+
+.pns-nerve-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pns-nerve-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.pns-nerve-dot--online {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+}
+
+.pns-nerve-dot--offline {
+    background: var(--accent-red);
+    box-shadow: 0 0 6px var(--accent-red);
+}
+
+.pns-nerve-hostname {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pns-nerve-badge {
+    margin-left: auto;
+    padding: 2px 6px;
+    background: rgba(248, 113, 113, 0.15);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--accent-red);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.pns-nerve-spike-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    border-radius: 6px;
+    color: var(--accent-red);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 8px 2px rgba(248, 113, 113, 0.2);
+    }
+}
+
+.pns-nerve-spike-text {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.pns-nerve-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 6px;
+}
+
+.pns-nerve-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.pns-nerve-detail-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.pns-nerve-detail-value {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pns-nerve-status-bar {
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.pns-nerve-status-bar--online {
+    background: rgba(74, 222, 128, 0.08);
+    color: var(--accent-green);
+}
+
+.pns-nerve-status-bar--offline {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--accent-red);
+}
+
+.pns-nerve-hint {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: #475569;
+    text-align: center;
+}

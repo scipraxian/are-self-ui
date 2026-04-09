@@ -353,3 +353,51 @@ export interface MergeResponse {
     cursors: Record<string, number>;
     any_active: boolean;
 }
+
+// --- INFRASTRUCTURE TYPES ---
+
+export interface VitalsData {
+    cpu_percent: number;
+    cpu_per_core: number[];
+    cpu_count: number;
+    ram_used_gb: number;
+    ram_total_gb: number;
+    ram_percent: number;
+    disk_used_gb: number;
+    disk_total_gb: number;
+    disk_percent: number;
+    gpu_name: string | null;
+    gpu_utilization: number | null;
+    gpu_memory_used_mb: number | null;
+    gpu_memory_total_mb: number | null;
+    gpu_temperature: number | null;
+}
+
+export interface InfraServiceStatus {
+    connected: boolean;
+    version: string | null;
+    [key: string]: unknown;
+}
+
+export interface InfraStatus {
+    postgres: InfraServiceStatus & {
+        db_size: string | null;
+        active_connections: number | null;
+        latency_ms: number | null;
+    };
+    redis: InfraServiceStatus & {
+        uptime_seconds: number | null;
+        memory_used: string | null;
+        connected_clients: number | null;
+    };
+}
+
+export interface NerveTerminal {
+    id: string;
+    hostname: string;
+    ip_address: string | null;
+    port: number;
+    status: { id: number; name: string };
+    version: string | null;
+    last_seen: string | null;
+}

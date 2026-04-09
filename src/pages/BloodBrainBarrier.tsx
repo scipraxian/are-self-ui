@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Loader2, TrendingUp, Brain, Zap, Network, Clock, LayoutGrid,
@@ -63,49 +63,105 @@ export function BloodBrainBarrier() {
         reasoning_session_count: 0
     });
 
-    // Dendrite hooks for real-time updates
+    // Dendrite hooks — each data section gets its own trigger.
+    // Spikes update on spike events only; sessions+stats on session events only.
     const spikeEvent = useDendrite('Spike', null);
     const sessionEvent = useDendrite('ReasoningSession', null);
 
+    // Debounce refs — coalesce rapid dendrite bursts into single fetches (500ms).
+    // Skip debounce on mount so the dashboard loads instantly.
+    const spikeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const mountedRef = useRef(false);
+
+    // --- Initial load (no debounce, all three at once) ---
     useEffect(() => {
         let cancelled = false;
 
-        const fetchData = async () => {
+        const load = async () => {
             try {
-                // Fetch latest spikes from lightweight endpoint
-                const spikesRes = await apiFetch('/api/v2/latest-spikes/');
-                if (spikesRes.ok && !cancelled) {
+                const [spikesRes, sessionsRes, statsRes] = await Promise.all([
+                    apiFetch('/api/v2/latest-spikes/'),
+                    apiFetch('/api/v2/latest-sessions/'),
+                    apiFetch('/api/v2/stats/'),
+                ]);
+                if (cancelled) return;
+                if (spikesRes.ok) {
                     const data = await spikesRes.json();
                     setLatestSpikes(data.slice(0, 6));
                 }
-
-                // Fetch latest reasoning sessions from lightweight endpoint
-                const sessionsRes = await apiFetch(
-                    '/api/v2/latest-sessions/'
-                );
-                if (sessionsRes.ok && !cancelled) {
+                if (sessionsRes.ok) {
                     const data = await sessionsRes.json();
                     setLatestSessions(data.slice(0, 6));
                 }
-
-                // Fetch system stats via lightweight stats endpoint
-                const statsRes = await apiFetch('/api/v2/stats/');
-                if (statsRes.ok && !cancelled) {
+                if (statsRes.ok) {
                     const data = await statsRes.json();
                     setStats(data);
-                    setIsLoading(false);
-                } else if (!cancelled) {
-                    setIsLoading(false);
                 }
             } catch (err) {
                 console.error('Failed to fetch dashboard data:', err);
-                if (!cancelled) setIsLoading(false);
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                    mountedRef.current = true;
+                }
             }
         };
 
-        fetchData();
+        load();
         return () => { cancelled = true; };
-    }, [spikeEvent, sessionEvent]);
+    }, []);
+
+    // --- Spikes (debounced, triggered by spike events only) ---
+    useEffect(() => {
+        if (!mountedRef.current) return;
+        let cancelled = false;
+        if (spikeTimerRef.current) clearTimeout(spikeTimerRef.current);
+
+        spikeTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await apiFetch('/api/v2/latest-spikes/');
+                if (res.ok && !cancelled) {
+                    const data = await res.json();
+                    setLatestSpikes(data.slice(0, 6));
+                }
+            } catch (err) {
+                console.error('Failed to fetch latest spikes:', err);
+            }
+        }, 500);
+
+        return () => {
+            cancelled = true;
+            if (spikeTimerRef.current) clearTimeout(spikeTimerRef.current);
+        };
+    }, [spikeEvent]);
+
+    // --- Sessions + Stats (debounced, triggered by session events only) ---
+    useEffect(() => {
+        if (!mountedRef.current) return;
+        let cancelled = false;
+
+        const timer = setTimeout(async () => {
+            try {
+                const [sessionsRes, statsRes] = await Promise.all([
+                    apiFetch('/api/v2/latest-sessions/'),
+                    apiFetch('/api/v2/stats/'),
+                ]);
+                if (cancelled) return;
+                if (sessionsRes.ok) {
+                    const data = await sessionsRes.json();
+                    setLatestSessions(data.slice(0, 6));
+                }
+                if (statsRes.ok) {
+                    const data = await statsRes.json();
+                    setStats(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch sessions/stats:', err);
+            }
+        }, 500);
+
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [sessionEvent]);
 
     if (isLoading) {
         return (
