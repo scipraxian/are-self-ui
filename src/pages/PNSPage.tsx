@@ -1,11 +1,16 @@
 import './PNSPage.css';
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Database, Power, Radio, RefreshCw, RotateCcw, Zap } from 'lucide-react';
+import { apiFetch } from '../api';
+import { CeleryBeatCard } from '../components/CeleryBeatCard';
+import { InfrastructureCard } from '../components/InfrastructureCard';
+import { MachineVitalsCard } from '../components/MachineVitalsCard';
+import { NerveTerminalCard } from '../components/NerveTerminalCard';
+import { useDendrite } from '../components/SynapticCleft';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useWorkerSet } from '../context/WorkerSetProvider';
-import { useDendrite } from '../components/SynapticCleft';
-import { SystemControlPanel } from '../components/SystemControlPanel';
-import { apiFetch } from '../api';
-import type { CeleryTask, NorepinephrineEvent } from '../types';
+import type { CeleryTask, InfraStatus, NerveTerminal, NorepinephrineEvent, Spike, VitalsData } from '../types';
 
 interface WorkerCardState {
     hostname: string;
@@ -23,9 +28,18 @@ interface WorkerCardState {
     rusage: Record<string, unknown> | null;
 }
 
+interface ScheduledTask {
+    name: string;
+    task: string;
+    schedule: string;
+    total_run_count: number;
+    last_run_at: string | null;
+}
+
 interface BeatStatus {
     running: boolean;
     pid?: number;
+    scheduled_tasks?: ScheduledTask[];
 }
 
 const MAX_LOG_LINES = 50;
@@ -44,12 +58,32 @@ function shortTaskName(name: string): string {
     return parts[parts.length - 1];
 }
 
+function formatUptime(seconds: number): string {
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+    return `${Math.floor(seconds / 86400)}d`;
+}
+
 export function PNSPage() {
     const { setCrumbs } = useBreadcrumbs();
     const { addWorker, isSelected } = useWorkerSet();
+    const navigate = useNavigate();
+
+    // State
     const [workers, setWorkers] = useState<Map<string, WorkerCardState>>(new Map());
     const [beatStatus, setBeatStatus] = useState<BeatStatus | null>(null);
+    const [vitals, setVitals] = useState<VitalsData | null>(null);
+    const [cpuHistory, setCpuHistory] = useState<number[]>([]);
+    const [gpuHistory, setGpuHistory] = useState<number[]>([]);
+    const [infraStatus, setInfraStatus] = useState<InfraStatus | null>(null);
+    const [terminals, setTerminals] = useState<NerveTerminal[]>([]);
+    const [activeSpikes, setActiveSpikes] = useState<Map<string, string>>(new Map());
     const [beatLoading, setBeatLoading] = useState(false);
+    const [refreshLoading, setRefreshLoading] = useState(false);
+    const [scanLoading, setScanLoading] = useState(false);
+    const [scanResult, setScanResult] = useState<string | null>(null);
+    const [sysActionLoading, setSysActionLoading] = useState(false);
+
     const workersRef = useRef(workers);
     workersRef.current = workers;
 
@@ -60,40 +94,69 @@ export function PNSPage() {
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
-    // Fetch beat status
+    // Dendrite subscriptions
     const workerEvent = useDendrite('CeleryWorker', null);
+    const terminalEvent = useDendrite('NerveTerminalRegistry', null);
 
+    // Vitals polling (3-second interval — the ONE polling exception)
     useEffect(() => {
         let cancelled = false;
-        const load = async () => {
+        const poll = async () => {
             try {
-                const res = await apiFetch('/api/v2/beat/status/');
+                const res = await apiFetch('/api/v2/vital-signs/vitals/');
                 if (!res.ok || cancelled) return;
-                const data = await res.json();
+                const data: VitalsData = await res.json();
                 if (cancelled) return;
-                setBeatStatus({ running: !!data.running, pid: data.pid });
+                setVitals(data);
+                setCpuHistory(prev => [...prev.slice(-59), data.cpu_percent]);
+                if (data.gpu_utilization != null) {
+                    setGpuHistory(prev => [...prev.slice(-59), data.gpu_utilization!]);
+                }
             } catch (err) {
-                console.error('Failed to fetch beat status', err);
+                console.error('Vitals fetch failed', err);
             }
         };
-        load();
-        return () => { cancelled = true; };
-    }, [workerEvent]);
+        poll(); // immediate first fetch
+        const interval = setInterval(poll, 3000);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, []);
 
-    // Fetch initial workers
-    useEffect(() => {
-        let cancelled = false;
-        const load = async () => {
-            try {
-                const res = await apiFetch('/api/v2/celery-workers/');
-                if (!res.ok || cancelled) return;
-                const data = await res.json();
-                if (cancelled) return;
+    // Refresh handler: fetches all non-vitals data
+    const handleRefresh = async () => {
+        setRefreshLoading(true);
+        try {
+            const [infraRes, termRes, workerRes, spikeRes, beatRes] = await Promise.all([
+                apiFetch('/api/v2/vital-signs/status/'),
+                apiFetch('/api/v2/nerve_terminal_registry/'),
+                apiFetch('/api/v2/celery-workers/'),
+                apiFetch('/api/v2/spikes/?is_active=true'),
+                apiFetch('/api/v2/beat/status/'),
+            ]);
+
+            // Infrastructure status
+            if (infraRes.ok) {
+                const data = await infraRes.json();
+                setInfraStatus(data);
+            }
+
+            // Nerve terminals (DRF returns flat array, no pagination)
+            if (termRes.ok) {
+                const data = await termRes.json();
+                setTerminals(Array.isArray(data) ? data : []);
+            }
+
+            // Celery workers
+            if (workerRes.ok) {
+                const data = await workerRes.json();
                 const newMap = new Map<string, WorkerCardState>();
                 for (const w of data.workers || []) {
                     const existing = workersRef.current.get(w.hostname);
                     const totalCompleted = Object.values(w.total || {}).reduce(
-                        (sum: number, v) => sum + (v as number), 0
+                        (sum: number, v) => sum + (v as number),
+                        0
                     );
                     newMap.set(w.hostname, {
                         hostname: w.hostname,
@@ -112,13 +175,47 @@ export function PNSPage() {
                     });
                 }
                 setWorkers(newMap);
-            } catch (err) {
-                console.error('Failed to fetch workers', err);
             }
-        };
-        load();
-        return () => { cancelled = true; };
-    }, [workerEvent]);
+
+            // Active spikes (build hostname -> spike_train map)
+            if (spikeRes.ok) {
+                const data = await spikeRes.json();
+                const spikeMap = new Map<string, string>();
+                const spikeList = (Array.isArray(data) ? data : []) as Spike[];
+                for (const spike of spikeList) {
+                    if (spike.target_hostname && spike.spike_train) {
+                        spikeMap.set(spike.target_hostname, spike.spike_train);
+                    }
+                }
+                setActiveSpikes(spikeMap);
+            }
+
+            // Beat status + scheduled tasks
+            if (beatRes.ok) {
+                const data = await beatRes.json();
+                setBeatStatus({
+                    running: !!data.running,
+                    pid: data.pid,
+                    scheduled_tasks: data.scheduled_tasks || [],
+                });
+            }
+        } catch (err) {
+            console.error('Refresh failed', err);
+        } finally {
+            setRefreshLoading(false);
+        }
+    };
+
+    // Initial load
+    useEffect(() => {
+        handleRefresh();
+    }, []);
+
+    // Refresh on nerve terminal changes (infrequent — only when agents register/deregister)
+    useEffect(() => {
+        if (!terminalEvent) return;
+        handleRefresh();
+    }, [terminalEvent]);
 
     // Process real-time worker events
     useEffect(() => {
@@ -210,6 +307,31 @@ export function PNSPage() {
         });
     }, [workerEvent]);
 
+    // Scan network for agents
+    const handleScan = async () => {
+        setScanLoading(true);
+        setScanResult(null);
+        try {
+            const res = await apiFetch('/api/v2/nerve_terminal_registry/scan/', {
+                method: 'POST',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setScanResult(data.message || `Found ${data.found} agents`);
+                // The thalamus Acetylcholine signal will trigger terminalEvent → refresh
+                // But also do a manual refresh to pick up any changes immediately
+                await handleRefresh();
+            } else {
+                setScanResult('Scan failed');
+            }
+        } catch (err) {
+            console.error('Scan failed', err);
+            setScanResult('Scan error');
+        } finally {
+            setScanLoading(false);
+        }
+    };
+
     // Beat controls
     const handleBeatToggle = async () => {
         setBeatLoading(true);
@@ -230,57 +352,181 @@ export function PNSPage() {
         }
     };
 
-    const handleCardClick = (hostname: string, e: React.MouseEvent) => {
-        if (e.shiftKey) {
-            e.preventDefault();
-            addWorker(hostname);
+    // System controls (restart/shutdown)
+    const handleRestart = async () => {
+        if (!window.confirm('Restart all workers?')) return;
+        setSysActionLoading(true);
+        try {
+            await apiFetch('/api/v2/system-control/restart/', { method: 'POST' });
+        } catch (err) {
+            console.error('Restart failed', err);
+        } finally {
+            setSysActionLoading(false);
         }
+    };
+
+    const handleShutdown = async () => {
+        if (!window.confirm('Shut down the system? This cannot be undone immediately.')) return;
+        setSysActionLoading(true);
+        try {
+            await apiFetch('/api/v2/system-control/shutdown/', { method: 'POST' });
+        } catch (err) {
+            console.error('Shutdown failed', err);
+        } finally {
+            setSysActionLoading(false);
+        }
+    };
+
+    const handleWorkerClick = (hostname: string) => {
+        // Single click: select worker into worker set
+        addWorker(hostname);
+    };
+
+    const handleWorkerDoubleClick = (hostname: string) => {
+        // Double-click: navigate to neural terminal monitor
+        navigate(`/pns/monitor?w1=${encodeURIComponent(hostname)}`);
+    };
+
+    const handleTaskClick = async (celeryTaskId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Don't trigger worker card click
+        try {
+            const res = await apiFetch(`/api/v2/spikes/?celery_task_id=${celeryTaskId}`);
+            if (res.ok) {
+                const data = await res.json();
+                const spikes = Array.isArray(data) ? data : [];
+                if (spikes.length > 0) {
+                    navigate(`/cns/spike/${spikes[0].id}`);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error('Spike lookup failed', err);
+        }
+        // No spike found for this task — it may not be a CNS-managed task
+    };
+
+    const handleTerminalClick = (trainId: string) => {
+        navigate(`/cns/spiketrain/${trainId}`);
     };
 
     const workerList = Array.from(workers.values());
     const beatRunning = beatStatus?.running ?? false;
+    const hasContent = workerList.length > 0 || terminals.length > 0 || vitals != null;
 
     return (
         <div className="pns-page">
-            <SystemControlPanel />
+            <div className="pns-top-bar">
+                <span className="pns-page-title">Peripheral Nervous System</span>
 
-            <div className="pns-beat-bar">
-                <div className="pns-beat-status">
-                    <span className={`pns-beat-dot ${beatRunning ? 'pns-beat-dot--active' : ''}`} />
-                    <span className="pns-beat-label">
-                        {beatRunning ? 'Heartbeat Active' : 'Heartbeat Stopped'}
-                    </span>
-                    {beatRunning && beatStatus?.pid != null && (
-                        <span className="pns-beat-pid">PID {beatStatus.pid}</span>
-                    )}
-                </div>
+                <div className="pns-top-divider" />
+
                 <button
-                    className={`pns-beat-btn ${beatRunning ? 'pns-beat-btn--stop' : 'pns-beat-btn--start'}`}
-                    onClick={handleBeatToggle}
-                    disabled={beatLoading}
+                    className="pns-scan-btn"
+                    onClick={handleScan}
+                    disabled={scanLoading}
+                    title="Scan subnet for agents"
                 >
-                    {beatLoading ? '...' : beatRunning ? 'Stop' : 'Start'}
+                    <Radio size={14} />
+                    {scanLoading ? 'Scanning...' : 'Scan'}
+                </button>
+
+                {scanResult && (
+                    <span className="pns-scan-result">{scanResult}</span>
+                )}
+
+                <button
+                    className="pns-refresh-btn"
+                    onClick={handleRefresh}
+                    disabled={refreshLoading}
+                    title="Refresh all data"
+                >
+                    <RefreshCw size={14} />
+                    {refreshLoading ? '...' : 'Refresh'}
+                </button>
+
+                <div className="pns-top-spacer" />
+
+                <button
+                    className="pns-sys-btn"
+                    onClick={handleRestart}
+                    disabled={sysActionLoading}
+                    title="Restart all workers"
+                >
+                    <RotateCcw size={13} />
+                    Restart
+                </button>
+                <button
+                    className="pns-sys-btn pns-sys-btn--danger"
+                    onClick={handleShutdown}
+                    disabled={sysActionLoading}
+                    title="Shutdown system"
+                >
+                    <Power size={13} />
+                    Shutdown
                 </button>
             </div>
 
-            {workerList.length === 0 ? (
+            {!hasContent ? (
                 <div className="pns-empty">
-                    <div className="pns-empty-title">No Workers Detected</div>
+                    <div className="pns-empty-title">No Vital Signs Detected</div>
                     <div className="pns-empty-text">
                         Celery workers must be running with the <code>-E</code> flag
-                        to enable event monitoring.
+                        to enable event monitoring. Neural endpoints and services must also be online.
                     </div>
                     <div className="pns-empty-hint">
-                        <code>celery -A talos worker -E --loglevel=info</code>
+                        <code>celery -A config worker -E --loglevel=info</code>
                     </div>
                 </div>
             ) : (
                 <div className="pns-card-grid">
+                    {/* Machine Vitals */}
+                    <MachineVitalsCard vitals={vitals} cpuHistory={cpuHistory} gpuHistory={gpuHistory} />
+
+                    {/* Infrastructure services */}
+                    {infraStatus && (
+                        <>
+                            <InfrastructureCard
+                                name="PostgreSQL"
+                                service={infraStatus.postgres ?? null}
+                                icon={<Database size={16} />}
+                                accentColor="#6366f1"
+                                details={[
+                                    { label: 'DB Size', value: infraStatus.postgres?.db_size ?? null },
+                                    { label: 'Connections', value: infraStatus.postgres?.active_connections ?? null },
+                                    {
+                                        label: 'Latency',
+                                        value: infraStatus.postgres?.latency_ms != null ? `${infraStatus.postgres.latency_ms}ms` : null,
+                                    },
+                                ]}
+                            />
+                            <InfrastructureCard
+                                name="Redis"
+                                service={infraStatus.redis ?? null}
+                                icon={<Zap size={16} />}
+                                accentColor="#f59e0b"
+                                details={[
+                                    { label: 'Memory', value: infraStatus.redis?.memory_used ?? null },
+                                    { label: 'Clients', value: infraStatus.redis?.connected_clients ?? null },
+                                    {
+                                        label: 'Uptime',
+                                        value:
+                                            infraStatus.redis?.uptime_seconds != null
+                                                ? formatUptime(infraStatus.redis.uptime_seconds)
+                                                : null,
+                                    },
+                                ]}
+                            />
+                        </>
+                    )}
+
+                    {/* Celery workers */}
                     {workerList.map(worker => (
                         <div
                             key={worker.hostname}
-                            className={`pns-card ${isSelected(worker.hostname) ? 'pns-card--selected' : ''}`}
-                            onClick={(e) => handleCardClick(worker.hostname, e)}
+                            className={`pns-worker-card ${isSelected(worker.hostname) ? 'pns-worker-card--selected' : ''}`}
+                            onClick={() => handleWorkerClick(worker.hostname)}
+                            onDoubleClick={() => handleWorkerDoubleClick(worker.hostname)}
+                            style={{ cursor: 'pointer' }}
                         >
                             <div className="pns-card-header">
                                 <span className={`pns-card-dot ${worker.status === 'online' ? 'pns-card-dot--online' : 'pns-card-dot--offline'}`} />
@@ -322,13 +568,22 @@ export function PNSPage() {
                             </div>
 
                             {worker.activeTasks.length > 0 && (
-                                <div className="pns-card-task">
-                                    <span className="pns-card-task-name">
-                                        {shortTaskName(worker.activeTasks[0].name)}
-                                    </span>
-                                    <span className="pns-card-task-elapsed">
-                                        {formatElapsed(worker.activeTasks[0].time_start)}
-                                    </span>
+                                <div className="pns-card-tasks">
+                                    {worker.activeTasks.map(task => (
+                                        <div
+                                            key={task.id}
+                                            className="pns-card-task pns-card-task--clickable"
+                                            onClick={(e) => handleTaskClick(task.id, e)}
+                                            title="View spike forensics"
+                                        >
+                                            <span className="pns-card-task-name">
+                                                {shortTaskName(task.name)}
+                                            </span>
+                                            <span className="pns-card-task-elapsed">
+                                                {formatElapsed(task.time_start)}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
@@ -359,8 +614,30 @@ export function PNSPage() {
                                 {worker.recentLogs.slice(-5).join('\n') || 'No log output yet'}
                             </pre>
 
-                            <div className="pns-card-hint">Shift+click to select</div>
+                            <div className="pns-card-hint">Click to select · Double-click for logs</div>
                         </div>
+                    ))}
+
+                    {/* Heartbeat (Celery Beat) */}
+                    <CeleryBeatCard
+                        running={beatRunning}
+                        pid={beatStatus?.pid ?? null}
+                        scheduledTasks={beatStatus?.scheduled_tasks ?? []}
+                        loading={beatLoading}
+                        onToggle={handleBeatToggle}
+                    />
+
+                    {/* Neural endpoints */}
+                    {terminals.map(terminal => (
+                        <NerveTerminalCard
+                            key={terminal.id}
+                            terminal={terminal}
+                            activeSpikeTrainId={activeSpikes.get(terminal.hostname) ?? null}
+                            onClick={() => {
+                                const trainId = activeSpikes.get(terminal.hostname);
+                                if (trainId) handleTerminalClick(trainId);
+                            }}
+                        />
                     ))}
                 </div>
             )}

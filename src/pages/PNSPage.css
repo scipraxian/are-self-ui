@@ -6,89 +6,142 @@
     pointer-events: auto;
     padding: 0 20px 20px;
     gap: 16px;
+    overflow-y: auto;
 }
 
-/* ── Beat control bar ── */
+/* ── Top bar: all controls in one strip ── */
 
-.pns-beat-bar {
+.pns-top-bar {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
+    gap: 10px;
+    padding: 8px 16px;
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--border-glass);
     border-radius: 8px;
     margin-top: 12px;
+    flex-wrap: wrap;
 }
 
-.pns-beat-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.pns-beat-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #64748b;
-    flex-shrink: 0;
-}
-
-.pns-beat-dot--active {
-    background: var(--accent-green);
-    box-shadow: 0 0 8px var(--accent-green);
-}
-
-.pns-beat-label {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-weight: 700;
+.pns-page-title {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 800;
     color: #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    white-space: nowrap;
 }
 
-.pns-beat-pid {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: #64748b;
+.pns-top-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(148, 163, 184, 0.2);
+    flex-shrink: 0;
 }
 
-.pns-beat-btn {
-    padding: 5px 18px;
+.pns-top-spacer {
+    flex: 1;
+}
+
+.pns-scan-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
     border-radius: 6px;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     cursor: pointer;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: #a855f7;
     transition: background 120ms ease;
 }
 
-.pns-beat-btn--start {
-    background: rgba(74, 222, 128, 0.15);
-    border: 1px solid var(--accent-green);
-    color: var(--accent-green);
+.pns-scan-btn:hover:not(:disabled) {
+    background: rgba(168, 85, 247, 0.2);
 }
 
-.pns-beat-btn--start:hover {
-    background: rgba(74, 222, 128, 0.3);
+.pns-scan-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.pns-beat-btn--stop {
+.pns-scan-result {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.pns-refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--accent-blue);
+    transition: background 120ms ease;
+}
+
+.pns-refresh-btn:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.2);
+}
+
+.pns-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── System control buttons (restart/shutdown) ── */
+
+.pns-sys-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+    transition: background 120ms ease;
+}
+
+.pns-sys-btn:hover:not(:disabled) {
+    background: rgba(148, 163, 184, 0.15);
+    color: #e2e8f0;
+}
+
+.pns-sys-btn--danger {
+    color: var(--accent-red);
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.pns-sys-btn--danger:hover:not(:disabled) {
     background: rgba(239, 68, 68, 0.15);
-    border: 1px solid var(--accent-red);
     color: var(--accent-red);
 }
 
-.pns-beat-btn--stop:hover {
-    background: rgba(239, 68, 68, 0.3);
-}
-
-.pns-beat-btn:disabled {
+.pns-sys-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
@@ -97,15 +150,17 @@
 
 .pns-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-auto-rows: min-content;
     gap: 16px;
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    padding: 4px;
     padding-bottom: 20px;
+    align-content: start;
 }
 
-.pns-card {
+/* ── Worker cards (renamed from .pns-card) ── */
+
+.pns-worker-card {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -118,11 +173,11 @@
     transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
-.pns-card:hover {
+.pns-worker-card:hover {
     border-color: var(--border-glass-strong);
 }
 
-.pns-card--selected {
+.pns-worker-card--selected {
     border-color: rgba(56, 189, 248, 0.5);
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
 }
@@ -198,7 +253,15 @@
     letter-spacing: 0.08em;
 }
 
-/* ── Current task ── */
+/* ── Active tasks ── */
+
+.pns-card-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: auto;
+}
 
 .pns-card-task {
     display: flex;
@@ -226,6 +289,16 @@
     color: #94a3b8;
     flex-shrink: 0;
     margin-left: 8px;
+}
+
+.pns-card-task--clickable {
+    cursor: pointer;
+    transition: background 100ms ease, border-color 100ms ease;
+}
+
+.pns-card-task--clickable:hover {
+    background: rgba(249, 159, 27, 0.15);
+    border-color: rgba(249, 159, 27, 0.4);
 }
 
 /* ── System info ── */

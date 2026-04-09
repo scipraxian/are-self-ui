@@ -1,0 +1,193 @@
+.beat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-glass);
+    border-left: 3px solid #ec4899;
+    border-radius: 10px;
+    backdrop-filter: blur(12px);
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.beat-card:hover {
+    border-color: var(--border-glass-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.beat-card--active {
+    border-left-color: #ec4899;
+}
+
+.beat-card--stopped {
+    border-left-color: #64748b;
+}
+
+/* ── Header ── */
+
+.beat-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.beat-card-icon {
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.beat-card-icon--pulse {
+    color: #ec4899;
+    animation: beat-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes beat-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.8; }
+}
+
+.beat-card-title {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.beat-card-pid {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #64748b;
+    margin-left: auto;
+}
+
+.beat-card-toggle {
+    padding: 3px 14px;
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+
+.beat-card-toggle--start {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+}
+
+.beat-card-toggle--start:hover {
+    background: rgba(74, 222, 128, 0.3);
+}
+
+.beat-card-toggle--stop {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+}
+
+.beat-card-toggle--stop:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.beat-card-toggle:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Status row ── */
+
+.beat-card-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.beat-card-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+    flex-shrink: 0;
+}
+
+.beat-card-dot--on {
+    background: #ec4899;
+    box-shadow: 0 0 8px #ec4899;
+}
+
+.beat-card-status-text {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── Scheduled tasks list ── */
+
+.beat-card-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.beat-card-task-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 6px;
+}
+
+.beat-card-task-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.beat-card-task-name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.beat-card-task-schedule {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #64748b;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.beat-card-task-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.beat-card-task-runs {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: #94a3b8;
+}
+
+.beat-card-task-last {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: #64748b;
+}

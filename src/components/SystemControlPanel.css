@@ -1,15 +1,22 @@
 .system-control-panel {
-    padding: 24px;
-    flex: 1;
-    overflow-y: auto;
+    padding: 10px 16px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .system-control-panel__title {
-    margin-bottom: 20px;
+    margin: 0;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
 .system-control-panel__status {
-    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .system-control-panel__status-badge {
@@ -19,13 +26,12 @@
 }
 
 .system-control-panel__actions {
-    margin-top: 8px;
     display: flex;
-    flex-direction: column;
     gap: 8px;
+    margin-left: auto;
 }
 
 .system-control-panel__error {
-    max-width: 420px;
+    max-width: 300px;
     line-height: 1.4;
 }

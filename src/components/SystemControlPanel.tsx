@@ -5,8 +5,6 @@ import './SystemControlPanel.css';
 const STATUS_URL = '/api/v2/system-control/status/';
 const SHUTDOWN_URL = '/api/v2/system-control/shutdown/';
 const RESTART_URL = '/api/v2/system-control/restart/';
-const POLL_INTERVAL_MS = 5000;
-
 export interface SystemStatus {
     worker_count: number;
 }
@@ -36,10 +34,9 @@ export const SystemControlPanel: React.FC = () => {
         }
     }, []);
 
+    // Single fetch on mount — no polling
     useEffect(() => {
         fetchStatus();
-        const interval = setInterval(fetchStatus, POLL_INTERVAL_MS);
-        return () => clearInterval(interval);
     }, [fetchStatus]);
 
     const handleShutdown = async () => {
@@ -79,7 +76,7 @@ export const SystemControlPanel: React.FC = () => {
     if (loading && status === null) {
         return (
             <div className="system-control-panel">
-                <h2 className="glass-panel-title system-control-panel__title">SYSTEM CONTROL</h2>
+                <h2 className="glass-panel-title system-control-panel__title">PERIPHERAL NERVOUS SYSTEM</h2>
                 <div className="bbb-placeholder font-mono text-sm">Checking status...</div>
             </div>
         );
@@ -89,7 +86,7 @@ export const SystemControlPanel: React.FC = () => {
 
     return (
         <div className="system-control-panel">
-            <h2 className="glass-panel-title system-control-panel__title">SYSTEM CONTROL</h2>
+            <h2 className="glass-panel-title system-control-panel__title">PERIPHERAL NERVOUS SYSTEM</h2>
 
             <div className="system-control-panel__status common-layout-3">
                 <span className="font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>

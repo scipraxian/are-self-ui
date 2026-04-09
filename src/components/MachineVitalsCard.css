@@ -1,0 +1,80 @@
+.pns-vitals-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-glass);
+    border-left: 3px solid #06b6d4;
+    border-radius: 10px;
+    backdrop-filter: blur(12px);
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    grid-row: span 2;
+}
+
+.pns-vitals-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-glass-strong);
+    border-left-color: #06b6d4;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.pns-vitals-card--loading {
+    opacity: 0.6;
+}
+
+.pns-vitals-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pns-vitals-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pns-vitals-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pns-vitals-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.pns-vitals-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.pns-vitals-value {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.pns-vitals-subtext {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+
+.pns-vitals-chart {
+    margin-top: 4px;
+}

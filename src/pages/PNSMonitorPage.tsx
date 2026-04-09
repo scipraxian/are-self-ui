@@ -6,7 +6,6 @@ import { Activity } from 'lucide-react';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { useTerminal } from '../hooks/useTerminal';
-import { SystemControlPanel } from '../components/SystemControlPanel';
 import type { NorepinephrineEvent } from '../types';
 
 interface TerminalPaneProps {
@@ -76,9 +75,9 @@ export function PNSMonitorPage() {
     useEffect(() => {
         setCrumbs([
             { label: 'Peripheral Nervous System', path: '/pns' },
-            { label: 'Worker Monitor', path: window.location.pathname + window.location.search },
+            { label: 'Neural Terminal Monitor', path: window.location.pathname + window.location.search },
         ]);
-        document.title = 'PNS Monitor | Are-Self';
+        document.title = 'Neural Terminal Monitor | Are-Self';
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
@@ -120,9 +119,8 @@ export function PNSMonitorPage() {
     if (workerHostnames.length === 0) {
         return (
             <div className="pns-monitor-page">
-                <SystemControlPanel />
                 <div className="pns-monitor-empty">
-                    <p>No workers selected. Go to the fleet view and Shift+click workers to select them.</p>
+                    <p>No workers selected. Go to the fleet view and click workers to select them.</p>
                 </div>
             </div>
         );
@@ -135,13 +133,12 @@ export function PNSMonitorPage() {
             <div className="pns-monitor-header">
                 <span className="pns-monitor-header-title">
                     <Activity size={16} style={{ color: '#fb923c', marginRight: '8px', verticalAlign: 'middle' }} />
-                    Worker Monitor
+                    Neural Terminal Monitor
                 </span>
                 <span className="pns-monitor-header-count">
-                    {count} worker{count !== 1 ? 's' : ''}
+                    {count} terminal{count !== 1 ? 's' : ''}
                 </span>
             </div>
-            <SystemControlPanel />
             <div className="pns-monitor-grid" data-count={count}>
                 {workerHostnames.slice(0, 4).map(hostname => (
                     <PNSTerminalPane
