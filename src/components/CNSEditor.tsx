@@ -14,7 +14,7 @@ import { GateNeuronNode } from './GateNeuronNode';
 import { RetryNeuronNode } from './RetryNeuronNode';
 import { DelayNeuronNode } from './DelayNeuronNode';
 import { FrontalLobeNeuronNode } from './FrontalLobeNeuronNode';
-import { EFFECTOR_NODE_TYPE, EFFECTOR_DEFAULTS } from './nodeConstants';
+import { EFFECTOR, EFFECTOR_NODE_TYPE, EFFECTOR_DEFAULTS } from './nodeConstants';
 
 interface CNSEditorProps {
     pathwayId: string;
@@ -344,6 +344,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
 
                     if (dragType === 'subgraph') {
                         requestBody.invoked_pathway = dragId;
+                        requestBody.effector = EFFECTOR.BEGIN_PLAY;
                     } else {
                         requestBody.effector = dragId;
                     }
