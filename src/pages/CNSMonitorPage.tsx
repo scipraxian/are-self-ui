@@ -17,7 +17,7 @@ import { CNSMonitorSidebar } from '../components/CNSMonitorSidebar';
 import { NeuronMonitorNode } from '../components/NeuronMonitorNode';
 import { CNSMetaPill } from '../components/CNSMetaPill';
 import { useDendrite } from '../components/SynapticCleft';
-import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { useBreadcrumbs, type Breadcrumb } from '../context/BreadcrumbProvider';
 import { useSpikeSet } from '../context/SpikeSetProvider';
 import { apiFetch } from '../api';
 import type { Spike, SpikeTrain, Neuron, Axon } from '../types';
@@ -367,7 +367,7 @@ export function CNSMonitorPage() {
     // Breadcrumbs — include parent context if we drilled from a parent train
     useEffect(() => {
         if (pathway && spiketrainId) {
-            const crumbs = [
+            const crumbs: Breadcrumb[] = [
                 { label: 'Central Nervous System', path: '/cns' },
             ];
 
