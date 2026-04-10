@@ -5,6 +5,7 @@ import { List, LayoutGrid, RefreshCw, Download, Cloud, Zap } from 'lucide-react'
 import { ThreePanel } from '../components/ThreePanel';
 import { HypothalamusModelInspector } from '../components/HypothalamusModelInspector';
 import { HypothalamusRoutingInspector } from '../components/HypothalamusRoutingInspector';
+import { HelpTip } from '../components/HelpTip';
 import { useDendrite } from '../components/SynapticCleft';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { apiFetch } from '../api';
@@ -587,6 +588,13 @@ export function HypothalamusPage() {
 
     const leftPanel = (
         <div className="hypothalamus-filters">
+            <div className="hypothalamus-mode-tabs-row">
+                <h2 className="hypothalamus-mode-tabs-title">Hypothalamus</h2>
+                <HelpTip
+                    tip="Manages AI models: catalog, routing, budgets, and circuit breakers."
+                    doc="brain-regions/hypothalamus"
+                />
+            </div>
             <div className="hypothalamus-mode-tabs">
                 {(['catalog', 'routing', 'budgets'] as TabMode[]).map(t => (
                     <button

@@ -21,3 +21,16 @@
     display: flex;
     gap: 8px;
 }
+
+.identity-page-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: visible;
+    position: relative;
+    z-index: 5;
+}
+
+.identity-page-header .glass-panel-title {
+    margin: 0;
+}

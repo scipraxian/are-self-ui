@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, Brain } from 'lucide-react';
+import { HelpTip } from '../components/HelpTip';
 import { ThreePanel } from '../components/ThreePanel';
 import { IdentityRoster } from '../components/IdentityRoster';
 import { apiFetch } from '../api';
@@ -80,10 +81,17 @@ export function IdentityStub() {
         <ThreePanel
             left={
                 <>
-                    <h2 className="glass-panel-title">
-                        <Brain size={18} style={{ color: '#38bdf8', marginRight: '8px', verticalAlign: 'middle' }} />
-                        IDENTITY ROSTER
-                    </h2>
+                    <div className="identity-page-header">
+                        <h2 className="glass-panel-title">
+                            <Brain size={18} style={{ color: '#38bdf8', marginRight: '8px', verticalAlign: 'middle' }} />
+                            IDENTITY ROSTER
+                        </h2>
+                        <HelpTip
+                            tip="Identities are AI persona blueprints — system prompt, tools, addons, model routing. Forged into IdentityDiscs when slotted into a Temporal shift."
+                            doc="ui/identity"
+                            placement="right"
+                        />
+                    </div>
                     {!showCreateForm ? (
                         <button
                             className="btn-action identity-create-btn"

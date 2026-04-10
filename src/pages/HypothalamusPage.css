@@ -1314,3 +1314,19 @@
 .hypothalamus-inspector-action-save:hover {
     background: rgba(52, 211, 153, 0.08);
 }
+
+.hypothalamus-mode-tabs-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px 0;
+}
+
+.hypothalamus-mode-tabs-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.85);
+}

@@ -7,6 +7,7 @@ import {
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
+import { HelpTip } from './HelpTip';
 import './NavBar.css';
 
 interface NavBarProps {
@@ -60,6 +61,11 @@ export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
                     <img src="/Are-SelfLogo-transparent.png" alt="Are-Self" className="navbar-logo-img" />
                     <span className="navbar-logo-text">ARE-SELF</span>
                 </Link>
+                <HelpTip
+                    tip="The Are-Self dashboard. Click the ? for docs."
+                    doc=""
+                    placement="bottom"
+                />
             </div>
 
             <div className="navbar-crumbs">
@@ -76,6 +82,11 @@ export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
             </div>
 
             <div className="navbar-right">
+                <HelpTip
+                    tip="Environments scope what you see — pathways, tasks, sessions. Changing here filters every view."
+                    doc="docs/ui/environments"
+                    placement="bottom"
+                />
                 <select
                     className="navbar-env-select"
                     value={selectedEnvironmentId}
