@@ -17,7 +17,12 @@ export function CNSEditStub() {
     useEffect(() => {
         setCrumbs([
             { label: 'Central Nervous System', path: '/cns' },
-            { label: 'Edit', path: `/cns/edit/${pathwayId}` },
+            {
+                label: 'Edit',
+                path: `/cns/edit/${pathwayId}`,
+                tip: 'The CNS Editor — drag neurons, wire axons, set axonal weights. Changes save on commit and version the pathway graph.',
+                doc: 'docs/ui/cns-editor',
+            },
         ]);
         return () => setCrumbs([]);
     }, [pathwayId, setCrumbs]);

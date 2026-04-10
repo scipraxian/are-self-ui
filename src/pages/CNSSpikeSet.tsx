@@ -73,7 +73,12 @@ export function CNSSpikeSet() {
     useEffect(() => {
         setCrumbs([
             { label: 'Central Nervous System', path: '/cns' },
-            { label: `Spike Set (${spikeIds.length})`, path: window.location.pathname + window.location.search },
+            {
+                label: `Spike Set (${spikeIds.length})`,
+                path: window.location.pathname + window.location.search,
+                tip: 'A bundle of related spikes viewed together — compare transcripts, timings, and errors across multiple neuron firings.',
+                doc: 'docs/ui/cns-monitor',
+            },
         ]);
         return () => setCrumbs([]);
     }, [spikeIds.length, setCrumbs]);

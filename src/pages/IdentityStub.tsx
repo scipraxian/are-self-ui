@@ -26,7 +26,12 @@ export function IdentityStub() {
     const [rosterKey, setRosterKey] = useState(0);
 
     useEffect(() => {
-        setCrumbs([{ label: 'Identity Ledger', path: '/identity' }]);
+        setCrumbs([{
+            label: 'Identity Ledger',
+            path: '/identity',
+            tip: 'Identities are AI persona blueprints — system prompt, tools, addons, model routing. Forged into IdentityDiscs when slotted into a shift.',
+            doc: 'docs/brain-regions/identity',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
@@ -88,7 +93,7 @@ export function IdentityStub() {
                         </h2>
                         <HelpTip
                             tip="Identities are AI persona blueprints — system prompt, tools, addons, model routing. Forged into IdentityDiscs when slotted into a Temporal shift."
-                            doc="ui/identity"
+                            doc="docs/ui/identity"
                             placement="right"
                         />
                     </div>

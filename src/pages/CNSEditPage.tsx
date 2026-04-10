@@ -37,7 +37,12 @@ export function CNSEditPage() {
             ...(pathwayName
                 ? [{ label: pathwayName, path: `/cns/pathway/${pathwayId}` }]
                 : []),
-            { label: 'Edit', path: `/cns/pathway/${pathwayId}/edit` },
+            {
+                label: 'Edit',
+                path: `/cns/pathway/${pathwayId}/edit`,
+                tip: 'The CNS Editor — drag neurons, wire axons, set axonal weights. Changes save on commit and version the pathway graph.',
+                doc: 'docs/ui/cns-editor',
+            },
         ]);
         return () => setCrumbs([]);
     }, [pathwayId, pathwayName, setCrumbs]);

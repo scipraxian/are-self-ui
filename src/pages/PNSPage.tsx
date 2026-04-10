@@ -89,7 +89,12 @@ export function PNSPage() {
 
     // Breadcrumbs
     useEffect(() => {
-        setCrumbs([{ label: 'Peripheral Nervous System', path: '/pns' }]);
+        setCrumbs([{
+            label: 'Peripheral Nervous System',
+            path: '/pns',
+            tip: 'The PNS is the worker fleet — Celery workers send heartbeats, pick up tasks, and fire the tick cycle that drives every loop.',
+            doc: 'docs/brain-regions/peripheral-nervous-system',
+        }]);
         document.title = 'PNS Fleet | Are-Self';
         return () => setCrumbs([]);
     }, [setCrumbs]);

@@ -16,7 +16,12 @@ export function CNSPage() {
 
     // Breadcrumbs
     useEffect(() => {
-        setCrumbs([{ label: 'Central Nervous System', path: '/cns' }]);
+        setCrumbs([{
+            label: 'Central Nervous System',
+            path: '/cns',
+            tip: 'The CNS holds pathways — directed graphs of neurons that route spike trains between brain regions.',
+            doc: 'docs/brain-regions/central-nervous-system',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
     const [searchQuery, setSearchQuery] = useState('');

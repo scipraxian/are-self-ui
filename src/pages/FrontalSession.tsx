@@ -36,7 +36,12 @@ export function FrontalSession() {
         if (sessionId) {
             setCrumbs([
                 { label: 'Frontal Lobe', path: '/frontal' },
-                { label: `Session #${sessionId.slice(0, 6).toUpperCase()}`, path: `/frontal/${sessionId}` },
+                {
+                    label: `Session #${sessionId.slice(0, 6).toUpperCase()}`,
+                    path: `/frontal/${sessionId}`,
+                    tip: 'A reasoning session — the full back-and-forth of a single AI thinking loop, with every spike, tool call, and model response.',
+                    doc: 'docs/ui/frontal-lobe',
+                },
             ]);
         }
         return () => setCrumbs([]);

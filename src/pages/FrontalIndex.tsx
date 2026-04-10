@@ -9,7 +9,12 @@ export function FrontalIndex() {
     const { setCrumbs } = useBreadcrumbs();
 
     useEffect(() => {
-        setCrumbs([{ label: 'Frontal Lobe', path: '/frontal' }]);
+        setCrumbs([{
+            label: 'Frontal Lobe',
+            path: '/frontal',
+            tip: 'The Frontal Lobe runs reasoning sessions — multi-turn AI thinking loops with failover, focus budgets, and tool use.',
+            doc: 'docs/brain-regions/frontal-lobe',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
 

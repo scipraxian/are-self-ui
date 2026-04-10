@@ -18,7 +18,12 @@ export function IdentityDetailStub() {
         if (discId) {
             setCrumbs([
                 { label: 'Identity Ledger', path: '/identity' },
-                { label: `Disc #${discId.slice(0, 6).toUpperCase()}`, path: `/identity/${discId}` },
+                {
+                    label: `Disc #${discId.slice(0, 6).toUpperCase()}`,
+                    path: `/identity/${discId}`,
+                    tip: 'An IdentityDisc is a forged persona slotted into a shift — its prompt, tools, and model routing baked in for the duration.',
+                    doc: 'docs/brain-regions/identity',
+                },
             ]);
         }
         return () => setCrumbs([]);

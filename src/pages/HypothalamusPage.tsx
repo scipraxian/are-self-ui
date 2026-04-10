@@ -181,7 +181,12 @@ export function HypothalamusPage() {
 
     // Breadcrumbs
     useEffect(() => {
-        setCrumbs([{ label: 'Hypothalamus', path: '/hypothalamus' }]);
+        setCrumbs([{
+            label: 'Hypothalamus',
+            path: '/hypothalamus',
+            tip: 'The Hypothalamus manages AI models — catalog, routing, budgets, and circuit breakers that trip on repeated failures.',
+            doc: 'docs/brain-regions/hypothalamus',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
@@ -592,7 +597,7 @@ export function HypothalamusPage() {
                 <h2 className="hypothalamus-mode-tabs-title">Hypothalamus</h2>
                 <HelpTip
                     tip="Manages AI models: catalog, routing, budgets, and circuit breakers."
-                    doc="brain-regions/hypothalamus"
+                    doc="docs/brain-regions/hypothalamus"
                 />
             </div>
             <div className="hypothalamus-mode-tabs">

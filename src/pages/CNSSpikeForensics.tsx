@@ -114,14 +114,24 @@ export function CNSSpikeForensics() {
                         { label: 'Central Nervous System', path: '/cns' },
                         { label: train.pathway_name, path: `/cns/pathway/${train.pathway}` },
                         { label: `Train #${String(train.id).slice(0, 6).toUpperCase()}`, path: `/cns/spiketrain/${spike.spike_train}` },
-                        { label: `${spike.effector_name} ${shortHash(String(spike.id))}`, path: `/cns/spike/${spikeId}` },
+                        {
+                            label: `${spike.effector_name} ${shortHash(String(spike.id))}`,
+                            path: `/cns/spike/${spikeId}`,
+                            tip: 'Spike forensics — every input, output, error, and timing for a single neuron firing. Read the full transcript.',
+                            doc: 'docs/ui/cns-monitor',
+                        },
                     ]);
                 }
             } catch {
                 // Fallback — no pathway context
                 setCrumbs([
                     { label: 'Central Nervous System', path: '/cns' },
-                    { label: `${spike.effector_name} ${shortHash(String(spike.id))}`, path: `/cns/spike/${spikeId}` },
+                    {
+                        label: `${spike.effector_name} ${shortHash(String(spike.id))}`,
+                        path: `/cns/spike/${spikeId}`,
+                        tip: 'Spike forensics — every input, output, error, and timing for a single neuron firing. Read the full transcript.',
+                        doc: 'docs/ui/cns-monitor',
+                    },
                 ]);
             }
         };

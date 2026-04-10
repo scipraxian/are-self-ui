@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Loader2, ArrowLeft, Trash2 } from 'lucide-react';
-import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { useBreadcrumbs, type Breadcrumb } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
@@ -147,21 +147,32 @@ export function PFCEditPage() {
     // Breadcrumbs
     useEffect(() => {
         const currentItem = items.find(i => i.id === itemId);
+        const PFC_ROOT: Breadcrumb = {
+            label: 'Prefrontal Cortex',
+            path: '/pfc',
+            tip: 'The Prefrontal Cortex plans work — epics split into stories, stories into tasks, all scoped by shift and priority.',
+            doc: 'docs/brain-regions/prefrontal-cortex',
+        };
+
         if (!currentItem) {
-            setCrumbs([{ label: 'Prefrontal Cortex', path: '/pfc' }]);
+            setCrumbs([PFC_ROOT]);
             return;
         }
 
-        const crumbs = [{ label: 'Prefrontal Cortex', path: '/pfc' }];
+        const crumbs: Breadcrumb[] = [PFC_ROOT];
+        const editTip: Pick<Breadcrumb, 'tip' | 'doc'> = {
+            tip: 'Edit this PFC item — name, description, status, shift assignment, tied pathways, and sub-item ordering.',
+            doc: 'docs/brain-regions/prefrontal-cortex',
+        };
 
         if (detailType === 'epic') {
-            crumbs.push({ label: currentItem.name, path: `/pfc/epic/${currentItem.id}` });
+            crumbs.push({ label: currentItem.name, path: `/pfc/epic/${currentItem.id}`, ...editTip });
         } else if (detailType === 'story') {
             const parentEpic = items.find(i => i.id === currentItem.parent_id);
             if (parentEpic) {
                 crumbs.push({ label: parentEpic.name, path: `/pfc/epic/${parentEpic.id}` });
             }
-            crumbs.push({ label: currentItem.name, path: `/pfc/story/${currentItem.id}` });
+            crumbs.push({ label: currentItem.name, path: `/pfc/story/${currentItem.id}`, ...editTip });
         } else if (detailType === 'task') {
             const parentStory = items.find(i => i.id === currentItem.parent_id);
             if (parentStory) {
@@ -171,7 +182,7 @@ export function PFCEditPage() {
                 }
                 crumbs.push({ label: parentStory.name, path: `/pfc/story/${parentStory.id}` });
             }
-            crumbs.push({ label: currentItem.name, path: `/pfc/task/${currentItem.id}` });
+            crumbs.push({ label: currentItem.name, path: `/pfc/task/${currentItem.id}`, ...editTip });
         }
 
         setCrumbs(crumbs);

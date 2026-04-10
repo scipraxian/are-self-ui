@@ -75,7 +75,12 @@ export function PNSMonitorPage() {
     useEffect(() => {
         setCrumbs([
             { label: 'Peripheral Nervous System', path: '/pns' },
-            { label: 'Neural Terminal Monitor', path: window.location.pathname + window.location.search },
+            {
+                label: 'Neural Terminal Monitor',
+                path: window.location.pathname + window.location.search,
+                tip: 'Live shell streams from selected workers — watch stdout/stderr from Celery tick cycles as they happen.',
+                doc: 'docs/ui/pns',
+            },
         ]);
         document.title = 'Neural Terminal Monitor | Are-Self';
         return () => setCrumbs([]);

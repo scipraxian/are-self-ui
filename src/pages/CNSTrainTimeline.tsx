@@ -89,7 +89,12 @@ export function CNSTrainTimeline() {
         if (pathway) {
             setCrumbs([
                 { label: 'Central Nervous System', path: '/cns' },
-                { label: pathway.name, path: `/cns/pathway/${pathwayId}` },
+                {
+                    label: pathway.name,
+                    path: `/cns/pathway/${pathwayId}`,
+                    tip: 'The pathway dashboard — every spike train this pathway has run, newest first. Click a train to watch it fire.',
+                    doc: 'docs/ui/cns-monitor',
+                },
             ]);
         }
         return () => setCrumbs([]);

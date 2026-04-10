@@ -47,7 +47,12 @@ export function EnvironmentEditor() {
     const [selectError, setSelectError] = useState('');
 
     useEffect(() => {
-        setCrumbs([{ label: 'Environments', path: '/environments' }]);
+        setCrumbs([{
+            label: 'Environments',
+            path: '/environments',
+            tip: 'Environments scope what every view sees — pathways, tasks, sessions, keys. Like different labs for different experiments.',
+            doc: 'docs/ui/environments',
+        }]);
     }, [setCrumbs]);
 
     // Fetch lookup data

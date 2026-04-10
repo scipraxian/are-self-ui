@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { PFCStatusBadge } from '../components/PFCStatusBadge';
 import { PFCInlineCreate } from '../components/PFCInlineCreate';
-import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { useBreadcrumbs, type Breadcrumb } from '../context/BreadcrumbProvider';
 import { useDendrite } from '../components/SynapticCleft';
 import { apiFetch } from '../api';
 import type { PFCAgileItem } from '../types';
@@ -94,21 +94,32 @@ export function PFCDetailPage() {
     // Breadcrumbs
     useEffect(() => {
         const currentItem = items.find(i => i.id === itemId);
+        const PFC_ROOT: Breadcrumb = {
+            label: 'Prefrontal Cortex',
+            path: '/pfc',
+            tip: 'The Prefrontal Cortex plans work — epics split into stories, stories into tasks, all scoped by shift and priority.',
+            doc: 'docs/brain-regions/prefrontal-cortex',
+        };
+
         if (!currentItem) {
-            setCrumbs([{ label: 'Prefrontal Cortex', path: '/pfc' }]);
+            setCrumbs([PFC_ROOT]);
             return;
         }
 
-        const crumbs = [{ label: 'Prefrontal Cortex', path: '/pfc' }];
+        const crumbs: Breadcrumb[] = [PFC_ROOT];
+        const detailTip: Pick<Breadcrumb, 'tip' | 'doc'> = {
+            tip: 'Epic → Story → Task. Drill in to see sub-items, status, assigned shift, and tied pathways.',
+            doc: 'docs/brain-regions/prefrontal-cortex',
+        };
 
         if (detailType === 'epic') {
-            crumbs.push({ label: currentItem.name, path: `/pfc/epic/${currentItem.id}` });
+            crumbs.push({ label: currentItem.name, path: `/pfc/epic/${currentItem.id}`, ...detailTip });
         } else if (detailType === 'story') {
             const parentEpic = items.find(i => i.id === currentItem.parent_id);
             if (parentEpic) {
                 crumbs.push({ label: parentEpic.name, path: `/pfc/epic/${parentEpic.id}` });
             }
-            crumbs.push({ label: currentItem.name, path: `/pfc/story/${currentItem.id}` });
+            crumbs.push({ label: currentItem.name, path: `/pfc/story/${currentItem.id}`, ...detailTip });
         } else if (detailType === 'task') {
             const parentStory = items.find(i => i.id === currentItem.parent_id);
             if (parentStory) {
@@ -118,7 +129,7 @@ export function PFCDetailPage() {
                 }
                 crumbs.push({ label: parentStory.name, path: `/pfc/story/${parentStory.id}` });
             }
-            crumbs.push({ label: currentItem.name, path: `/pfc/task/${currentItem.id}` });
+            crumbs.push({ label: currentItem.name, path: `/pfc/task/${currentItem.id}`, ...detailTip });
         }
 
         setCrumbs(crumbs);

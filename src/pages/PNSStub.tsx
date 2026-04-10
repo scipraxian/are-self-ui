@@ -9,7 +9,12 @@ export function PNSStub() {
     const { setCrumbs } = useBreadcrumbs();
 
     useEffect(() => {
-        setCrumbs([{ label: 'Peripheral Nervous System', path: '/pns' }]);
+        setCrumbs([{
+            label: 'Peripheral Nervous System',
+            path: '/pns',
+            tip: 'The PNS is the worker fleet — Celery workers send heartbeats, pick up tasks, and fire the tick cycle that drives every loop.',
+            doc: 'docs/brain-regions/peripheral-nervous-system',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
 

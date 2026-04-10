@@ -66,7 +66,12 @@ export function HippocampusPage() {
 
     // Breadcrumbs
     useEffect(() => {
-        setCrumbs([{ label: 'Hippocampus', path: '/hippocampus' }]);
+        setCrumbs([{
+            label: 'Hippocampus',
+            path: '/hippocampus',
+            tip: 'The Hippocampus stores engrams — vector-embedded memories with provenance, tags, and relevance scores.',
+            doc: 'docs/brain-regions/hippocampus',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
 

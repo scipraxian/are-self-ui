@@ -388,6 +388,8 @@ export function CNSMonitorPage() {
             crumbs.push({
                 label: `Train #${spiketrainId.slice(0, 6).toUpperCase()}`,
                 path: `/cns/spiketrain/${spiketrainId}`,
+                tip: 'Live spike train monitor — watch neurons fire in real time as a pathway runs. Click spikes for forensics.',
+                doc: 'docs/ui/cns-monitor',
             });
 
             setCrumbs(crumbs);

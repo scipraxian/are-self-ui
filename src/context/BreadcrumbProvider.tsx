@@ -4,6 +4,11 @@ import type { ReactNode } from 'react';
 export interface Breadcrumb {
     label: string;
     path: string;
+    // Optional HelpTip hover text. When both tip and doc are set on the
+    // active crumb, NavBar renders a HelpTip button next to the label.
+    tip?: string;
+    // Optional docs slug (e.g. 'docs/brain-regions/hypothalamus') passed to docUrl().
+    doc?: string;
 }
 
 interface BreadcrumbContextType {

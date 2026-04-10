@@ -141,8 +141,20 @@ export function EffectorEditorPage() {
     useEffect(() => {
         setCrumbs([
             { label: 'Central Nervous System', path: '/cns' },
-            { label: 'Effector Editor', path: '/cns/effector' },
-            ...(detail ? [{ label: detail.name, path: `/cns/effector/${detail.id}/edit` }] : []),
+            {
+                label: 'Effector Editor',
+                path: '/cns/effector',
+                tip: 'Effectors are the runnable units neurons fire — prompts, tools, scripts, MCP calls. Configure inputs, outputs, and arguments here.',
+                doc: 'docs/ui/cns-editor',
+            },
+            ...(detail
+                ? [{
+                    label: detail.name,
+                    path: `/cns/effector/${detail.id}/edit`,
+                    tip: 'Edit this effector — its prompt template, arguments, output schema, and which neurons use it.',
+                    doc: 'docs/ui/cns-editor',
+                }]
+                : []),
         ]);
         return () => setCrumbs([]);
     }, [detail, setCrumbs]);

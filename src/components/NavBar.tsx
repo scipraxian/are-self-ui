@@ -69,16 +69,22 @@ export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
             </div>
 
             <div className="navbar-crumbs">
-                {crumbs.map((crumb, i) => (
-                    <Fragment key={crumb.path}>
-                        <span className="navbar-crumb-sep">&rsaquo;</span>
-                        {i < crumbs.length - 1 ? (
-                            <Link to={crumb.path} className="navbar-crumb">{crumb.label}</Link>
-                        ) : (
-                            <span className="navbar-crumb navbar-crumb--active">{crumb.label}</span>
-                        )}
-                    </Fragment>
-                ))}
+                {crumbs.map((crumb, i) => {
+                    const isLast = i === crumbs.length - 1;
+                    return (
+                        <Fragment key={crumb.path}>
+                            <span className="navbar-crumb-sep">&rsaquo;</span>
+                            {!isLast ? (
+                                <Link to={crumb.path} className="navbar-crumb">{crumb.label}</Link>
+                            ) : (
+                                <span className="navbar-crumb navbar-crumb--active">{crumb.label}</span>
+                            )}
+                            {isLast && crumb.tip && crumb.doc && (
+                                <HelpTip tip={crumb.tip} doc={crumb.doc} placement="bottom" />
+                            )}
+                        </Fragment>
+                    );
+                })}
             </div>
 
             <div className="navbar-right">

@@ -38,7 +38,12 @@ export function PFCPage() {
     const pfcTaskEvent = useDendrite('PFCTask', null);
 
     useEffect(() => {
-        setCrumbs([{ label: 'Prefrontal Cortex', path: '/pfc' }]);
+        setCrumbs([{
+            label: 'Prefrontal Cortex',
+            path: '/pfc',
+            tip: 'The Prefrontal Cortex plans work — epics split into stories, stories into tasks, all scoped by shift and priority.',
+            doc: 'docs/brain-regions/prefrontal-cortex',
+        }]);
         return () => setCrumbs([]);
     }, [setCrumbs]);
 
