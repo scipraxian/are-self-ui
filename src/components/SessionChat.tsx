@@ -18,7 +18,6 @@ import {
 } from '@assistant-ui/react';
 import { apiFetch } from '../api';
 import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
-import { toolOneLiner, extractThought } from '../utils/toolFormatters';
 import './ThalamusChat.css'; // Reusing the glassmorphic styles
 
 // Assuming a standard REST structure for your session endpoints
@@ -537,7 +536,7 @@ function SessionThreadInner() {
                     </div>
                 </AuiIf>
                 <ThreadPrimitive.Messages>
-                    {({ message, messageIndex }) => {
+                    {({ message }) => {
                         // Narrowed cast: we only pass assistant content to CustomMessageTools,
                         // and only when the role is actually 'assistant'.
                         const assistantContent: readonly ThreadAssistantMessagePart[] =
@@ -579,9 +578,11 @@ function SessionThreadInner() {
                             }
                         }
 
-                        // Detect turn boundaries (after tool result, when system message appears)
+                        // Detect turn boundaries — any system prompt *after* the first one
+                        // marks a new turn. We use the systemPromptCache (populated on the
+                        // first system prompt we see) as a stand-in for "message index > 0".
                         let isTurnBoundary = false;
-                        if (messageIndex > 0 && isSystemPrompt) {
+                        if (isSystemPrompt && systemPromptCache) {
                             isTurnBoundary = true;
                             setTurnCounter(c => c + 1);
                         }

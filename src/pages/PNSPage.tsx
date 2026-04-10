@@ -597,7 +597,7 @@ export function PNSPage() {
                                     {worker.pool && (typeof worker.pool === 'object' && worker.pool.max_concurrency != null) && (
                                         <div className="pns-card-sysinfo-row">
                                             <span className="pns-card-sysinfo-label">Concurrency:</span>
-                                            <span className="pns-card-sysinfo-value">{worker.pool.max_concurrency}</span>
+                                            <span className="pns-card-sysinfo-value">{String(worker.pool.max_concurrency)}</span>
                                         </div>
                                     )}
                                     {worker.rusage && (typeof worker.rusage === 'object' && worker.rusage.utime != null) && (

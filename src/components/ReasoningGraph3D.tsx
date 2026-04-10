@@ -59,7 +59,7 @@ const generateHoverCardLines = (node: GraphNode): string[] => {
     const lines: string[] = [];
 
     if (node.type === 'turn') {
-        const turnData = node as ReasoningTurnData & { id: string };
+        const turnData = node as unknown as ReasoningTurnData & { id: string };
         const durationStr = turnData.model_usage_record?.query_time || turnData.delta || '?';
         const status = turnData.status_name || 'Unknown';
         lines.push(`Turn ${turnData.turn_number} · ${durationStr} · ${status}`);
@@ -73,19 +73,19 @@ const generateHoverCardLines = (node: GraphNode): string[] => {
             lines.push(`💭 "${thought}"`);
         }
     } else if (node.type === 'tool') {
-        const toolData = node as ToolCallData & { id: string };
+        const toolData = node as unknown as ToolCallData & { id: string };
         const summary = summarizeTool(toolData);
         const status = toolData.status_name || 'Unknown';
         lines.push(`⚙ ${toolData.tool_name} · ${status}`);
         lines.push(summary.action);
     } else if (node.type === 'engram') {
-        const engramData = node as TalosEngramData & { id: string };
+        const engramData = node as unknown as TalosEngramData & { id: string };
         lines.push(`◆ "${engramData.name}"`);
         const relevance = (engramData.relevance_score || 0).toFixed(2);
         const sourceTurn = engramData.source_turns?.[0] || '?';
         lines.push(`relevance ${relevance} · from Turn ${sourceTurn}`);
     } else if (node.type === 'goal') {
-        const goalData = node as ReasoningGoalData & { id: string };
+        const goalData = node as unknown as ReasoningGoalData & { id: string };
         const status = goalData.status_name || 'Unknown';
         lines.push(`⊕ Goal · ${status}`);
         const goalPreview = goalData.rendered_goal?.slice(0, 100) || '';
@@ -135,7 +135,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
     const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
     const [hoverCard, setHoverCard] = useState<HoverCard | null>(null);
-    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const parseDuration = (str: string) => {
         if (!str) return 0;

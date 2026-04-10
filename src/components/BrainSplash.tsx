@@ -208,8 +208,8 @@ function BrainRegionMeshes({ region, hoveredLobe, setHoveredLobe, onLobeClick, v
                 <primitive key={region.files[i]} object={clone} />
             ))}
             {isHovered && region.path && (
-                <Html className="brainsplash-ui-13" position={[0, 2, 0]} center>
-                    <div className={`brainsplash-hover-label brainsplash-hover-label--${region.path}`}>
+                <Html position={[0, 2, 0]} center>
+                    <div className={`brainsplash-ui-13 brainsplash-hover-label brainsplash-hover-label--${region.path}`}>
                         {region.name.toUpperCase()}
                     </div>
                 </Html>
@@ -301,7 +301,7 @@ export interface BrainPlaceholderProps {
 }
 
 export const BrainPlaceholder = ({ onLobeClick, hoveredLobe, setHoveredLobe, showBrain }: BrainPlaceholderProps) => {
-    useCursor(hoveredLobe !== null, 'pointer', 'auto');
+    useCursor(hoveredLobe !== null);
     return (
         <group>
             <group rotation={UNREAL_ROTATION}>
