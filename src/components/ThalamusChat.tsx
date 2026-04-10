@@ -18,6 +18,7 @@ import {
     type ThreadAssistantMessagePart,
 } from '@assistant-ui/react';
 import { apiFetch } from '../api';
+import { stripHumanTag } from '../utils/humanTag';
 import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
 import './ThalamusChat.css';
 
@@ -74,8 +75,11 @@ interface SynapseChatEvent extends Event {
 // ---------------------------------------------------------------------------
 
 function getRawText(m: BackendMessage): string {
-    if (typeof m.content === 'string') return m.content;
-    if (typeof m.text === 'string') return m.text;
+    // Strip the `<<h>>` human-message tag the backend prepends to
+    // swarm_message_queue entries. It's a routing marker for the
+    // river_of_six addon, not display content.
+    if (typeof m.content === 'string') return stripHumanTag(m.content);
+    if (typeof m.text === 'string') return stripHumanTag(m.text);
     return '';
 }
 

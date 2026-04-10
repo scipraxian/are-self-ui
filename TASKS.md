@@ -20,6 +20,15 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   (`/api/v2/system-control/`). SystemControlPanel exists on PNSPage. Restart works. **Remaining:** CSS
   layout fix (huge empty spaces), full app lifecycle (close browser windows, restart webserver). Consider
   moving controls to a global header/nav position instead of PNS-only.
+- [ ] **Rename `SystemControlPanel` — off style guide.** "System Control" is mechanical/military-adjacent
+  and violates the biological-naming rule. Candidates: `HomeostasisPanel`, `BrainstemPanel`,
+  `MedullaPanel`, `AutonomicPanel`. Coordinated rename: component file, CSS class prefix, PNSPage import,
+  any tests. Pair with the backend endpoint rename (`/api/v2/system-control/` → something biological) so
+  the name maps cleanly front-to-back.
+- [x] **~~Frontend <<h>> tag stripping in chat display.~~** `src/utils/humanTag.ts` with `HUMAN_TAG`
+  constant and `stripHumanTag()`. Wired into `getRawText()` in both `SessionChat.tsx` and
+  `ThalamusChat.tsx`. Strips a single leading `<<h>>` or `<<h>>\n`. Backend TODO to move the constant
+  server-side still open (it lives in `river_of_six_addon.py`).
 
 ## Open Tasks
 
@@ -42,10 +51,11 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   work to make it compact/inline with the beat bar or styled as a minimal header strip.
 - [ ] **Navigation cleanup.** Hamburger menu has Hippocampus + Hypothalamus. Remaining brain regions TBD.
 - [ ] **Identity ledger layout.** Remove always-open empty right panel when nothing selected.
-- [ ] **Identity — remove redundant Model Routing Configuration section.** The Loadout tab has an inline
-  SelectionFilterEditor that duplicates the Hypothalamus routing inspector. Now that SelectionFilter and
-  Budget fields click through to the Hypothalamus, the embedded editor is redundant. Consider removing the
-  "Model Routing Configuration" section from IdentitySheet's Loadout tab entirely.
+- [x] **~~Identity — remove redundant Model Routing Configuration section.~~** Removed from
+  `IdentitySheet.tsx`: the "Model Routing Configuration" sheet-section, the `SelectionFilterEditor`
+  import, and the `showFilterEditor` state. `selectionFilters` state is kept — the Loadout dropdown
+  above still uses it. Hypothalamus is now the single source of truth for routing config; the Loadout
+  tab links through via the SelectionFilter and Budget fields.
 - [ ] **EngramEditor — attach existing.** "Attach Existing" flow to link existing engrams to a disc.
 - [ ] **Hypothalamus — family filter sort + zero-count hiding.** Family chips in filter panel need
   alphabetical sort. Consider hiding families with zero models (44 chips, 4 models on first load).
