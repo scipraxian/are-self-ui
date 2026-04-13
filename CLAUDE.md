@@ -359,9 +359,9 @@ environment-types, environment-statuses
   `required_capabilities_ids`, `banned_providers_ids`, `preferred_categories_ids`,
   `preferred_tags_ids`, `preferred_roles_ids`.
 - `Spike` returns: id, status, status_name, neuron, effector, effector_name, spike_train,
-  created, modified, target_hostname, result_code, application_log, execution_log, blackboard,
+  created, modified, target_hostname, result_code, application_log, execution_log, axoplasm,
   invoked_pathway, child_trains, provenance, provenance_train.
-- `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`.
+- `SpikeTrain` has nested `spikes` array, `pathway` FK, `pathway_name`, cerebrospinal_fluid.
 - `ReasoningTurn` has nested `model_usage_record` with response_payload deep inside.
 - `Engram` returns: id, name, description, is_active, relevance_score, tags (nested),
   sessions (ID list), source_turns (ID list), spikes (ID list), creator (nested or null),
@@ -504,7 +504,7 @@ port layout matching existing NeuronNode handle sizes. Uses `--readonly` modifie
 
 | Component | Effector PK | Color | Icon | Editable Fields |
 |-----------|-------------|-------|------|-----------------|
-| `GateNeuronNode.tsx` | 5 | Teal (#06b6d4) | GitBranch | gate_key, gate_operator, gate_value |
+| `GateNeuronNode.tsx` | 5 | Teal (#06b6d4) | GitBranch | gate_key (axoplasm), gate_operator, gate_value |
 | `RetryNeuronNode.tsx` | 6 | Amber (#f59e0b) | RotateCw | max_retries, retry_delay (NOT delay) |
 | `DelayNeuronNode.tsx` | 7 | Indigo (#6366f1) | Clock | delay (NOT retry_delay) |
 | `FrontalLobeNeuronNode.tsx` | 8 | Purple (#a855f7) | Brain | identity_disc (select), prompt (textarea) |

@@ -35,7 +35,7 @@ export const GateNeuronNode = ({ data, id }: { data: GateNodeData; id: string })
                             <input
                                 className="nodrag custom-node-field-input"
                                 value={context.gate_key || ''}
-                                placeholder="blackboard key"
+                                placeholder="axoplasm key"
                                 onChange={e => updateContext('gate_key', e.target.value)}
                             />
                         </div>

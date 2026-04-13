@@ -9,7 +9,7 @@ export interface SpikeData {
     duration?: string;
     delta?: string;
     average_delta?: string | number;
-    blackboard?: Record<string, unknown>;
+    axoplasm?: Record<string, unknown>;
     result_code?: number | null;
 }
 
@@ -25,6 +25,7 @@ export interface SpikeTrainData {
     live_children: SpikeData[];
     history: SpikeData[];
     subgraphs: SpikeTrainData[];
+    cerebrospinal_fluid?: Record<string, any>;
 }
 
 export interface DashboardSummary {
@@ -215,7 +216,7 @@ export interface Spike {
     provenance_train?: string | null;
     application_log?: string;
     execution_log?: string;
-    blackboard?: Record<string, unknown>;
+    axoplasm?: Record<string, unknown>;
 }
 
 export interface SpikeTrain {
@@ -228,6 +229,7 @@ export interface SpikeTrain {
     modified: string;
     spikes: Spike[];
     parent_spike?: string | null;
+    cerebrospinal_fluid?: Record<string, any>;
 }
 
 export interface CNSTag {
