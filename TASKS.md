@@ -2,6 +2,39 @@
 
 Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
+## In Progress — PNS Dashboard Churn (April 11, 2026)
+
+**Status:** Blocked on backend regression fix (see are-self-api/TASKS.md → "In Progress —
+Nerve Terminal Scan Reconcile"). Frontend has no code changes yet but there are frontend
+follow-ups queued once the backend lands.
+
+**Symptoms reported by Michael:**
+- Agent cards in PNS blink online/offline constantly (not true — they're stable).
+- Refresh button blinks constantly.
+- Logs show relentless polling of `/vital-signs/vitals/`, `/vital-signs/status/`,
+  `/spikes/?is_active=true`, `/beat/status/`, `/celery-workers/` (that last one taking ~3s).
+
+**Diagnosis:** The backend scan fires per-row acetylcholine during reconcile, and
+`PNSPage.tsx:220` subscribes to `NerveTerminalRegistry` and calls `handleRefresh()` on every
+broadcast. `handleRefresh()` is monolithic — it refetches all five endpoints on ANY
+subscription event — so a terminal save also rehits celery-workers and beat for no reason.
+
+**Frontend follow-ups (queued, not started):**
+- [ ] **Split `handleRefresh` into per-topic refetchers.** A `NerveTerminalRegistry`
+  broadcast should only refetch `/nerve_terminal_registry/`. A `CeleryWorker` broadcast
+  should only refetch `/celery-workers/`. Etc. Today (`PNSPage.tsx:133-212`) it's one blob.
+- [ ] **Debounce dendrite-triggered refetches.** Even per-topic, a backend scan that flips
+  N rows in quick succession will N times call the same refetch. Coalesce with a short
+  (100-200ms) trailing-edge debounce per topic.
+- [ ] **Vitals push instead of poll.** `PNSPage.tsx:125` has a 3s `setInterval` for
+  `/vital-signs/vitals/` — the "ONE polling exception." Once the backend vitals collector
+  fires a neurotransmitter, subscribe via `useDendrite` and drop the interval. Browser does
+  NOT already have CPU/GPU data — it's server-side from psutil.
+- [ ] **Beat status & spikes via subscription.** `/beat/status/` and `/spikes/?is_active=true`
+  should likewise be event-driven — they only change when beat restarts or spikes start/end.
+
+## Top Priority — PNS Expansion
+
 ## Top Priority — PNS Expansion
 
 - [ ] **Multiple Ollama endpoints UI.** Hypothalamus needs an affordance to add/edit AIModelProvider
@@ -68,7 +101,16 @@ Remaining work, sifted for the frontend. See FEATURES.md for what's built.
   views filter by environment yet. Ensure temporal, PFC, frontal, identity views all pass environment to
   API calls.
 - [ ] **Standardize API URLs to hyphens.** Frontend counterpart to the backend URL rename. Coordinated
-  sweep — both repos change together.
+  sweep — both repos change together. Known touch points: `EngramEditor.tsx`,
+  `HippocampusPage.tsx` (`engram_tags`), `SessionChat.tsx`, `ReasoningPanels.tsx`,
+  `FrontalLobeView.tsx`, `FrontalLobeDetail.tsx`, `ReasoningGraph3D.tsx`
+  (`reasoning_sessions`, `reasoning_turns`), `PNSPage.tsx` (`nerve_terminal_*`).
+- [ ] **Purge residual `/api/v1/` calls.** Legacy v1 routes still live in the UI:
+  `/api/v1/node-contexts` (13 call sites), `/api/v1/reasoning_sessions/` in
+  `FrontalLobeView.tsx`, `FrontalLobeDetail.tsx`, `ReasoningGraph3D.tsx`, and
+  `ReasoningPanels.tsx` (7 sites), and `/api/v1/environments` (4 sites). Re-point to
+  v2 equivalents; if v2 doesn't host a given endpoint yet, file the gap on the backend
+  side. Pairs with the backend task.
 - [ ] **Frontal Lobe session Parietal tab — drill-through broken.** Items in the Parietal tab and Parietal
   actions in the right window don't drill. Proposed fix: drill to zoom the matching 3D node so the full
   call is visible.

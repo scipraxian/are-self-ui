@@ -3,6 +3,13 @@
 The single source of truth for any AI agent working on the are-self-ui codebase.
 Read completely before making any changes.
 
+> **Active thread (April 11, 2026):** PNS dashboard churn — agent cards and refresh
+> button blink because `handleRefresh` in `PNSPage.tsx` is a monolithic five-endpoint
+> refetch fired on every dendrite event. Blocked on a backend fix first (see
+> are-self-api/TASKS.md). Frontend follow-ups queued in TASKS.md → "In Progress — PNS
+> Dashboard Churn." Resume there.
+
+
 ## The Developer
 
 Michael is a 30+ year programming veteran building Are-Self as an MIT-licensed AI reasoning

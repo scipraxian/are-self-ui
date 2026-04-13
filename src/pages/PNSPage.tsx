@@ -42,6 +42,11 @@ interface BeatStatus {
     scheduled_tasks?: ScheduledTask[];
 }
 
+interface DjangoServerState {
+    hostname: string;
+    recentLogs: string[];
+}
+
 const MAX_LOG_LINES = 50;
 
 function formatElapsed(timeStart: number | null): string {
@@ -83,6 +88,7 @@ export function PNSPage() {
     const [scanLoading, setScanLoading] = useState(false);
     const [scanResult, setScanResult] = useState<string | null>(null);
     const [sysActionLoading, setSysActionLoading] = useState(false);
+    const [djangoServers, setDjangoServers] = useState<Map<string, DjangoServerState>>(new Map());
 
     const workersRef = useRef(workers);
     workersRef.current = workers;
@@ -102,6 +108,7 @@ export function PNSPage() {
     // Dendrite subscriptions
     const workerEvent = useDendrite('CeleryWorker', null);
     const terminalEvent = useDendrite('NerveTerminalRegistry', null);
+    const djangoEvent = useDendrite('Django', null);
 
     // Vitals polling (3-second interval — the ONE polling exception)
     useEffect(() => {
@@ -312,6 +319,33 @@ export function PNSPage() {
         });
     }, [workerEvent]);
 
+    // Process real-time Django server events
+    useEffect(() => {
+        if (!djangoEvent) return;
+        const event = djangoEvent as unknown as NorepinephrineEvent;
+        const hostname = event.dendrite_id;
+        if (!hostname) return;
+
+        if (event.activity === 'log') {
+            const msg = event.vesicle.message as string;
+            if (!msg) return;
+
+            setDjangoServers(prev => {
+                const next = new Map(prev);
+                const existing = next.get(hostname) || {
+                    hostname,
+                    recentLogs: [],
+                };
+                const logs = [...existing.recentLogs, msg];
+                next.set(hostname, {
+                    ...existing,
+                    recentLogs: logs.slice(-MAX_LOG_LINES),
+                });
+                return next;
+            });
+        }
+    }, [djangoEvent]);
+
     // Scan network for agents
     const handleScan = async () => {
         setScanLoading(true);
@@ -415,8 +449,9 @@ export function PNSPage() {
     };
 
     const workerList = Array.from(workers.values());
+    const djangoList = Array.from(djangoServers.values());
     const beatRunning = beatStatus?.running ?? false;
-    const hasContent = workerList.length > 0 || terminals.length > 0 || vitals != null;
+    const hasContent = workerList.length > 0 || djangoList.length > 0 || terminals.length > 0 || vitals != null;
 
     return (
         <div className="pns-page">
@@ -523,6 +558,26 @@ export function PNSPage() {
                             />
                         </>
                     )}
+
+                    {/* Django servers */}
+                    {djangoList.map(server => (
+                        <div
+                            key={`django-${server.hostname}`}
+                            className="pns-worker-card pns-worker-card--django"
+                        >
+                            <div className="pns-card-header">
+                                <span className="pns-card-dot pns-card-dot--online" />
+                                <span className="pns-card-hostname">{server.hostname}</span>
+                                <span className="pns-card-version">Django</span>
+                            </div>
+
+                            <pre className="pns-card-logs">
+                                {server.recentLogs.slice(-5).join('\n') || 'No log output yet'}
+                            </pre>
+
+                            <div className="pns-card-hint">Server log stream</div>
+                        </div>
+                    ))}
 
                     {/* Celery workers */}
                     {workerList.map(worker => (
