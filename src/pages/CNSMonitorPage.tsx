@@ -35,7 +35,7 @@ interface PathwayDetail {
 interface NeuronMonitorData {
     label: string;
     effectorName: string | null;
-    effectorId: number | null;
+    effectorId: string | null;
     is_root: boolean;
     invoked_pathway_name: string | null;
     invoked_pathway_id: string | null;
@@ -435,19 +435,33 @@ export function CNSMonitorPage() {
 
     const handleNodeDoubleClick = useCallback(
         (_neuronId: string, neuron: Neuron) => {
-            if (!neuron.invoked_pathway) return;
-
             const spike = train?.spikes?.find(s => String(s.neuron) === String(neuron.id));
-            if (spike?.child_trains && spike.child_trains.length > 0) {
-                navigate(`/cns/spiketrain/${spike.child_trains[0]}`, {
-                    state: {
-                        parentTrainId: spiketrainId,
-                        parentPathwayName: pathway?.name,
-                        parentPathwayId: pathwayId,
-                    } satisfies ParentContext,
-                });
-            } else {
-                navigate(`/cns/pathway/${neuron.invoked_pathway}`);
+
+            // Sub-graph nodes: drill into child train or pathway editor
+            if (neuron.invoked_pathway) {
+                if (spike?.child_trains && spike.child_trains.length > 0) {
+                    navigate(`/cns/spiketrain/${spike.child_trains[0]}`, {
+                        state: {
+                            parentTrainId: spiketrainId,
+                            parentPathwayName: pathway?.name,
+                            parentPathwayId: pathwayId,
+                        } satisfies ParentContext,
+                    });
+                } else {
+                    navigate(`/cns/pathway/${neuron.invoked_pathway}`);
+                }
+                return;
+            }
+
+            // Spike exists: drill to spike forensics
+            if (spike) {
+                navigate(`/cns/spike/${spike.id}`);
+                return;
+            }
+
+            // Fallback: drill to effector editor
+            if (neuron.effector) {
+                navigate(`/cns/effector/${neuron.effector}/edit`);
             }
         },
         [train, navigate, spiketrainId, pathway, pathwayId],

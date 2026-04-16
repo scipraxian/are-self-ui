@@ -5,12 +5,12 @@ import { useDendrite } from './SynapticCleft';
 import './IdentityRoster.css';
 
 interface BaseIdentity {
-    id: number;
+    id: string;
     name: string;
 }
 
 interface IdentityDisc {
-    id: number;
+    id: string;
     name: string;
     level: number;
     xp: number;
@@ -18,7 +18,7 @@ interface IdentityDisc {
 }
 
 interface IdentityRosterProps {
-    onSelectIdentity: (id: number, type: 'base' | 'disc') => void;
+    onSelectIdentity: (id: string, type: 'base' | 'disc') => void;
 }
 
 export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {

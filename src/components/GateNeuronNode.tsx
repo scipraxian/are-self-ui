@@ -18,7 +18,7 @@ export const GateNeuronNode = ({ data, id }: { data: GateNodeData; id: string })
     const ro = !!data.readonly;
 
     return (
-        <div className={`custom-node${ro ? ' custom-node--readonly' : ''}`}>
+        <div className={`custom-node custom-node--gate${ro ? ' custom-node--readonly' : ''}`}>
             <div className="custom-node-header" style={{ background: COLOR }}>
                 <div className="custom-node-header-left">
                     <GitBranch size={16} className="custom-node-header-icon" color="#fff" />

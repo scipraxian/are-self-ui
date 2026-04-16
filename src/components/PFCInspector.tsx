@@ -42,7 +42,7 @@ export const PFCInspector = ({ item, allItems, statuses, onUpdate, onDelete, isE
     const navigate = useNavigate();
     const [localData, setLocalData] = useState<PFCAgileItem>(item);
     const [environments, setEnvironments] = useState<{id: string, name: string}[]>([]);
-    const [identityDiscs, setIdentityDiscs] = useState<{id: number, name: string}[]>([]);
+    const [identityDiscs, setIdentityDiscs] = useState<{id: string, name: string}[]>([]);
     const [newComment, setNewComment] = useState("");
     const [isPosting, setIsPosting] = useState(false);
 

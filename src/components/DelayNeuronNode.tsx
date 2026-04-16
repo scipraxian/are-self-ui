@@ -17,7 +17,7 @@ export const DelayNeuronNode = ({ data, id }: { data: DelayNodeData; id: string 
     const ro = !!data.readonly;
 
     return (
-        <div className={`custom-node${ro ? ' custom-node--readonly' : ''}`}>
+        <div className={`custom-node custom-node--delay${ro ? ' custom-node--readonly' : ''}`}>
             <div className="custom-node-header" style={{ background: COLOR }}>
                 <div className="custom-node-header-left">
                     <Clock size={16} className="custom-node-header-icon" color="#fff" />

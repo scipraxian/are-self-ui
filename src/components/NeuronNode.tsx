@@ -7,11 +7,11 @@ import { EFFECTOR_STYLE } from './nodeConstants';
 interface NeuronNodeData {
     label: string;
     effectorName: string | null;
-    effectorId?: number | null;
+    effectorId?: string | null;
     status?: string;
     is_root?: boolean;
     invoked_pathway_name?: string | null;
-    invoked_pathway_id?: number | string | null;
+    invoked_pathway_id?: string | null;
     onDrillDown?: (id: string | number) => void;
     onPlay?: (id: string) => void;
     onStop?: (id: string) => void;

@@ -5,6 +5,9 @@
     flex-direction: column;
     gap: 2px;
     padding: 8px;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
 }
 
 .eff-editor-new-btn {

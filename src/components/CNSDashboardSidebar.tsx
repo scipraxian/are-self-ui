@@ -1,7 +1,7 @@
 import './CNSDashboardSidebar.css';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Edit } from 'lucide-react';
+import { Play, Edit, Plus, Trash2 } from 'lucide-react';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import { apiFetch } from '../api';
 import type { NeuralPathway } from '../types';
@@ -11,6 +11,7 @@ interface CNSDashboardSidebarProps {
     isLoading: boolean;
     searchQuery: string;
     onSearchChange: (query: string) => void;
+    onPathwayCreated?: () => void;
 }
 
 interface PathwayGroup {
@@ -23,9 +24,42 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
     isLoading,
     searchQuery,
     onSearchChange,
+    onPathwayCreated,
 }) => {
     const navigate = useNavigate();
     const { environments, selectedEnvironmentId, selectEnvironment, isLoading: isEnvLoading } = useEnvironment();
+    const [creatingPathway, setCreatingPathway] = useState(false);
+    const [newPathwayName, setNewPathwayName] = useState('');
+
+    const handleCreatePathway = async () => {
+        if (!newPathwayName.trim()) return;
+        try {
+            const res = await apiFetch('/api/v2/neuralpathways/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newPathwayName.trim() }),
+            });
+            if (!res.ok) return;
+            const created = await res.json();
+            setCreatingPathway(false);
+            setNewPathwayName('');
+            if (onPathwayCreated) onPathwayCreated();
+            navigate(`/cns/pathway/${created.id}/edit`);
+        } catch (err) {
+            console.error('Failed to create pathway', err);
+        }
+    };
+
+    const handleDelete = async (e: React.MouseEvent, pathwayId: string, pathwayName: string) => {
+        e.stopPropagation();
+        if (!confirm(`Delete pathway "${pathwayName}"? This cannot be undone.`)) return;
+        try {
+            await apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/`, { method: 'DELETE' });
+            if (onPathwayCreated) onPathwayCreated(); // re-fetch list
+        } catch {
+            // ignore
+        }
+    };
 
     const handleLaunch = async (e: React.MouseEvent, pathwayId: string) => {
         e.stopPropagation();
@@ -98,6 +132,31 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
                 />
             </div>
 
+            {creatingPathway ? (
+                <div className="cns-dash-create-form">
+                    <input
+                        className="cns-dash-search-input"
+                        type="text"
+                        placeholder="Pathway name..."
+                        value={newPathwayName}
+                        onChange={(e) => setNewPathwayName(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCreatePathway();
+                            if (e.key === 'Escape') { setCreatingPathway(false); setNewPathwayName(''); }
+                        }}
+                        autoFocus
+                    />
+                    <div className="cns-dash-create-actions">
+                        <button className="cns-dash-action-btn cns-dash-action-btn--launch" onClick={handleCreatePathway}>Create</button>
+                        <button className="cns-dash-action-btn" onClick={() => { setCreatingPathway(false); setNewPathwayName(''); }}>Cancel</button>
+                    </div>
+                </div>
+            ) : (
+                <button className="cns-dash-new-btn" onClick={() => setCreatingPathway(true)}>
+                    <Plus size={12} /> New Pathway
+                </button>
+            )}
+
             <div className="cns-dash-pathways">
                 {isLoading ? (
                     <div className="cns-dash-loading">Loading pathways...</div>
@@ -131,6 +190,13 @@ export const CNSDashboardSidebar: React.FC<CNSDashboardSidebarProps> = ({
                                             title="Edit Graph"
                                         >
                                             <Edit size={11} />
+                                        </button>
+                                        <button
+                                            className="cns-dash-action-btn cns-dash-action-btn--delete"
+                                            onClick={(e) => handleDelete(e, pw.id, pw.name)}
+                                            title="Delete Pathway"
+                                        >
+                                            <Trash2 size={11} />
                                         </button>
                                     </div>
                                 </div>

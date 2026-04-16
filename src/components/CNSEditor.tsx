@@ -10,10 +10,12 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import type { Neuron } from "../types.ts";
 import { NeuronNode } from './NeuronNode';
+import { BeginPlayNeuronNode } from './BeginPlayNeuronNode';
 import { GateNeuronNode } from './GateNeuronNode';
 import { RetryNeuronNode } from './RetryNeuronNode';
 import { DelayNeuronNode } from './DelayNeuronNode';
 import { FrontalLobeNeuronNode } from './FrontalLobeNeuronNode';
+import { DebugNeuronNode } from './DebugNeuronNode';
 import { EFFECTOR, EFFECTOR_NODE_TYPE, EFFECTOR_DEFAULTS } from './nodeConstants';
 
 interface CNSEditorProps {
@@ -21,7 +23,7 @@ interface CNSEditorProps {
     onDrillDown?: (pathwayId: string) => void;
     onNodeSelect?: (node: any) => void;
     /** Called when a node is double-clicked — navigates to the Effector Editor. */
-    onNodeDoubleClick?: (effectorId: number) => void;
+    onNodeDoubleClick?: (effectorId: string) => void;
     /** Called after a successful launch with the new SpikeTrain ID. */
     onLaunch?: (spikeTrainId: string) => void;
     /**
@@ -35,10 +37,12 @@ interface CNSEditorProps {
 
 const nodeTypes = {
     neuron: NeuronNode,
+    beginPlayNode: BeginPlayNeuronNode,
     gateNode: GateNeuronNode,
     retryNode: RetryNeuronNode,
     delayNode: DelayNeuronNode,
     frontalLobeNode: FrontalLobeNeuronNode,
+    debugNode: DebugNeuronNode,
 };
 
 import { apiFetch } from '../api';
@@ -98,7 +102,7 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
     // CRUD: Connect Edges
     const onConnect = useCallback((params: any) => {
         if (isMonitorMode) return;
-        const axonTypeMap: Record<string, number> = { 'always': 1, 'success': 2, 'failure': 3, 'fail': 3 };
+        const axonTypeMap: Record<string, number> = { 'always': 1, 'flow': 1, 'success': 2, 'failure': 3, 'fail': 3 };
         const requestBody = {
             pathway: pathwayId,
             source: params.source,

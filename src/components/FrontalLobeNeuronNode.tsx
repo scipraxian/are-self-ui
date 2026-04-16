@@ -8,7 +8,7 @@ import './CustomNeuronNodes.css';
 const COLOR = '#a855f7';
 
 interface IdentityDisc {
-    id: number;
+    id: string;
     name: string;
 }
 
@@ -42,7 +42,7 @@ export const FrontalLobeNeuronNode = ({ data, id }: { data: FrontalLobeNodeData;
     const discVal = context.identity_disc || '';
 
     return (
-        <div className={`custom-node${ro ? ' custom-node--readonly' : ''}`}>
+        <div className={`custom-node custom-node--frontal-lobe${ro ? ' custom-node--readonly' : ''}`}>
             <div className="custom-node-header" style={{ background: COLOR }}>
                 <div className="custom-node-header-left">
                     <Brain size={16} className="custom-node-header-icon" color="#fff" />

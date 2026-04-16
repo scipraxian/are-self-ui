@@ -55,7 +55,7 @@ export function PFCEditPage() {
     const [items, setItems] = useState<PFCAgileItem[]>([]);
     const [statuses, setStatuses] = useState<PFCItemStatus[]>([]);
     const [environments, setEnvironments] = useState<{id: string, name: string}[]>([]);
-    const [identityDiscs, setIdentityDiscs] = useState<{id: number, name: string}[]>([]);
+    const [identityDiscs, setIdentityDiscs] = useState<{id: string, name: string}[]>([]);
     const [allTags, setAllTags] = useState<PFCTag[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [localData, setLocalData] = useState<PFCAgileItem | null>(null);

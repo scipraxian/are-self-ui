@@ -488,10 +488,15 @@ Each maps to a fixture-defined effector PK that is stable and can be depended up
 ### Architecture
 
 **Constants file:** `src/components/nodeConstants.ts` — single source of truth for:
-- `EFFECTOR` — canonical PK constants (BEGIN_PLAY=1, LOGIC_GATE=5, LOGIC_RETRY=6, LOGIC_DELAY=7, FRONTAL_LOBE=8, DEBUG=9)
-- `EFFECTOR_NODE_TYPE` — maps PK → ReactFlow node type string (e.g., 5 → 'gateNode')
-- `EFFECTOR_STYLE` — maps PK → `{color, label}` for visual identity
-- `EFFECTOR_DEFAULTS` — maps PK → default NeuronContext key/value pairs posted on drop
+- `EFFECTOR` — canonical UUID constants (BEGIN_PLAY, LOGIC_GATE, LOGIC_RETRY, LOGIC_DELAY, FRONTAL_LOBE, DEBUG) mirrored from `central_nervous_system.models.Effector`
+- `EFFECTOR_NODE_TYPE` — maps UUID → ReactFlow node type string (e.g., LOGIC_GATE UUID → 'gateNode')
+- `EFFECTOR_STYLE` — maps UUID → `{color, label}` for visual identity
+- `EFFECTOR_DEFAULTS` — maps UUID → default NeuronContext key/value pairs posted on drop
+
+**All CNS entity IDs are UUIDs** (string type in TypeScript). Neuron, Effector, NeuralPathway, Spike,
+SpikeTrain, Axon, EffectorContext, Executable, ExecutableArgument, ExecutableSwitch — all use
+`UUIDIdMixin` on the backend. The only integer PKs remaining are: `SpikeStatus`, `SpikeTrainStatus`,
+`AxonType`, `CNSDistributionMode`, and `CNSTag`.
 
 **Shared hook:** `src/components/useNeuronContext.ts` — fetches and edits NeuronContext for a neuron.
 Used by all custom nodes. Pattern: fetch from `/api/v1/neurons/{id}/inspector_details/` on mount,
@@ -504,19 +509,21 @@ port layout matching existing NeuronNode handle sizes. Uses `--readonly` modifie
 
 ### Node Components
 
-| Component | Effector PK | Color | Icon | Editable Fields |
-|-----------|-------------|-------|------|-----------------|
-| `GateNeuronNode.tsx` | 5 | Teal (#06b6d4) | GitBranch | gate_key (axoplasm), gate_operator, gate_value |
-| `RetryNeuronNode.tsx` | 6 | Amber (#f59e0b) | RotateCw | max_retries, retry_delay (NOT delay) |
-| `DelayNeuronNode.tsx` | 7 | Indigo (#6366f1) | Clock | delay (NOT retry_delay) |
-| `FrontalLobeNeuronNode.tsx` | 8 | Purple (#a855f7) | Brain | identity_disc (select), prompt (textarea) |
+| Component | Effector UUID const | Color | Icon | Editable Fields |
+|-----------|---------------------|-------|------|-----------------|
+| `BeginPlayNeuronNode.tsx` | BEGIN_PLAY | Red (#ef4444) | Play | (root node, launch button) |
+| `GateNeuronNode.tsx` | LOGIC_GATE | Teal (#06b6d4) | GitBranch | gate_key (axoplasm), gate_operator, gate_value |
+| `RetryNeuronNode.tsx` | LOGIC_RETRY | Amber (#f59e0b) | RotateCw | max_retries, retry_delay (NOT delay) |
+| `DelayNeuronNode.tsx` | LOGIC_DELAY | Indigo (#6366f1) | Clock | delay (NOT retry_delay) |
+| `FrontalLobeNeuronNode.tsx` | FRONTAL_LOBE | Purple (#a855f7) | Brain | identity_disc (select), prompt (textarea) |
+| `DebugNeuronNode.tsx` | DEBUG | Red (#ef4444) | Bug | (shows context entries) |
 
 ### Type Resolution
 
-`CNSEditor.tsx` resolves node types via `EFFECTOR_NODE_TYPE[neuron.effector]`, falling back to
-generic `'neuron'` type. This replaces the old executable slug matching. On drop, default context
-values from `EFFECTOR_DEFAULTS` are POSTed to `/api/v1/node-contexts/` so new logic nodes start
-with sensible defaults (e.g., gate_operator='exists', max_retries='3').
+`CNSEditor.tsx` resolves node types via `EFFECTOR_NODE_TYPE[neuron.effector]` (UUID string lookup),
+falling back to generic `'neuron'` type. On drop, default context values from `EFFECTOR_DEFAULTS`
+are POSTed to `/api/v1/node-contexts/` so new logic nodes start with sensible defaults
+(e.g., gate_operator='exists', max_retries='3').
 
 ### Monitor View
 
@@ -533,8 +540,8 @@ fires for every spike globally.
 ### Backend Mirror
 
 Python constants in `central_nervous_system/models.py` (`Effector.BEGIN_PLAY`, `.LOGIC_GATE`, etc.)
-mirror the TypeScript constants. Fixture PKs are stable — never change an existing canonical PK.
-The Frontal Lobe was moved from PK 171 to PK 8 in Session 5 for consistency with the 5-8 range.
+are UUIDs that mirror the TypeScript constants in `nodeConstants.ts`. These are fixture-defined and
+stable — never change an existing canonical UUID.
 
 ## Dependencies
 - `react-force-graph-3d` + `three` — 3D force graph (Frontal Lobe)

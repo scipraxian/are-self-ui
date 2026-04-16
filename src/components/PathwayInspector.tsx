@@ -1,6 +1,6 @@
 import "./PathwayInspector.css";
 import { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Download, Settings } from 'lucide-react';
 import { apiFetch } from '../api';
 
 interface PathwayInspectorProps {
@@ -24,6 +24,7 @@ export const PathwayInspector = ({ pathwayId }: PathwayInspectorProps) => {
     const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
     const [isLoadingEnvs, setIsLoadingEnvs] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSampling, setIsSampling] = useState(false);
 
     // Fetch pathway details
     useEffect(() => {
@@ -104,6 +105,35 @@ export const PathwayInspector = ({ pathwayId }: PathwayInspectorProps) => {
         }
     };
 
+    const handleSamplePathway = async () => {
+        if (!pathwayId) return;
+        setIsSampling(true);
+        try {
+            const res = await apiFetch(
+                `/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/sample/`
+            );
+            if (!res.ok) throw new Error('Sample failed');
+
+            const blob = await res.blob();
+            const disposition = res.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="(.+?)"/);
+            const filename = match?.[1] || 'pathway_sample.json';
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Failed to sample pathway:', err);
+        } finally {
+            setIsSampling(false);
+        }
+    };
+
     if (!details) {
         return <div className="pathway-inspector-loading">Loading pathway...</div>;
     }
@@ -114,6 +144,14 @@ export const PathwayInspector = ({ pathwayId }: PathwayInspectorProps) => {
                 <div className="pathway-inspector-header-content">
                     <Settings size={14} />
                     <span className="pathway-inspector-title">{details.name}</span>
+                    <button
+                        className="pathway-inspector-sample-btn"
+                        onClick={handleSamplePathway}
+                        disabled={isSampling}
+                        title="Sample pathway as fixture JSON"
+                    >
+                        <Download size={14} />
+                    </button>
                 </div>
             </div>
 

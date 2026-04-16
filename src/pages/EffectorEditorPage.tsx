@@ -11,14 +11,14 @@ import './EffectorEditorPage.css';
 /* ------------------------------------------------------------------ */
 
 interface EffectorLight {
-    id: number;
+    id: string;
     name: string;
     description: string;
     distribution_mode: number;
 }
 
 interface ExecutableDetail {
-    id: number;
+    id: string;
     name: string;
     description: string;
     executable: string;
@@ -30,22 +30,22 @@ interface ExecutableDetail {
 }
 
 interface SwitchDetail {
-    id: number;
+    id: string;
     name: string;
     flag: string;
     value: string;
 }
 
 interface ArgAssignment {
-    id: number;
+    id: string;
     order: number;
-    argument: number;
-    argument_detail: { id: number; name: string; argument: string };
+    argument: string;
+    argument_detail: { id: string; name: string; argument: string };
 }
 
 interface ContextEntry {
-    id: number;
-    effector: number;
+    id: string;
+    effector: string;
     key: string;
     value: string;
 }
@@ -57,30 +57,30 @@ interface DistributionMode {
 }
 
 interface ArgumentDef {
-    id: number;
+    id: string;
     name: string;
     argument: string;
 }
 
 interface EffectorFull {
-    id: number;
+    id: string;
     name: string;
     description: string;
-    executable: number;
+    executable: string;
     executable_detail: ExecutableDetail;
-    switches: number[];
+    switches: string[];
     switches_detail: SwitchDetail[];
     distribution_mode: number;
     distribution_mode_detail: DistributionMode;
     argument_assignments: ArgAssignment[];
     context_entries: ContextEntry[];
-    tags: { id: number; name: string }[];
+    tags: { id: string; name: string }[];
     is_favorite: boolean;
     rendered_full_command: string[];
 }
 
 interface ExecutableLight {
-    id: number;
+    id: string;
     name: string;
     executable: string;
 }
@@ -96,8 +96,8 @@ export function EffectorEditorPage() {
 
     // List state
     const [effectors, setEffectors] = useState<EffectorLight[]>([]);
-    const [selectedId, setSelectedId] = useState<number | null>(
-        routeEffectorId ? Number(routeEffectorId) : null
+    const [selectedId, setSelectedId] = useState<string | null>(
+        routeEffectorId ?? null
     );
 
     // Detail state
@@ -105,7 +105,7 @@ export function EffectorEditorPage() {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [distributionMode, setDistributionMode] = useState<number>(1);
-    const [executableId, setExecutableId] = useState<number>(1);
+    const [executableId, setExecutableId] = useState<string>('');
 
     // Lookup data
     const [distributionModes, setDistributionModes] = useState<DistributionMode[]>([]);
@@ -126,10 +126,10 @@ export function EffectorEditorPage() {
 
     // Add-argument forms
     const [addingExeArg, setAddingExeArg] = useState(false);
-    const [newExeArgId, setNewExeArgId] = useState<number>(0);
+    const [newExeArgId, setNewExeArgId] = useState<string>('');
     const [newExeArgOrder, setNewExeArgOrder] = useState<number>(10);
     const [addingEffArg, setAddingEffArg] = useState(false);
-    const [newEffArgId, setNewEffArgId] = useState<number>(0);
+    const [newEffArgId, setNewEffArgId] = useState<string>('');
     const [newEffArgOrder, setNewEffArgOrder] = useState<number>(10);
 
     // New argument creation
@@ -162,7 +162,7 @@ export function EffectorEditorPage() {
     // Sync route param
     useEffect(() => {
         if (routeEffectorId) {
-            setSelectedId(Number(routeEffectorId));
+            setSelectedId(routeEffectorId);
         }
     }, [routeEffectorId]);
 
@@ -277,7 +277,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleExecutableChange = async (newExeId: number) => {
+    const handleExecutableChange = async (newExeId: string) => {
         if (!detail) return;
         setExecutableId(newExeId);
         try {
@@ -337,7 +337,7 @@ export function EffectorEditorPage() {
     /* -------------------------------------------------------------- */
 
     const handleAddExeArgAssignment = async () => {
-        if (!detail?.executable_detail || !newExeArgId) return;
+        if (!detail?.executable_detail || !newExeArgId || newExeArgId === '') return;
         try {
             const res = await apiFetch('/api/v2/executable-argument-assignments/', {
                 method: 'POST',
@@ -350,7 +350,7 @@ export function EffectorEditorPage() {
             });
             if (!res.ok) return;
             setAddingExeArg(false);
-            setNewExeArgId(0);
+            setNewExeArgId('');
             setNewExeArgOrder(10);
             await fetchDetail(detail.id);
         } catch (err) {
@@ -358,7 +358,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleDeleteExeArgAssignment = async (assignmentId: number) => {
+    const handleDeleteExeArgAssignment = async (assignmentId: string) => {
         if (!detail) return;
         try {
             await apiFetch(`/api/v2/executable-argument-assignments/${assignmentId}/`, { method: 'DELETE' });
@@ -368,7 +368,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleReorderExeArg = async (assignmentId: number, newOrder: number) => {
+    const handleReorderExeArg = async (assignmentId: string, newOrder: number) => {
         if (!detail) return;
         try {
             await apiFetch(`/api/v2/executable-argument-assignments/${assignmentId}/`, {
@@ -387,7 +387,7 @@ export function EffectorEditorPage() {
     /* -------------------------------------------------------------- */
 
     const handleAddEffArgAssignment = async () => {
-        if (!detail || !newEffArgId) return;
+        if (!detail || !newEffArgId || newEffArgId === '') return;
         try {
             const res = await apiFetch('/api/v2/effector-argument-assignments/', {
                 method: 'POST',
@@ -400,7 +400,7 @@ export function EffectorEditorPage() {
             });
             if (!res.ok) return;
             setAddingEffArg(false);
-            setNewEffArgId(0);
+            setNewEffArgId('');
             setNewEffArgOrder(10);
             await fetchDetail(detail.id);
         } catch (err) {
@@ -408,7 +408,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleDeleteEffArgAssignment = async (assignmentId: number) => {
+    const handleDeleteEffArgAssignment = async (assignmentId: string) => {
         if (!detail) return;
         try {
             await apiFetch(`/api/v2/effector-argument-assignments/${assignmentId}/`, { method: 'DELETE' });
@@ -418,7 +418,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleReorderEffArg = async (assignmentId: number, newOrder: number) => {
+    const handleReorderEffArg = async (assignmentId: string, newOrder: number) => {
         if (!detail) return;
         try {
             await apiFetch(`/api/v2/effector-argument-assignments/${assignmentId}/`, {
@@ -489,7 +489,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleContextDelete = async (entryId: number) => {
+    const handleContextDelete = async (entryId: string) => {
         try {
             await apiFetch(`/api/v2/effector-contexts/${entryId}/`, { method: 'DELETE' });
             setContextEntries(prev => prev.filter(e => e.id !== entryId));
@@ -507,7 +507,7 @@ export function EffectorEditorPage() {
             const res = await apiFetch('/api/v2/effectors/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'New Effector', executable: 1, distribution_mode: 1 }),
+                body: JSON.stringify({ name: 'New Effector', executable: '974ed732-6f2d-47f4-9482-18d17c73086e', distribution_mode: 1 }),
             });
             if (!res.ok) return;
             const created = await res.json();
@@ -533,7 +533,7 @@ export function EffectorEditorPage() {
         }
     };
 
-    const handleSelectEffector = (id: number) => {
+    const handleSelectEffector = (id: string) => {
         setSelectedId(id);
         navigate(`/cns/effector/${id}/edit`, { replace: true });
     };
@@ -543,17 +543,17 @@ export function EffectorEditorPage() {
     /* -------------------------------------------------------------- */
 
     const renderArgSelector = (
-        selectedArgId: number,
-        onSelectArg: (id: number) => void,
+        selectedArgId: string,
+        onSelectArg: (id: string) => void,
     ) => (
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <select
                 className="eff-editor-select"
                 value={selectedArgId}
-                onChange={(e) => onSelectArg(Number(e.target.value))}
+                onChange={(e) => onSelectArg(e.target.value)}
                 style={{ flex: 1 }}
             >
-                <option value={0}>Select argument...</option>
+                <option value="">Select argument...</option>
                 {allArguments.map(a => (
                     <option key={a.id} value={a.id}>{a.name} — {a.argument}</option>
                 ))}
@@ -574,12 +574,12 @@ export function EffectorEditorPage() {
 
     const renderArgTable = (
         assignments: ArgAssignment[],
-        onDelete: (id: number) => Promise<void>,
-        onReorder: (id: number, newOrder: number) => Promise<void>,
+        onDelete: (id: string) => Promise<void>,
+        onReorder: (id: string, newOrder: number) => Promise<void>,
         addingState: boolean,
         setAddingState: (v: boolean) => void,
-        selectedArgId: number,
-        setSelectedArgId: (v: number) => void,
+        selectedArgId: string,
+        setSelectedArgId: (v: string) => void,
         orderValue: number,
         setOrderValue: (v: number) => void,
         onAdd: () => void,
@@ -828,7 +828,7 @@ export function EffectorEditorPage() {
                 <select
                     className="eff-editor-select"
                     value={executableId}
-                    onChange={(e) => handleExecutableChange(Number(e.target.value))}
+                    onChange={(e) => handleExecutableChange(e.target.value)}
                 >
                     {allExecutables.map(exe => (
                         <option key={exe.id} value={exe.id}>{exe.name}</option>

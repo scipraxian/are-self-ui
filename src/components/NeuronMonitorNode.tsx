@@ -1,19 +1,19 @@
 import './NeuronMonitorNode.css';
 import { Handle, Position } from 'reactflow';
-import { Network, GitBranch, RotateCw, Clock, Brain } from 'lucide-react';
-import { EFFECTOR_STYLE } from './nodeConstants';
+import { Network, Play, GitBranch, RotateCw, Clock, Brain, Bug } from 'lucide-react';
+import { EFFECTOR, EFFECTOR_STYLE } from './nodeConstants';
 import type { Spike } from '../types';
 
 interface NeuronMonitorData {
     label: string;
     effectorName: string | null;
-    effectorId?: number | null;
+    effectorId?: string | null;
     is_root?: boolean;
     invoked_pathway_name?: string | null;
-    invoked_pathway_id?: number | string | null;
+    invoked_pathway_id?: string | null;
     spikeStatus: 'unrun' | 'running' | 'success' | 'failed' | 'pending';
     spike: Spike | null;
-    spikeId?: number;
+    spikeId?: string;
 }
 
 const statusClasses: Record<string, string> = {
@@ -25,11 +25,13 @@ const statusClasses: Record<string, string> = {
 };
 
 /** Pick the right icon component for a known effector type */
-const EFFECTOR_ICON: Record<number, typeof GitBranch> = {
-    5: GitBranch,   // Gate
-    6: RotateCw,    // Retry
-    7: Clock,       // Delay
-    8: Brain,       // Frontal Lobe
+const EFFECTOR_ICON: Record<string, typeof GitBranch> = {
+    [EFFECTOR.BEGIN_PLAY]: Play,
+    [EFFECTOR.LOGIC_GATE]: GitBranch,
+    [EFFECTOR.LOGIC_RETRY]: RotateCw,
+    [EFFECTOR.LOGIC_DELAY]: Clock,
+    [EFFECTOR.FRONTAL_LOBE]: Brain,
+    [EFFECTOR.DEBUG]: Bug,
 };
 
 function formatDuration(created: string, modified: string): string {

@@ -9,26 +9,26 @@ interface CNSEditorPaletteProps {
 }
 
 interface LibraryItem {
-    id: number | string;
+    id: string;
     name: string;
     category: string;
     is_book?: boolean;
 }
 
-/** Effector PKs that belong to the Logic group. */
-const LOGIC_EFFECTOR_IDS: ReadonlySet<number> = new Set([
+/** Effector UUIDs that belong to the Logic group. */
+const LOGIC_EFFECTOR_IDS: ReadonlySet<string> = new Set([
     EFFECTOR.LOGIC_GATE,
     EFFECTOR.LOGIC_RETRY,
     EFFECTOR.LOGIC_DELAY,
 ]);
 
-/** Effector PKs that belong to the Reasoning group. */
-const REASONING_EFFECTOR_IDS: ReadonlySet<number> = new Set([
+/** Effector UUIDs that belong to the Reasoning group. */
+const REASONING_EFFECTOR_IDS: ReadonlySet<string> = new Set([
     EFFECTOR.FRONTAL_LOBE,
 ]);
 
 /** System effectors that should be hidden from the palette (users don't drag Begin Play). */
-const HIDDEN_EFFECTOR_IDS: ReadonlySet<number> = new Set([
+const HIDDEN_EFFECTOR_IDS: ReadonlySet<string> = new Set([
     EFFECTOR.BEGIN_PLAY,
 ]);
 
@@ -47,17 +47,17 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
     const query = search.toLowerCase();
     const matchesSearch = (item: LibraryItem) => !query || item.name.toLowerCase().includes(query);
 
-    const effectors = items.filter(i => i.category === 'Spells' && !HIDDEN_EFFECTOR_IDS.has(Number(i.id)) && matchesSearch(i));
+    const effectors = items.filter(i => i.category === 'Spells' && !HIDDEN_EFFECTOR_IDS.has(i.id) && matchesSearch(i));
     const subGraphs = items.filter(i => i.category === 'Sub-Graphs' && matchesSearch(i));
 
-    const logicNodes = effectors.filter(i => LOGIC_EFFECTOR_IDS.has(Number(i.id)));
-    const reasoningNodes = effectors.filter(i => REASONING_EFFECTOR_IDS.has(Number(i.id)));
+    const logicNodes = effectors.filter(i => LOGIC_EFFECTOR_IDS.has(i.id));
+    const reasoningNodes = effectors.filter(i => REASONING_EFFECTOR_IDS.has(i.id));
     const otherNodes = effectors.filter(i =>
-        !LOGIC_EFFECTOR_IDS.has(Number(i.id)) && !REASONING_EFFECTOR_IDS.has(Number(i.id))
+        !LOGIC_EFFECTOR_IDS.has(i.id) && !REASONING_EFFECTOR_IDS.has(i.id)
     );
 
     const renderItem = (item: LibraryItem) => {
-        const style = EFFECTOR_STYLE[Number(item.id)];
+        const style = EFFECTOR_STYLE[item.id];
         const accentColor = style?.color;
 
         return (
@@ -65,7 +65,7 @@ export const CNSEditorPalette = ({ pathwayId, onBack }: CNSEditorPaletteProps) =
                 draggable
                 onDragStart={(e) => {
                     const isSubGraph = item.category === 'Sub-Graphs';
-                    e.dataTransfer.setData('application/reactflow', item.id.toString());
+                    e.dataTransfer.setData('application/reactflow', item.id);
                     e.dataTransfer.setData('application/reactflow-type', isSubGraph ? 'subgraph' : 'effector');
                     e.dataTransfer.effectAllowed = 'move';
                 }}

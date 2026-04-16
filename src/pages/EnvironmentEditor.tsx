@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Settings, Zap } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
@@ -23,6 +24,7 @@ interface ContextKey {
 }
 
 export function EnvironmentEditor() {
+    const navigate = useNavigate();
     const { setCrumbs } = useBreadcrumbs();
     const { environments, selectEnvironment, refreshEnvironments } = useEnvironment();
 
@@ -301,6 +303,14 @@ export function EnvironmentEditor() {
                     {env.selected && <span className="env-editor-list-item-active-badge">ACTIVE</span>}
                 </div>
             ))}
+            <div className="env-editor-nav-links">
+                <button
+                    className="env-editor-nav-link"
+                    onClick={() => navigate('/cns/effector')}
+                >
+                    <Zap size={13} /> Effectors
+                </button>
+            </div>
         </div>
     );
 

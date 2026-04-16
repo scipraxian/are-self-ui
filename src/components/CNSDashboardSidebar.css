@@ -176,3 +176,40 @@
     color: #86efac;
     border-color: rgba(74, 222, 128, 0.4);
 }
+
+.cns-dash-action-btn--delete:hover {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.cns-dash-new-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.cns-dash-new-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.cns-dash-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cns-dash-create-actions {
+    display: flex;
+    gap: 6px;
+}

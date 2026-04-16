@@ -157,7 +157,7 @@ export interface GraphLink {
 // --- CNS GRAPH EDITOR TYPES ---
 
 export interface CNSEffector {
-    id: number;
+    id: string;
     name: string;
     category: string;
     is_book?: boolean;
@@ -172,11 +172,11 @@ export interface CNSContextRow {
 }
 
 export interface CNSNeuron {
-    id: number | string;
+    id: string;
     title: string;
     x: number;
     y: number;
-    effector_id: number | null;
+    effector_id: string | null;
     is_root: boolean;
     has_override: boolean;
     invoked_pathway_id?: string | null;
@@ -184,8 +184,8 @@ export interface CNSNeuron {
 }
 
 export interface CNSWire {
-    from_node_id: number | string;
-    to_node_id: number | string;
+    from_node_id: string;
+    to_node_id: string;
     status_id: 'flow' | 'success' | 'fail';
 }
 
@@ -199,8 +199,8 @@ export interface Spike {
     id: string;
     status: number;
     status_name: string;
-    neuron: number;
-    effector: number;
+    neuron: string;
+    effector: string | null;
     effector_name: string;
     created: string;
     modified: string;
@@ -233,12 +233,12 @@ export interface SpikeTrain {
 }
 
 export interface CNSTag {
-    id: number;
+    id: string;
     name: string;
 }
 
 export interface Effector {
-    id: number;
+    id: string;
     name: string;
     description: string;
     distribution_mode: string;
@@ -256,9 +256,9 @@ export interface NeuralPathway {
 }
 
 export interface Neuron {
-    id: number;
-    pathway: number;
-    effector: number | null;
+    id: string;
+    pathway: string;
+    effector: string | null;
     effector_name: string | null;
     invoked_pathway: string | null;
     invoked_pathway_name: string | null;
@@ -271,10 +271,10 @@ export interface Neuron {
 }
 
 export interface Axon {
-    id: number;
-    pathway: number;
-    source: number;
-    target: number;
+    id: string;
+    pathway: string;
+    source: string;
+    target: string;
     type: number;
     type_name: string;
 }
@@ -295,8 +295,8 @@ export interface PFCAgileItem {
     complexity?: number;
     priority?: number;
     tags: { id: number; name: string }[];
-    owning_disc: { id: number; name: string } | null;
-    previous_owners?: { id: number; name: string }[];
+    owning_disc: { id: string; name: string } | null;
+    previous_owners?: { id: string; name: string }[];
     parent_name?: string;
     parent_id?: string;
     environment?: { id: string; name: string } | null;
