@@ -1,0 +1,97 @@
+.pathway-inspector-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+.pathway-inspector-loading {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    font-style: italic;
+    padding: 16px;
+}
+
+.pathway-inspector-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.pathway-inspector-header-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pathway-inspector-header-content > svg {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.pathway-inspector-title {
+    font-family: Outfit, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #f8fafc;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pathway-inspector-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.pathway-inspector-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pathway-inspector-label {
+    font-family: Outfit, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.pathway-inspector-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 8px;
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.pathway-inspector-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.pathway-inspector-override {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(250, 204, 21, 0.55);
+    background: rgba(250, 204, 21, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.pathway-inspector-override-badge {
+    color: #facc15;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}

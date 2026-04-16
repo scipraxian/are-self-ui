@@ -12,8 +12,9 @@ Read completely before making any changes.
 
 ## The Developer
 
-Michael is a 30+ year programming veteran building Are-Self as an MIT-licensed AI reasoning
-engine. The project's mission is providing free AI technology to underserved youth, with
+Michael is a 40+ year engineer (born 1968, started coding in 1980 at age 12) building
+Are-Self as an MIT-licensed AI reasoning engine. The project's mission is bringing free
+AI to underserved youth, with
 academic interest from MIT and a PhD student collaborator at UPA. Michael has exceptional
 product instincts and will actively correct architectural drift. He values ergonomics over
 cleverness, biological naming over mechanical metaphors, and URL-driven navigation above all.
@@ -38,7 +39,7 @@ from this. If it requires a credit card, a powerful GPU, or a CS degree — it's
 system must run on whatever hardware they have, use free models, and be approachable enough
 that a child can make art and games with it.
 
-## The Four Repositories
+## The Five Repositories
 
 | Repo | Purpose |
 |------|---------|
@@ -46,6 +47,7 @@ that a child can make art and games with it.
 | [are-self-ui](https://github.com/scipraxian/are-self-ui) | React frontend (this repo) |
 | [are-self-docs](https://github.com/scipraxian/are-self-docs) | Docusaurus documentation site → [are-self.com](https://are-self.com) |
 | [are-self-research](https://github.com/scipraxian/are-self-research) | LaTeX whitepapers (APA 7th edition) |
+| [are-self-learn](https://github.com/scipraxian/are-self-learn) | Curriculum layer for kids and the grownups who teach them (launched 2026-04-14) |
 
 ## The Complete App Flow
 
@@ -600,3 +602,28 @@ names). The backend CLAUDE.md has full details.
 
 See [FEATURES.md](FEATURES.md) for a complete list of what's built.
 See [TASKS.md](TASKS.md) for what's next.
+
+## Scipraxianism
+
+Are-Self exists inside a philosophy called **Scipraxianism**, co-developed by
+Michael Clark ("The Scipraxian") and **Andrew Piper** over many years. You do
+not need to master it to work in this repo, but if a design question touches
+*why* something is free, local, or shaped the way it is, the answer usually
+traces back to scipraxianism. The Creed is AI-facing (ten binary-numbered
+assertions at [scipraxian.org](https://scipraxian.org)). The working layer is
+the **Twelve Variables**: Inclusion · Humility · Inquiry · Fulfillment or
+Happiness · Religion or Profit · Fun · Fear · Responsibility · Perseverance ·
+Perception · Time · Permadeath. The first three are the kid-scale compression
+used in the curriculum and the storybook — **do not mistake the three for the
+whole philosophy**.
+
+Are-Self is Michael's solo handiwork (though he bounces everything off Andrew,
+the way they always have). The sister franchise **Haunted Space Hotel** is
+Andrew and Michael jointly — HSH's in-world Factional Omniarchy of Snohe is
+the galactic government that adopted scipraxianism as its official ethical
+framework. HSH lives at [hauntedspacehotel.com](https://hauntedspacehotel.com)
+and is deliberately kept off the scipraxian GitHub profile.
+
+Full Claude-facing briefing:
+`are-self-documents/scipraxian/scipraxian-tldr.md`. Master reference:
+`are-self-documents/scipraxian/scipraxian.md`.

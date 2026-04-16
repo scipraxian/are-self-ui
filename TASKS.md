@@ -65,6 +65,54 @@ subscription event — so a terminal save also rehits celery-workers and beat fo
 
 ## Open Tasks
 
+- [ ] **ReasoningGraph3D — large sessions take forever to load.** `ReasoningGraph3D.tsx:159`
+  hits `/api/v1/reasoning_sessions/{id}/graph_data/` which returns the entire session in one
+  blob: every turn (with full `model_usage_record.response_payload`), every engram, every
+  tool call, and the conclusion. For long sessions that payload is enormous and the whole
+  UI waits on one request. Knee-jerk fix is a "next turn / next turn / next turn" pull that
+  fills the graph in as the page loads — **but the backend does not currently support this.**
+  Endpoint audit (see are-self-api `frontal_lobe/api.py:60-78` + `api.py:547-570`):
+    - `graph_data` action takes no query params — no `since_turn`, `offset`, or `limit`.
+    - `/api/v2/reasoning_turns/?session={id}` exists and filters by session, but has NO
+      pagination class configured and is ordered `-created`.
+    - No standalone endpoints for `SessionConclusion` or `ToolCall` — they only come nested
+      in `graph_data` / `ReasoningTurnSerializer`.
+    - Engrams DO have their own endpoint (`/api/v2/engrams/`).
+  **Decided approach (April 13, 2026):** map-reduce at turn-completion, stream via cursor,
+  full payload only on explicit click.
+    1. **Pre-compute a refined "turn summary" when the turn closes (the map-reduce).** When
+       a `ReasoningTurn` transitions to terminal status, the backend computes and persists
+       the small stuff the frontend actually needs to draw the graph and the chat row:
+       `latest_thought` (extracted from `response_payload` via the same logic currently in
+       `ReasoningGraph3D.extractThoughtFromUsageRecord`), tool call one-liners (name,
+       status, compact action summary), duration, token/cost totals. Store on the turn row
+       (new fields) or a 1:1 `ReasoningTurnDigest` sidecar — sidecar is probably cleaner
+       so the digest schema can evolve without migrating the fat table. Do the extraction
+       server-side once, not on every frontend read.
+    2. **`graph_data` reads the digest, not the payload.** Serializer pulls from the
+       pre-computed fields. Response is near-instant because there's no JSON-parse-and-
+       extract work per turn per request. The fat `response_payload` is no longer in the
+       list response at all.
+    3. **Add `?since_turn_number=N` to `graph_data`** so the frontend can pull "next turn"
+       style as the session grows, instead of refetching everything on each dendrite ping.
+       Pairs cleanly with the existing `ReasoningTurn` dendrite subscription.
+    4. **Full payload is one explicit click away.** Chat views and the right-panel
+       inspector fetch full per-turn detail via `/api/v2/reasoning_turns/{id}/` (already
+       exists as ReadOnly) when the user actually opens a turn. **Do not cache it on the
+       session object.** Every turn's payload sitting in memory for a session the user is
+       scrolling through is exactly the bloat we're avoiding.
+    5. **Backfill for existing sessions.** A management command that walks existing turns
+       and computes the digest retroactively, so this isn't only a forward-looking fix.
+       Worth gating the serializer behind "digest present? use it : fall back to on-the-fly
+       extraction" during the rollout window.
+  Touch points on the UI side: `ReasoningGraph3D.tsx`, `FrontalLobeView.tsx`,
+  `FrontalLobeDetail.tsx`, `ReasoningPanels.tsx`, `SessionChat.tsx` — all currently read
+  `response_payload` out of the graph blob. They'll need to switch to per-turn fetch when
+  the inspector/chat opens a specific turn.
+  Also fold in the `/api/v1/` → `/api/v2/` migration for this file while we're in there
+  (listed below). **Paired with backend task — don't start until the slim serializer and
+  `since_turn_number` param land.**
+
 - [ ] **Neural Pathway Graph Editor — right-click context menu.** Demo feedback: "in Unreal you can
   right-click." Add right-click functionality with search of available items (neurons, effectors) for
   adding to the pathway. Backend already supports the item catalog — this is a frontend UX feature.

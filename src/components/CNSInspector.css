@@ -306,3 +306,86 @@ textarea.cnsinspector-context-input {
     color: #94a3b8;
     cursor: not-allowed;
 }
+
+/* Distribution Mode & Environment Sections */
+.cns-inspector-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 8px;
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.cns-inspector-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cns-inspector-mode-section,
+.cns-inspector-env-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cns-inspector-mode-status,
+.cns-inspector-env-override {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.cns-inspector-mode-override {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(250, 204, 21, 0.55);
+    padding: 8px;
+    border-radius: 4px;
+    background: rgba(250, 204, 21, 0.1);
+}
+
+.cns-inspector-mode-override > svg {
+    color: #facc15;
+    flex-shrink: 0;
+}
+
+.cns-inspector-mode-badge {
+    color: #facc15;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.cns-inspector-mode-default {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cns-inspector-mode-inherit {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.cns-inspector-env-override {
+    border: 1px solid rgba(250, 204, 21, 0.55);
+    background: rgba(250, 204, 21, 0.1);
+}
+
+.cns-inspector-env-badge {
+    color: #facc15;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}

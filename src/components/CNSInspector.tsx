@@ -1,6 +1,6 @@
 import "./CNSInspector.css";
 import { type ReactNode, useEffect, useState } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, AlertCircle } from 'lucide-react';
 import { apiFetch } from '../api';
 import type { CNSContextRow } from "../types.ts";
 
@@ -17,6 +17,21 @@ interface NodeDetails {
     name: string;
     description: string;
     context_matrix: CNSContextRow[];
+    distribution_mode?: string | null;
+    distribution_mode_name?: string | null;
+    environment?: string | null;
+    environment_name?: string | null;
+    effector_distribution_mode_name?: string | null;
+}
+
+interface DistributionMode {
+    id: string;
+    name: string;
+}
+
+interface EnvironmentOption {
+    id: string;
+    name: string;
 }
 
 interface AccordionProps {
@@ -43,6 +58,12 @@ const Accordion = ({ title, variant = 'green', open = false, children, rightElem
 
 export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorProps) => {
     const [details, setDetails] = useState<NodeDetails | null>(null);
+    const [distributionModes, setDistributionModes] = useState<DistributionMode[]>([]);
+    const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
+    const [isLoadingModes, setIsLoadingModes] = useState(false);
+    const [isLoadingEnvs, setIsLoadingEnvs] = useState(false);
+    const [isSavingMode, setIsSavingMode] = useState(false);
+    const [isSavingEnv, setIsSavingEnv] = useState(false);
 
     useEffect(() => {
         if (!node?.id) return;
@@ -60,6 +81,56 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
         };
 
     }, [node?.id]);
+
+    // Fetch distribution modes and environments on mount
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadLookups = async () => {
+            try {
+                setIsLoadingModes(true);
+                setIsLoadingEnvs(true);
+
+                const [modesRes, envsRes] = await Promise.all([
+                    apiFetch('/api/v2/distribution-modes/'),
+                    apiFetch('/api/v2/environments/'),
+                ]);
+
+                if (cancelled) return;
+
+                if (modesRes.ok) {
+                    const data = await modesRes.json();
+                    if (Array.isArray(data)) {
+                        setDistributionModes(data);
+                    } else if (data.results) {
+                        setDistributionModes(data.results);
+                    }
+                }
+
+                if (envsRes.ok) {
+                    const data = await envsRes.json();
+                    if (Array.isArray(data)) {
+                        setEnvironments(data);
+                    } else if (data.results) {
+                        setEnvironments(data.results);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load distribution modes or environments:', err);
+            } finally {
+                if (!cancelled) {
+                    setIsLoadingModes(false);
+                    setIsLoadingEnvs(false);
+                }
+            }
+        };
+
+        loadLookups();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     if (!node) {
         return (
@@ -94,6 +165,60 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
         setDetails(prev => prev ? { ...prev, context_matrix: prev.context_matrix.map(m => m.key === key ? { ...m, source: 'default', value: '' } : m) } : null);
     };
 
+    const handleDistributionModeChange = async (modeId: string | null) => {
+        if (!node?.id) return;
+        setIsSavingMode(true);
+        try {
+            const response = await apiFetch(`/api/v2/neurons/${node.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ distribution_mode: modeId }),
+            });
+
+            if (response.ok) {
+                const updatedData = await response.json();
+                setDetails(prev => prev ? {
+                    ...prev,
+                    distribution_mode: updatedData.distribution_mode ?? null,
+                    distribution_mode_name: updatedData.distribution_mode_name ?? null,
+                } : null);
+            } else {
+                console.error('Failed to update distribution mode');
+            }
+        } catch (err) {
+            console.error('Error updating distribution mode:', err);
+        } finally {
+            setIsSavingMode(false);
+        }
+    };
+
+    const handleEnvironmentChange = async (envId: string | null) => {
+        if (!node?.id) return;
+        setIsSavingEnv(true);
+        try {
+            const response = await apiFetch(`/api/v2/neurons/${node.id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ environment: envId }),
+            });
+
+            if (response.ok) {
+                const updatedData = await response.json();
+                setDetails(prev => prev ? {
+                    ...prev,
+                    environment: updatedData.environment ?? null,
+                    environment_name: updatedData.environment_name ?? null,
+                } : null);
+            } else {
+                console.error('Failed to update environment');
+            }
+        } catch (err) {
+            console.error('Error updating environment:', err);
+        } finally {
+            setIsSavingEnv(false);
+        }
+    };
+
     return (
         <div className="scroll-hidden cns-inspector-root">
             <div className="cns-inspector-body">
@@ -116,6 +241,67 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                     <div className="cns-inspector-description-box">
                         {details.description || 'No specialized purpose defined for this neuron.'}
                     </div>
+
+                    {/* Distribution Mode Section */}
+                    <Accordion
+                        title="DISTRIBUTION MODE"
+                        variant="blue"
+                        open={false}
+                    >
+                        <div className="cns-inspector-mode-section">
+                            <select
+                                className="cns-inspector-select"
+                                value={details.distribution_mode || ''}
+                                onChange={(e) => handleDistributionModeChange(e.target.value || null)}
+                                disabled={isSavingMode || isLoadingModes}
+                            >
+                                <option value="">Inherit from effector</option>
+                                {distributionModes.map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </select>
+
+                            <div className="cns-inspector-mode-status">
+                                {details.distribution_mode ? (
+                                    <div className="cns-inspector-mode-override">
+                                        <AlertCircle size={14} />
+                                        <span className="cns-inspector-mode-badge">OVERRIDE: {details.distribution_mode_name}</span>
+                                    </div>
+                                ) : (
+                                    <div className="cns-inspector-mode-default">
+                                        <span className="cns-inspector-mode-inherit">Inherits: {details.effector_distribution_mode_name || 'Default'}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Accordion>
+
+                    {/* Neuron Environment Section */}
+                    <Accordion
+                        title="NEURON ENVIRONMENT"
+                        variant="yellow"
+                        open={false}
+                    >
+                        <div className="cns-inspector-env-section">
+                            <select
+                                className="cns-inspector-select"
+                                value={details.environment || ''}
+                                onChange={(e) => handleEnvironmentChange(e.target.value || null)}
+                                disabled={isSavingEnv || isLoadingEnvs}
+                            >
+                                <option value="">Inherit</option>
+                                {environments.map(e => (
+                                    <option key={e.id} value={e.id}>{e.name}</option>
+                                ))}
+                            </select>
+
+                            {details.environment && (
+                                <div className="cns-inspector-env-override">
+                                    <span className="cns-inspector-env-badge">OVERRIDE: {details.environment_name}</span>
+                                </div>
+                            )}
+                        </div>
+                    </Accordion>
 
                     <Accordion
                         title={`CONTEXT VARIABLES (${details.context_matrix.length})`}

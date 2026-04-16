@@ -4,6 +4,7 @@ import { ThreePanel } from '../components/ThreePanel';
 import { CNSEditorPalette } from '../components/CNSEditorPalette';
 import { CNSEditor } from '../components/CNSEditor';
 import { CNSInspector } from '../components/CNSInspector';
+import { PathwayInspector } from '../components/PathwayInspector';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { apiFetch } from '../api';
 import type { GraphNode } from '../types';
@@ -69,53 +70,57 @@ export function CNSEditPage() {
                 />
             }
             right={
-                <CNSInspector
-                    node={selectedNode}
-                    pathwayId={pathwayId}
-                    onDelete={(id) => {
-                        apiFetch(`/api/v2/neurons/${id}/`, { method: 'DELETE' })
-                            .then(() => {
-                                window.dispatchEvent(
-                                    new CustomEvent('cns-node-deleted', { detail: id })
+                selectedNode ? (
+                    <CNSInspector
+                        node={selectedNode}
+                        pathwayId={pathwayId}
+                        onDelete={(id) => {
+                            apiFetch(`/api/v2/neurons/${id}/`, { method: 'DELETE' })
+                                .then(() => {
+                                    window.dispatchEvent(
+                                        new CustomEvent('cns-node-deleted', { detail: id })
+                                    );
+                                })
+                                .catch(console.error);
+                        }}
+                        onContextChange={async (nodeId, key, value) => {
+                            try {
+                                const searchRes = await apiFetch(
+                                    `/api/v1/node-contexts/?neuron=${nodeId}&key=${key}`
                                 );
-                            })
-                            .catch(console.error);
-                    }}
-                    onContextChange={async (nodeId, key, value) => {
-                        try {
-                            const searchRes = await apiFetch(
-                                `/api/v1/node-contexts/?neuron=${nodeId}&key=${key}`
-                            );
-                            const searchData = await searchRes.json();
-                            const existing =
-                                searchData.results && searchData.results.length > 0
-                                    ? searchData.results[0]
-                                    : null;
+                                const searchData = await searchRes.json();
+                                const existing =
+                                    searchData.results && searchData.results.length > 0
+                                        ? searchData.results[0]
+                                        : null;
 
-                            if (!value) {
-                                if (existing) {
+                                if (!value) {
+                                    if (existing) {
+                                        await apiFetch(`/api/v1/node-contexts/${existing.id}/`, {
+                                            method: 'DELETE',
+                                        });
+                                    }
+                                } else if (existing) {
                                     await apiFetch(`/api/v1/node-contexts/${existing.id}/`, {
-                                        method: 'DELETE',
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ value }),
+                                    });
+                                } else {
+                                    await apiFetch(`/api/v1/node-contexts/`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ neuron: nodeId, key, value }),
                                     });
                                 }
-                            } else if (existing) {
-                                await apiFetch(`/api/v1/node-contexts/${existing.id}/`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ value }),
-                                });
-                            } else {
-                                await apiFetch(`/api/v1/node-contexts/`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ neuron: nodeId, key, value }),
-                                });
+                            } catch (err) {
+                                console.error('Failed to sync context override via REST:', err);
                             }
-                        } catch (err) {
-                            console.error('Failed to sync context override via REST:', err);
-                        }
-                    }}
-                />
+                        }}
+                    />
+                ) : (
+                    <PathwayInspector pathwayId={pathwayId} />
+                )
             }
         />
     );

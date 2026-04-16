@@ -251,6 +251,8 @@ export interface NeuralPathway {
     is_favorite: boolean;
     tags: CNSTag[];
     ui_json: string | NeuronPosition | null;
+    environment?: string | null;
+    environment_name?: string | null;
 }
 
 export interface Neuron {
@@ -262,6 +264,10 @@ export interface Neuron {
     invoked_pathway_name: string | null;
     ui_json: string | NeuronPosition | null;
     is_root: boolean;
+    distribution_mode?: string | null;
+    distribution_mode_name?: string | null;
+    environment?: string | null;
+    environment_name?: string | null;
 }
 
 export interface Axon {
