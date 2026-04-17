@@ -13,7 +13,7 @@ import './HypothalamusPage.css';
 
 /* ── Types ────────────────────────────────────────── */
 
-type NameOrString = string | { name: string; id?: number | string };
+type NameOrString = string | { name: string; id?: string };
 
 interface AIModel {
     id: string;
@@ -21,8 +21,8 @@ interface AIModel {
     description: string | null;
     current_description: string | null;
     enabled: boolean;
-    creator: { id: number; name: string; description?: string } | null;
-    family: { id: number | string; name: string; slug?: string; parent?: number | null } | null;
+    creator: { id: string; name: string; description?: string } | null;
+    family: { id: string; name: string; slug?: string; parent?: string | null } | null;
     parameter_size: string;
     context_length: number;
     mode: string;
@@ -34,9 +34,9 @@ interface AIModel {
 }
 
 interface ModelProvider {
-    id: number;
+    id: string;
     ai_model: string | { id: string; name: string; [key: string]: unknown };
-    provider: { id: number; name: string; key: string };
+    provider: { id: string; name: string; key: string };
     provider_unique_model_id: string;
     is_enabled: boolean;
     rate_limit_counter: number;
@@ -46,31 +46,31 @@ interface ModelProvider {
 }
 
 interface ModelFamily {
-    id: number | string;
+    id: string;
     name: string;
 }
 
 interface FailoverStrategy {
-    id: number | string;
+    id: string;
     name: string;
     steps: FailoverStep[];
 }
 
 interface NestedProvider {
-    id: number;
+    id: string;
     ai_model: { id: string; name: string; [key: string]: unknown } | null;
-    provider: { id: number; name: string; key: string };
+    provider: { id: string; name: string; key: string };
     [key: string]: unknown;
 }
 
 interface SelectionFilter {
-    id: number | string;
+    id: string;
     name: string;
     failover_strategy: FailoverStrategy | null;
     preferred_model: NestedProvider | null;
     local_failover: NestedProvider | null;
     required_capabilities: NameOrString[];
-    banned_providers: (number | string)[];
+    banned_providers: string[];
     banned_provider_names: string[];
     preferred_categories: NameOrString[];
     preferred_tags: NameOrString[];
@@ -78,11 +78,12 @@ interface SelectionFilter {
 }
 
 interface FailoverStep {
-    id: number | string;
+    id: string;
     order: number;
-    failover_type: { id: number | string; name: string; description?: string };
+    failover_type: { id: string; name: string; description?: string };
 }
 
+// IdentityBudget lives in the `identity` Django app (still integer PK), not hypothalamus.
 interface IdentityBudget {
     id: number | string;
     name: string;
@@ -405,8 +406,8 @@ export function HypothalamusPage() {
         setSearchParams(params);
     };
 
-    const selectFilter = (id: string | number) => {
-        setSearchParams({ tab: 'routing', filter: String(id) });
+    const selectFilter = (id: string) => {
+        setSearchParams({ tab: 'routing', filter: id });
     };
 
     const selectBudgetItem = (id: string | number) => {
@@ -484,7 +485,7 @@ export function HypothalamusPage() {
         }
     };
 
-    const handleResetBreaker = async (providerId: number, e?: React.MouseEvent) => {
+    const handleResetBreaker = async (providerId: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
         try {
             const res = await apiFetch(`/api/v2/model-providers/${providerId}/reset_circuit_breaker/`, { method: 'POST' });
@@ -575,7 +576,7 @@ export function HypothalamusPage() {
         }
     };
 
-    const handleToggleProviderEnabled = async (providerId: number) => {
+    const handleToggleProviderEnabled = async (providerId: string) => {
         try {
             const res = await apiFetch(`/api/v2/model-providers/${providerId}/toggle_enabled/`, { method: 'POST' });
             if (!res.ok) console.error('Toggle provider failed', res.status);

@@ -33,6 +33,18 @@ subscription event — so a terminal save also rehits celery-workers and beat fo
 - [ ] **Beat status & spikes via subscription.** `/beat/status/` and `/spikes/?is_active=true`
   should likewise be event-driven — they only change when beat restarts or spikes start/end.
 
+## Recently Done — Hypothalamus UUID propagation (April 17, 2026)
+
+Backend flipped all 28 hypothalamus models to UUID PKs (commit `1e98e303`). Frontend
+type-tightening pass: narrowed `number | string` unions to `string` on all hypothalamus
+ID fields across SelectionFilterEditor, HypothalamusRoutingInspector,
+HypothalamusModelInspector, HypothalamusPage, and IdentitySheet.selection_filter_id.
+Dropped the `Number()` coercion in the RoutingInspector save handler (would have
+`NaN`'d on UUIDs). No SyncStatus lookups existed in UI. Follow-up: 10 pre-existing
+type errors in `EffectorEditorPage.tsx` from the prior CNS UUID migration
+(`fetchDetail(id?: number)` called with a string) still block `npm run build` — out of
+scope for this pass, needs its own fix.
+
 ## Top Priority — PNS Expansion
 
 ## Top Priority — PNS Expansion

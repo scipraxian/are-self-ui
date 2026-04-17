@@ -79,7 +79,7 @@ interface IdentitySheetProps {
 type ActiveTab = 'telemetry' | 'loadout' | 'memories' | 'flight';
 
 interface ModelPreview {
-    model_provider: number | null;
+    model_provider: string | null;
     ai_model_id: string | null;
     model_name: string | null;
     provider_name: string | null;
@@ -91,7 +91,8 @@ interface ModelPreview {
 
 interface IdentityFormState {
     name: string;
-    selection_filter_id: string | number | null;
+    selection_filter_id: string | null;
+    // budget_id maps to IdentityBudget (identity app, integer PK) — not hypothalamus
     budget_id: string | number | null;
     system_prompt_template: string;
     enabled_tool_ids: (string | number)[];
@@ -154,7 +155,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         const base = current as BaseIdentityData;
         const next: IdentityFormState = {
             name: base.name,
-            selection_filter_id: base.selection_filter?.id ?? null,
+            selection_filter_id: base.selection_filter?.id != null ? String(base.selection_filter.id) : null,
             budget_id: base.budget?.id ?? null,
             system_prompt_template: base.system_prompt_template ?? '',
             enabled_tool_ids: (base.enabled_tools ?? []).map(t => t.id),

@@ -4,25 +4,25 @@ import { apiFetch } from '../api';
 import './SelectionFilterEditor.css';
 
 interface SelectionFilter {
-    id: string | number;
+    id: string;
     name: string;
-    failover_strategy?: { id: string | number; name: string } | null;
-    preferred_model?: { id: string | number; provider: { name: string }; ai_model: { name: string } } | null;
-    local_failover?: { id: string | number; provider: { name: string }; ai_model: { name: string } } | null;
-    required_capabilities?: Array<{ id: string | number; name: string }>;
-    banned_providers?: Array<{ id: string | number; name: string }>;
-    preferred_categories?: Array<{ id: string | number; name: string }>;
-    preferred_tags?: Array<{ id: string | number; name: string }>;
-    preferred_roles?: Array<{ id: string | number; name: string }>;
+    failover_strategy?: { id: string; name: string } | null;
+    preferred_model?: { id: string; provider: { name: string }; ai_model: { name: string } } | null;
+    local_failover?: { id: string; provider: { name: string }; ai_model: { name: string } } | null;
+    required_capabilities?: Array<{ id: string; name: string }>;
+    banned_providers?: Array<{ id: string; name: string }>;
+    preferred_categories?: Array<{ id: string; name: string }>;
+    preferred_tags?: Array<{ id: string; name: string }>;
+    preferred_roles?: Array<{ id: string; name: string }>;
 }
 
 interface FailoverStrategy {
-    id: string | number;
+    id: string;
     name: string;
 }
 
 interface AIModelProvider {
-    id: string | number;
+    id: string;
     ai_model: { name: string };
     provider: { name: string };
 }
@@ -34,16 +34,16 @@ interface SelectionFilterEditorProps {
 export const SelectionFilterEditor = ({ onRefresh }: SelectionFilterEditorProps) => {
     const [filters, setFilters] = useState<SelectionFilter[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [savingId, setSavingId] = useState<string | number | null>(null);
+    const [savingId, setSavingId] = useState<string | null>(null);
 
     // Dropdown data
     const [failoverStrategies, setFailoverStrategies] = useState<FailoverStrategy[]>([]);
     const [modelProviders, setModelProviders] = useState<AIModelProvider[]>([]);
-    const [capabilities, setCapabilities] = useState<Array<{ id: string | number; name: string }>>([]);
-    const [providers, setProviders] = useState<Array<{ id: string | number; name: string }>>([]);
-    const [categories, setCategories] = useState<Array<{ id: string | number; name: string }>>([]);
-    const [tags, setTags] = useState<Array<{ id: string | number; name: string }>>([]);
-    const [roles, setRoles] = useState<Array<{ id: string | number; name: string }>>([]);
+    const [capabilities, setCapabilities] = useState<Array<{ id: string; name: string }>>([]);
+    const [providers, setProviders] = useState<Array<{ id: string; name: string }>>([]);
+    const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+    const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
+    const [roles, setRoles] = useState<Array<{ id: string; name: string }>>([]);
 
     // Create form state
     const [showCreate, setShowCreate] = useState(false);
@@ -52,7 +52,7 @@ export const SelectionFilterEditor = ({ onRefresh }: SelectionFilterEditorProps)
     const [createError, setCreateError] = useState<string | null>(null);
 
     // Delete confirm state
-    const [confirmDeleteId, setConfirmDeleteId] = useState<string | number | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Fetch all data
     useEffect(() => {
@@ -125,7 +125,7 @@ export const SelectionFilterEditor = ({ onRefresh }: SelectionFilterEditorProps)
         return () => { cancelled = true; };
     }, []);
 
-    const patchFilter = async (filterId: string | number, payload: Record<string, unknown>) => {
+    const patchFilter = async (filterId: string, payload: Record<string, unknown>) => {
         setSavingId(filterId);
         try {
             const res = await apiFetch(`/api/v2/selection-filters/${filterId}/`, {
@@ -170,7 +170,7 @@ export const SelectionFilterEditor = ({ onRefresh }: SelectionFilterEditorProps)
         }
     };
 
-    const handleDelete = async (filterId: string | number) => {
+    const handleDelete = async (filterId: string) => {
         try {
             const res = await apiFetch(`/api/v2/selection-filters/${filterId}/`, {
                 method: 'DELETE',
@@ -186,7 +186,7 @@ export const SelectionFilterEditor = ({ onRefresh }: SelectionFilterEditorProps)
         }
     };
 
-    const toggleIdInSet = (currentIds: (string | number)[] | undefined, id: string | number) => {
+    const toggleIdInSet = (currentIds: string[] | undefined, id: string) => {
         const current = currentIds ?? [];
         return current.includes(id)
             ? current.filter(x => x !== id)

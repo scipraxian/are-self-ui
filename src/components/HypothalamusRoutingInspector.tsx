@@ -5,35 +5,35 @@ import { apiFetch } from '../api';
 
 /* ── Types ────────────────────────────────────────── */
 
-type NameOrString = string | { name: string; id?: number | string };
+type NameOrString = string | { name: string; id?: string };
 
 interface NestedProvider {
-    id: number;
+    id: string;
     ai_model: { id: string; name: string; [key: string]: unknown } | null;
-    provider: { id: number; name: string; key: string };
+    provider: { id: string; name: string; key: string };
     [key: string]: unknown;
 }
 
 interface FailoverStep {
-    id: number | string;
+    id: string;
     order: number;
-    failover_type: { id: number | string; name: string; description?: string };
+    failover_type: { id: string; name: string; description?: string };
 }
 
 interface FailoverStrategy {
-    id: number | string;
+    id: string;
     name: string;
     steps: FailoverStep[];
 }
 
 interface SelectionFilter {
-    id: number | string;
+    id: string;
     name: string;
     failover_strategy: FailoverStrategy | null;
     preferred_model: NestedProvider | null;
     local_failover: NestedProvider | null;
     required_capabilities: NameOrString[];
-    banned_providers: (number | string)[];
+    banned_providers: string[];
     banned_provider_names: string[];
     preferred_categories: NameOrString[];
     preferred_tags: NameOrString[];
@@ -41,15 +41,15 @@ interface SelectionFilter {
 }
 
 interface ProviderOption {
-    id: number;
+    id: string;
     ai_model: { id: string; name: string } | null;
-    provider: { id: number; name: string; key: string };
+    provider: { id: string; name: string; key: string };
     provider_unique_model_id: string;
     is_enabled: boolean;
 }
 
 interface RefOption {
-    id: number | string;
+    id: string;
     name: string;
 }
 
@@ -62,7 +62,7 @@ export interface RoutingInspectorProps {
 /* ── Helpers ──────────────────────────────────────── */
 
 
-function labelId(v: NameOrString): number | string {
+function labelId(v: NameOrString): string {
     if (typeof v === 'string') return v;
     return v.id ?? v.name;
 }
@@ -89,19 +89,19 @@ export function HypothalamusRoutingInspector({ filter, onClose, onFilterUpdate }
     const [editLocalFailover, setEditLocalFailover] = useState<string>(
         filter.local_failover ? String(filter.local_failover.id) : ''
     );
-    const [editCapabilities, setEditCapabilities] = useState<Set<string | number>>(
+    const [editCapabilities, setEditCapabilities] = useState<Set<string>>(
         new Set(filter.required_capabilities?.map(c => labelId(c)) ?? [])
     );
-    const [editBannedProviders, setEditBannedProviders] = useState<Set<string | number>>(
+    const [editBannedProviders, setEditBannedProviders] = useState<Set<string>>(
         new Set(filter.banned_providers ?? [])
     );
-    const [editCategories, setEditCategories] = useState<Set<string | number>>(
+    const [editCategories, setEditCategories] = useState<Set<string>>(
         new Set(filter.preferred_categories?.map(c => labelId(c)) ?? [])
     );
-    const [editTags, setEditTags] = useState<Set<string | number>>(
+    const [editTags, setEditTags] = useState<Set<string>>(
         new Set(filter.preferred_tags?.map(t => labelId(t)) ?? [])
     );
-    const [editRoles, setEditRoles] = useState<Set<string | number>>(
+    const [editRoles, setEditRoles] = useState<Set<string>>(
         new Set(filter.preferred_roles?.map(r => labelId(r)) ?? [])
     );
 
@@ -177,8 +177,8 @@ export function HypothalamusRoutingInspector({ filter, onClose, onFilterUpdate }
 
     // Toggle helper
     const toggleSet = (
-        setter: React.Dispatch<React.SetStateAction<Set<string | number>>>,
-        id: string | number,
+        setter: React.Dispatch<React.SetStateAction<Set<string>>>,
+        id: string,
     ) => {
         setter(prev => {
             const next = new Set(prev);
@@ -198,10 +198,10 @@ export function HypothalamusRoutingInspector({ filter, onClose, onFilterUpdate }
             const payload: Record<string, unknown> = {};
 
             if (editStrategy) {
-                payload.failover_strategy_id = Number(editStrategy) || editStrategy;
+                payload.failover_strategy_id = editStrategy;
             }
-            payload.preferred_model_id = editPreferredModel ? Number(editPreferredModel) : null;
-            payload.local_failover_id = editLocalFailover ? Number(editLocalFailover) : null;
+            payload.preferred_model_id = editPreferredModel || null;
+            payload.local_failover_id = editLocalFailover || null;
             payload.required_capabilities_ids = [...editCapabilities];
             payload.banned_providers_ids = [...editBannedProviders];
             payload.preferred_categories_ids = [...editCategories];

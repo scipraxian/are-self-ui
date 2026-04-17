@@ -5,15 +5,15 @@ import { apiFetch } from '../api';
 
 /* ── Types ────────────────────────────────────────── */
 
-type NameOrString = string | { name: string; id?: number | string };
+type NameOrString = string | { name: string; id?: string };
 
 interface AIModel {
     id: string;
     name: string;
     enabled: boolean;
     current_description: string | null;
-    creator: { id: number; name: string } | null;
-    family: { id: number | string; name: string } | null;
+    creator: { id: string; name: string } | null;
+    family: { id: string; name: string } | null;
     parameter_size: string;
     context_length: number;
     mode: string;
@@ -25,9 +25,9 @@ interface AIModel {
 }
 
 interface ModelProvider {
-    id: number;
+    id: string;
     provider_unique_model_id: string;
-    provider: { id: number; name: string; key: string };
+    provider: { id: string; name: string; key: string };
     is_enabled: boolean;
     rate_limit_counter: number;
     rate_limit_reset_time: string | null;
@@ -36,17 +36,17 @@ interface ModelProvider {
 }
 
 interface DescriptionRecord {
-    id: number;
+    id: string;
     description: string;
     ai_models: { id: string; name: string }[];
-    families: { id: number | string; name: string }[];
-    tags: { id: number; name: string }[];
-    categories: { id: number; name: string }[];
+    families: { id: string; name: string }[];
+    tags: { id: string; name: string }[];
+    categories: { id: string; name: string }[];
     is_family_level?: boolean;
 }
 
 interface ModelFamily {
-    id: number | string;
+    id: string;
     name: string;
 }
 
@@ -60,8 +60,8 @@ export interface ModelInspectorProps {
     onToggleEnabled: (modelId: string) => void;
     onPull: (modelId: string) => void;
     onRemove: (modelId: string) => void;
-    onResetBreaker: (providerId: number) => void;
-    onToggleProviderEnabled: (providerId: number) => void;
+    onResetBreaker: (providerId: string) => void;
+    onToggleProviderEnabled: (providerId: string) => void;
 }
 
 /* ── Helpers ──────────────────────────────────────── */
@@ -143,8 +143,8 @@ export function HypothalamusModelInspector({
     const [newCategoryName, setNewCategoryName] = useState('');
 
     // All tags + categories for dropdowns
-    const [allTags, setAllTags] = useState<{ id: number; name: string }[]>([]);
-    const [allCategories, setAllCategories] = useState<{ id: number; name: string }[]>([]);
+    const [allTags, setAllTags] = useState<{ id: string; name: string }[]>([]);
+    const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([]);
 
     // Fetch description record for this model
     useEffect(() => {
@@ -291,26 +291,26 @@ export function HypothalamusModelInspector({
         setAddModelSearch('');
     };
 
-    const removeLinkedFamily = (famId: number | string) => {
+    const removeLinkedFamily = (famId: string) => {
         if (!descRecord) return;
         const ids = descRecord.families.filter(f => f.id !== famId).map(f => f.id);
         patchRelationships({ family_ids: ids });
     };
 
-    const addLinkedFamily = (famId: number | string) => {
+    const addLinkedFamily = (famId: string) => {
         if (!descRecord) return;
         const ids = [...descRecord.families.map(f => f.id), famId];
         patchRelationships({ family_ids: ids });
         setShowAddFamily(false);
     };
 
-    const removeTag = (tagId: number) => {
+    const removeTag = (tagId: string) => {
         if (!descRecord) return;
         const ids = descRecord.tags.filter(t => t.id !== tagId).map(t => t.id);
         patchRelationships({ tag_ids: ids });
     };
 
-    const addTag = (tagId: number) => {
+    const addTag = (tagId: string) => {
         if (!descRecord) return;
         const ids = [...descRecord.tags.map(t => t.id), tagId];
         patchRelationships({ tag_ids: ids });
@@ -318,13 +318,13 @@ export function HypothalamusModelInspector({
         setNewTagName('');
     };
 
-    const removeCategory = (catId: number) => {
+    const removeCategory = (catId: string) => {
         if (!descRecord) return;
         const ids = descRecord.categories.filter(c => c.id !== catId).map(c => c.id);
         patchRelationships({ category_ids: ids });
     };
 
-    const addCategory = (catId: number) => {
+    const addCategory = (catId: string) => {
         if (!descRecord) return;
         const ids = [...descRecord.categories.map(c => c.id), catId];
         patchRelationships({ category_ids: ids });
