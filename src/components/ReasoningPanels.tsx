@@ -1,6 +1,6 @@
 import "./ReasoningPanels.css";
 import { type ReactNode, useEffect, useState } from 'react';
-import { Power, RefreshCw, Terminal, Database, Target, Download, MessageSquare } from 'lucide-react';
+import { Power, RefreshCw, Terminal, Database, Target, Download, MessageSquare, Trash2 } from 'lucide-react';
 import { useDendrite } from './SynapticCleft';
 import type {
     GraphNode,
@@ -37,6 +37,28 @@ const extractThoughtFromUsageRecord = (record?: ModelUsageRecord): string => {
     }
 
     return '';
+};
+
+// --- Relative time formatter for "ago" strings ---
+const formatAgo = (iso?: string): string => {
+    if (!iso) return '';
+    const then = new Date(iso).getTime();
+    if (isNaN(then)) return '';
+    const diff = Math.max(0, Date.now() - then);
+    const sec = Math.floor(diff / 1000);
+    if (sec < 60) return `${sec}s ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h ago`;
+    const day = Math.floor(hr / 24);
+    if (day < 7) return `${day}d ago`;
+    const wk = Math.floor(day / 7);
+    if (wk < 4) return `${wk}w ago`;
+    const mo = Math.floor(day / 30);
+    if (mo < 12) return `${mo}mo ago`;
+    const yr = Math.floor(day / 365);
+    return `${yr}y ago`;
 };
 
 // --- HELPER COMPONENT: Reusable Accordion ---
@@ -273,6 +295,28 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
         });
     };
 
+    const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm('Delete this thread? This cannot be undone.')) return;
+        const csrfToken = getCookie('csrftoken') || '';
+        try {
+            const res = await fetch(`/api/v1/reasoning_sessions/${id}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            if (res.ok || res.status === 204) {
+                setSessions(prev => prev.filter(s => s.id !== id));
+                if (id === activeSessionId) {
+                    onSelectSession('');
+                }
+            } else {
+                console.error('Delete failed', res.status);
+            }
+        } catch (err) {
+            console.error('Delete failed', err);
+        }
+    };
+
     const handleDump = async () => {
         try {
             const res = await fetch(`/api/v1/reasoning_sessions/${activeSessionId}/summary_dump/`);
@@ -292,7 +336,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
 
     const activeSession = sessions.find(s => s.id === activeSessionId);
     const isAlive = activeSession && ['Active', 'Pending', 'Running', 'Thinking'].includes(activeSession.status_name);
-    const turnCount = activeSession?.turns?.length || 0;
+    const turnCount = activeSession?.turns_count ?? activeSession?.turns?.length ?? 0;
 
     return (
         <div className="sidebar-root">
@@ -312,17 +356,33 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
                 {sessions.map(s => {
                     const isActive = s.id === activeSessionId;
                     const isStatusActive = s.status_name === 'Active';
+                    const turns = s.turns_count ?? s.turns?.length ?? 0;
+                    const ago = formatAgo(s.modified || s.created);
                     return (
                         <div
                             key={s.id}
                             onClick={() => onSelectSession(s.id)}
                             className={`reasoningpanels-session-card ${isActive ? 'reasoningpanels-session-card--active' : ''}`}
                         >
-                            <div className="font-mono text-xs sidebar-session-id">
-                                {s.id.split('-')[0].toUpperCase()}
+                            <div className="sidebar-session-card-header">
+                                <div className="font-mono text-xs sidebar-session-id">
+                                    {s.id.split('-')[0].toUpperCase()}
+                                </div>
+                                <button
+                                    type="button"
+                                    className="sidebar-session-delete"
+                                    onClick={(e) => handleDeleteSession(s.id, e)}
+                                    title="Delete this thread"
+                                    aria-label="Delete this thread"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
                             </div>
                             <div className={`font-mono text-xs reasoningpanels-status-text ${isStatusActive ? 'reasoningpanels-status-text--active' : ''}`}>
-                                {s.status_name} - {new Date(s.created).toLocaleString()}
+                                {s.status_name} · {turns} turn{turns === 1 ? '' : 's'}{ago ? ` · ${ago}` : ''}
+                            </div>
+                            <div className="font-mono text-xs sidebar-session-datetime">
+                                {new Date(s.created).toLocaleString()}
                             </div>
                         </div>
                     );

@@ -132,6 +132,8 @@ export interface ReasoningSessionData {
     max_focus: number;
     total_xp: number;
     created: string;
+    modified?: string;
+    turns_count?: number;
     goals?: ReasoningGoalData[];
     turns: ReasoningTurnData[];
     engrams: TalosEngramData[];

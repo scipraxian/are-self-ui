@@ -621,6 +621,41 @@
     color: #facc15;
 }
 
+.sidebar-session-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-session-delete {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    opacity: 0.55;
+    flex-shrink: 0;
+}
+
+.sidebar-session-delete:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    opacity: 1;
+}
+
+.sidebar-session-datetime {
+    color: #64748b;
+    margin-top: 2px;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+}
+
 /* The Override Button */
 .reasoningpanels-btn-override {
     color: #a855f7;
