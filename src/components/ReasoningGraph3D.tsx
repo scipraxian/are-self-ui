@@ -3,102 +3,73 @@ import { memo, useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import { useDendrite } from './SynapticCleft';
-import { summarizeTool, toolOneLiner } from '../utils/toolFormatters';
 import type {
     GraphLink,
     GraphNode,
-    ModelUsageRecord,
-    ReasoningGoalData,
     ReasoningSessionData,
-    ReasoningTurnData,
+    ReasoningToolCallSummary,
+    ReasoningTurnDigest,
     TalosEngramData,
-    ToolCallData
 } from "../types.ts";
 
+// Scope: turns + their tool sub-nodes come from the digest stream;
+// engrams piggyback a thin dedicated fetch (/api/v2/engrams/?sessions=X)
+// on mount and get refreshed when a vesicle brings an engram_id we
+// haven't seen before. Goals and session conclusion still live behind
+// the right-side inspector.
 const MAX_THOUGHT_LENGTH = 140;
+const ENGRAM_REFETCH_DEBOUNCE_MS = 250;
 
-const extractThoughtFromUsageRecord = (record?: ModelUsageRecord): string => {
-    if (!record?.response_payload?.choices?.length) return '';
-    const message = record.response_payload.choices[0].message;
-
-    // 1. Direct assistant content
-    if (typeof message.content === 'string' && message.content.trim()) {
-        return message.content.trim();
+const clipExcerpt = (text: string | undefined): string => {
+    if (!text) return '';
+    if (text.length > MAX_THOUGHT_LENGTH) {
+        return `${text.slice(0, MAX_THOUGHT_LENGTH - 1)}\u2026`;
     }
-
-    // 2. Tool call: mcp_respond_to_user → parse arguments for "thought"
-    if (Array.isArray(message.tool_calls)) {
-        for (const tc of message.tool_calls) {
-            if (tc.function?.name === 'mcp_respond_to_user') {
-                try {
-                    const parsed = JSON.parse(tc.function.arguments);
-                    if (typeof parsed.thought === 'string' && parsed.thought.trim()) {
-                        return parsed.thought.trim();
-                    }
-                } catch { /* ignore parse errors */ }
-            }
-        }
-    }
-
-    return '';
-};
-
-const extractNodeThought = (node: GraphNode): string => {
-    if (node.type !== 'turn') return '';
-
-    const thought = extractThoughtFromUsageRecord(node.model_usage_record as ModelUsageRecord | undefined);
-    if (!thought) return '';
-
-    if (thought.length > MAX_THOUGHT_LENGTH) {
-        return `${thought.slice(0, MAX_THOUGHT_LENGTH - 1)}…`;
-    }
-    return thought;
+    return text;
 };
 
 const generateHoverCardLines = (node: GraphNode): string[] => {
     const lines: string[] = [];
 
     if (node.type === 'turn') {
-        const turnData = node as unknown as ReasoningTurnData & { id: string };
-        const durationStr = turnData.model_usage_record?.query_time || turnData.delta || '?';
-        const status = turnData.status_name || 'Unknown';
-        lines.push(`Turn ${turnData.turn_number} · ${durationStr} · ${status}`);
+        const status = node.status_name || 'Unknown';
+        const modelName = node.model_name || 'Unknown';
+        const duration = computeDurationLabel(node.created, node.modified);
+        const tokensOut = node.tokens_out ?? 0;
+        lines.push(`Turn ${node.turn_number ?? '?'} · ${duration} · ${status}`);
+        lines.push(`${modelName} · ${tokensOut} out`);
 
-        if (turnData.tool_calls && turnData.tool_calls.length > 0) {
-            lines.push(toolOneLiner(turnData.tool_calls[0]));
+        const tool = node.tool_calls_summary?.[0];
+        if (tool) {
+            const marker = tool.success === true ? '✓' : tool.success === false ? '✗' : '○';
+            const target = tool.target ? ` · ${tool.target}` : '';
+            lines.push(`⚙ ${tool.tool_name} ${marker}${target}`);
         }
 
-        const thought = extractNodeThought(node);
+        const thought = clipExcerpt(node.excerpt);
         if (thought) {
             lines.push(`💭 "${thought}"`);
         }
     } else if (node.type === 'tool') {
-        const toolData = node as unknown as ToolCallData & { id: string };
-        const summary = summarizeTool(toolData);
-        const status = toolData.status_name || 'Unknown';
-        lines.push(`⚙ ${toolData.tool_name} · ${status}`);
-        lines.push(summary.action);
-    } else if (node.type === 'engram') {
-        const engramData = node as unknown as TalosEngramData & { id: string };
-        lines.push(`◆ "${engramData.name}"`);
-        const relevance = (engramData.relevance_score || 0).toFixed(2);
-        const sourceTurn = engramData.source_turns?.[0] || '?';
-        lines.push(`relevance ${relevance} · from Turn ${sourceTurn}`);
-    } else if (node.type === 'goal') {
-        const goalData = node as unknown as ReasoningGoalData & { id: string };
-        const status = goalData.status_name || 'Unknown';
-        lines.push(`⊕ Goal · ${status}`);
-        const goalPreview = goalData.rendered_goal?.slice(0, 100) || '';
-        lines.push(`"${goalPreview}"`);
-    } else if (node.type === 'conclusion') {
-        const conclusionData = node as any; // SessionConclusionData
-        const status = conclusionData.outcome_status || conclusionData.status_name || 'Complete';
-        lines.push(`◼ ${status}`);
-        const summaryPreview = conclusionData.summary?.slice(0, 100) || '';
-        lines.push(`"${summaryPreview}"`);
+        const tool = node as unknown as ReasoningToolCallSummary & { id: string };
+        const marker = tool.success === true ? '✓' : tool.success === false ? '✗' : '○';
+        lines.push(`⚙ ${tool.tool_name} ${marker}`);
+        if (tool.target) lines.push(tool.target);
     }
 
     return lines;
+};
+
+const computeDurationLabel = (created?: string | null, modified?: string | null): string => {
+    if (!created || !modified) return '?';
+    const start = Date.parse(created);
+    const end = Date.parse(modified);
+    if (isNaN(start) || isNaN(end) || end <= start) return '?';
+    const sec = (end - start) / 1000;
+    if (sec < 60) return `${sec.toFixed(1)}s`;
+    const min = Math.floor(sec / 60);
+    const rem = sec - min * 60;
+    return `${min}m${rem.toFixed(0)}s`;
 };
 
 interface BubblePosition {
@@ -121,6 +92,16 @@ interface ReasoningGraphProps {
     onSessionDataUpdate?: (data: ReasoningSessionData) => void;
 }
 
+// Size-ratio heuristic replaces the old avgDelta-based one. We no longer
+// have query_time on the digest, so sphere size now scales off
+// tokens_out normalized against the session's running mean (clamped 0.3x
+// – 4.0x). A long verbose turn looks bigger than a cheap one-liner.
+const computeSizeRatio = (tokensOut: number, meanTokens: number): number => {
+    if (!meanTokens || meanTokens <= 0 || !tokensOut) return 1;
+    const raw = tokensOut / meanTokens;
+    return Math.max(0.3, Math.min(raw, 4.0));
+};
+
 export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     sessionId,
     onNodeSelect,
@@ -130,144 +111,201 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
-    const prevDataRef = useRef<string>("");
+    const digestsRef = useRef<Map<string, ReasoningTurnDigest>>(new Map());
+    const engramsRef = useRef<Map<string, TalosEngramData>>(new Map());
+    const highestTurnRef = useRef<number>(-1);
+    const engramRefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
     const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
     const [hoverCard, setHoverCard] = useState<HoverCard | null>(null);
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const parseDuration = (str: string) => {
-        if (!str) return 0;
-        const clean = str.replace('s', '').trim();
-        const parts = clean.split(':');
-        if (parts.length === 3) return (parseFloat(parts[0]) * 3600) + (parseFloat(parts[1]) * 60) + parseFloat(parts[2]);
-        if (parts.length === 2) return (parseFloat(parts[0]) * 60) + parseFloat(parts[1]);
-        return parseFloat(clean) || 0;
-    };
+    // Rebuild nodes/links from the digest map. Idempotent: same map in,
+    // same arrays out (modulo Map iteration order, which is insertion
+    // order, which matches the order we upsert in).
+    const rebuild = useCallback(() => {
+        const digests = Array.from(digestsRef.current.values())
+            .sort((a, b) => a.turn_number - b.turn_number);
 
-    // Real-time: refetch when any ReasoningTurn changes
-    const turnEvent = useDendrite('ReasoningTurn', null);
-    const sessionEvent = useDendrite('ReasoningSession', sessionId);
+        const meanTokens = digests.length
+            ? digests.reduce((s, d) => s + (d.tokens_out || 0), 0) / digests.length
+            : 0;
 
+        const nodes: GraphNode[] = [];
+        const links: GraphLink[] = [];
+
+        digests.forEach((d, index) => {
+            const tId = `turn-${d.turn_id}`;
+            const sizeRatio = computeSizeRatio(d.tokens_out, meanTokens);
+            nodes.push({
+                id: tId,
+                type: 'turn',
+                label: `Turn ${d.turn_number}`,
+                status_name: d.status_name,
+                sizeRatio,
+                turn_id: d.turn_id,
+                session_id: d.session_id,
+                turn_number: d.turn_number,
+                model_name: d.model_name,
+                tokens_in: d.tokens_in,
+                tokens_out: d.tokens_out,
+                excerpt: d.excerpt,
+                tool_calls_summary: d.tool_calls_summary,
+                engram_ids: d.engram_ids,
+                created: d.created,
+                modified: d.modified,
+            });
+
+            if (index > 0) {
+                const prev = digests[index - 1];
+                links.push({ source: `turn-${prev.turn_id}`, target: tId, type: 'sequence' });
+            }
+
+            (d.tool_calls_summary || []).forEach((call) => {
+                const cId = `tool-${call.id}`;
+                nodes.push({
+                    id: cId,
+                    type: 'tool',
+                    label: call.tool_name,
+                    status_name: call.success === true ? 'Completed' : call.success === false ? 'Error' : 'Pending',
+                    tool_name: call.tool_name,
+                    success: call.success,
+                    target: call.target,
+                    turn_id: d.turn_id,
+                    tool_call_id: call.id,
+                });
+                links.push({ source: tId, target: cId, type: 'tool_call' });
+            });
+        });
+
+        // Engram layer: one octahedron per engram linked to this session,
+        // with a 'memory' link to each source turn already rendered.
+        engramsRef.current.forEach((engram) => {
+            const eId = `engram-${engram.id}`;
+            nodes.push({
+                ...engram,
+                id: eId,
+                type: 'engram',
+                label: engram.name,
+            });
+            (engram.source_turns || []).forEach((turnId) => {
+                if (digestsRef.current.has(turnId)) {
+                    links.push({
+                        source: `turn-${turnId}`,
+                        target: eId,
+                        type: 'memory',
+                    });
+                }
+            });
+        });
+
+        activeMeshesRef.current = [];
+        setGraphData({ nodes, links });
+
+        const latest = digests[digests.length - 1];
+        onStatsUpdate({
+            level: 1,
+            focus: `${digests.length} / ?`,
+            xp: digests.reduce((s, d) => s + (d.tokens_out || 0), 0),
+            status: latest?.status_name || 'Unknown',
+            latestThought: latest?.excerpt || 'Awaiting cortex synchronization...',
+        });
+        // Partial ReasoningSessionData — goals/engrams/conclusion/full turns
+        // aren't available from the digest stream. Downstream consumers
+        // should null-check rather than assume these are populated.
+        onSessionDataUpdate?.({
+            id: sessionId,
+            status_name: latest?.status_name || 'Unknown',
+            created: latest?.created || '',
+            turns_count: digests.length,
+        });
+    }, [sessionId, onStatsUpdate, onSessionDataUpdate]);
+
+    const upsertDigest = useCallback((digest: ReasoningTurnDigest) => {
+        digestsRef.current.set(digest.turn_id, digest);
+        if (digest.turn_number > highestTurnRef.current) {
+            highestTurnRef.current = digest.turn_number;
+        }
+    }, []);
+
+    const loadEngrams = useCallback(async () => {
+        if (!sessionId) return;
+        try {
+            const res = await fetch(`/api/v2/engrams/?sessions=${sessionId}`);
+            if (!res.ok) return;
+            const engrams: TalosEngramData[] = await res.json();
+            const nextMap = new Map<string, TalosEngramData>();
+            engrams.forEach(e => nextMap.set(e.id, e));
+            engramsRef.current = nextMap;
+            rebuild();
+        } catch (err) {
+            console.error('Engram fetch failed:', err);
+        }
+    }, [sessionId, rebuild]);
+
+    const scheduleEngramRefetch = useCallback(() => {
+        if (engramRefetchTimerRef.current) {
+            clearTimeout(engramRefetchTimerRef.current);
+        }
+        engramRefetchTimerRef.current = setTimeout(() => {
+            engramRefetchTimerRef.current = null;
+            loadEngrams();
+        }, ENGRAM_REFETCH_DEBOUNCE_MS);
+    }, [loadEngrams]);
+
+    const digestEvent = useDendrite('ReasoningTurnDigest', null);
+
+    // Cold-start fetch + reset when session changes. Digest blob and
+    // engram side-fetch fire in parallel.
     useEffect(() => {
         if (!sessionId) return;
         let cancelled = false;
 
-        const load = async () => {
+        digestsRef.current = new Map();
+        engramsRef.current = new Map();
+        highestTurnRef.current = -1;
+        setGraphData({ nodes: [], links: [] });
+
+        const loadDigests = async () => {
             try {
-                const res = await fetch(`/api/v1/reasoning_sessions/${sessionId}/graph_data/`);
+                const res = await fetch(
+                    `/api/v2/reasoning_sessions/${sessionId}/graph_data/?since_turn_number=-1`
+                );
                 if (!res.ok || cancelled) return;
-                const data: ReasoningSessionData = await res.json();
+                const digests: ReasoningTurnDigest[] = await res.json();
                 if (cancelled) return;
-
-                let latestThought = "Awaiting cortex synchronization...";
-                let totalSeconds = 0;
-                let validTurnsCount = 0;
-
-                if (data.turns && data.turns.length > 0) {
-                    for (let i = data.turns.length - 1; i >= 0; i--) {
-                        const thought = extractThoughtFromUsageRecord(data.turns[i].model_usage_record);
-                        if (thought) {
-                            latestThought = thought;
-                            break;
-                        }
-                    }
-                    data.turns.forEach((t: ReasoningTurnData) => {
-                        const timeStr = t.model_usage_record?.query_time || t.delta || '';
-                        const sec = parseDuration(timeStr);
-                        if (sec > 0) {
-                            totalSeconds += sec;
-                            validTurnsCount++;
-                        }
-                    });
-                }
-
-                const avgDelta = validTurnsCount > 0 ? totalSeconds / validTurnsCount : 1.0;
-
-                onStatsUpdate({
-                    level: data.current_level || 1,
-                    focus: `${data.current_focus || 0} / ${data.max_focus || 10}`,
-                    xp: data.total_xp || 0,
-                    status: data.status_name,
-                    latestThought
-                });
-
-                onSessionDataUpdate?.(data);
-
-                const newNodes: GraphNode[] = [];
-                const newLinks: GraphLink[] = [];
-
-                if (data.goals) {
-                    data.goals.forEach((g: ReasoningGoalData) => newNodes.push({ ...g, id: `goal-${g.id}`, type: 'goal', label: `Goal ${g.id}` }));
-                }
-
-                if (data.turns) {
-                    data.turns.forEach((t: ReasoningTurnData, index: number) => {
-                        const tId = `turn-${t.id}`;
-
-                        const sec = parseDuration(t.model_usage_record?.query_time || t.delta || '');
-                        let ratio = sec / avgDelta;
-                        if (isNaN(ratio) || ratio === 0) ratio = 1;
-                        ratio = Math.max(0.3, Math.min(ratio, 4.0));
-
-                        newNodes.push({ ...t, id: tId, type: 'turn', label: `Turn ${t.turn_number}`, sizeRatio: ratio });
-
-                        if (index > 0) {
-                            newLinks.push({ source: `turn-${data.turns[index - 1].id}`, target: tId, type: 'sequence' });
-                        }
-
-                        if (t.tool_calls) {
-                            t.tool_calls.forEach((c: ToolCallData, cIdx: number) => {
-                                const cId = `tool-${t.id}-${cIdx}`;
-                                newNodes.push({ ...c, id: cId, type: 'tool', label: c.tool_name });
-                                newLinks.push({ source: tId, target: cId, type: 'tool_call' });
-                            });
-                        }
-                    });
-                }
-
-                if (data.engrams) {
-                    data.engrams.forEach((e: TalosEngramData) => {
-                        const eId = `engram-${e.id}`;
-                        newNodes.push({ ...e, id: eId, type: 'engram', label: e.name });
-                        if (e.source_turns) {
-                            e.source_turns.forEach((st: number) => newLinks.push({ source: `turn-${st}`, target: eId, type: 'memory' }));
-                        }
-                    });
-                }
-
-                if (data.conclusion) {
-                    const cId = `conclusion-${data.conclusion.id}`;
-                    newNodes.push({ ...data.conclusion, id: cId, type: 'conclusion', label: 'Final Report' });
-                    if (data.turns && data.turns.length > 0) {
-                        newLinks.push({ source: `turn-${data.turns[data.turns.length - 1].id}`, target: cId, type: 'sequence' });
-                    }
-                }
-
-                const validIds = new Set(newNodes.map(n => n.id));
-                const safeLinks = newLinks.filter(l => validIds.has(l.source as string) && validIds.has(l.target as string));
-
-                const topologySignature = JSON.stringify({
-                    nodes: newNodes.map(n => ({ id: n.id, status: n.status_name, ratio: n.sizeRatio })),
-                    links: safeLinks.length
-                });
-
-                if (topologySignature !== prevDataRef.current) {
-                    prevDataRef.current = topologySignature;
-                    activeMeshesRef.current = [];
-                    setGraphData({ nodes: newNodes, links: safeLinks });
-                }
-
+                digests.forEach(upsertDigest);
+                rebuild();
             } catch (err) {
-                console.error("Graph fetch failed:", err);
+                console.error('Graph cold-start fetch failed:', err);
             }
         };
 
-        prevDataRef.current = "";
-        load();
-        return () => { cancelled = true; };
-    }, [sessionId, turnEvent, sessionEvent, onStatsUpdate, onSessionDataUpdate]);
+        loadDigests();
+        loadEngrams();
+        return () => {
+            cancelled = true;
+            if (engramRefetchTimerRef.current) {
+                clearTimeout(engramRefetchTimerRef.current);
+                engramRefetchTimerRef.current = null;
+            }
+        };
+    }, [sessionId, upsertDigest, rebuild, loadEngrams]);
+
+    // Live push: Acetylcholine vesicles per turn close. If a vesicle
+    // references an engram id we haven't rendered yet, trigger a
+    // debounced re-fetch of the engram layer.
+    useEffect(() => {
+        if (!digestEvent || !sessionId) return;
+        const vesicle = digestEvent.vesicle as ReasoningTurnDigest | undefined;
+        if (!vesicle || vesicle.session_id !== sessionId) return;
+        upsertDigest(vesicle);
+        const incoming = vesicle.engram_ids || [];
+        const hasUnseen = incoming.some(id => !engramsRef.current.has(id));
+        if (hasUnseen) scheduleEngramRefetch();
+        rebuild();
+    }, [digestEvent, sessionId, upsertDigest, rebuild, scheduleEngramRefetch]);
 
     useEffect(() => {
         let frameId: number;
@@ -313,7 +351,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
             graphData.nodes.forEach((node) => {
                 if (node.type !== 'turn') return;
 
-                const text = extractNodeThought(node);
+                const text = clipExcerpt(node.excerpt);
                 if (!text) return;
 
                 const vector = new THREE.Vector3(
@@ -414,12 +452,10 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         } else if (node.type === 'engram') {
             geometry = new THREE.OctahedronGeometry(5);
             color = '#a855f7';
-        } else if (node.type === 'goal') {
-            geometry = new THREE.OctahedronGeometry(8);
-            color = '#38bdf8';
-        } else if (node.type === 'conclusion') {
-            geometry = new THREE.OctahedronGeometry(10);
-            color = '#4ade80';
+        }
+
+        if (!geometry) {
+            geometry = new THREE.SphereGeometry(4, 16, 16);
         }
 
         const material = new THREE.MeshPhongMaterial({

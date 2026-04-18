@@ -111,7 +111,16 @@ export interface TalosEngramData {
     name: string;
     description: string;
     relevance_score: number;
-    source_turns: number[];
+    is_active: boolean;
+    created: string;
+    modified: string;
+    sessions: string[];
+    source_turns: string[];
+    spikes: string[];
+    tags: number[];
+    tasks: string[];
+    identity_discs: string[];
+    creator: string | null;
 }
 
 export interface SessionConclusionData {
@@ -124,20 +133,51 @@ export interface SessionConclusionData {
     next_goal_suggestion: string;
 }
 
+/**
+ * NOTE: `turns` used to be populated by the legacy
+ * `/api/v1/reasoning_sessions/{id}/graph_data/` blob. That endpoint now
+ * serves ReasoningTurnDigest rows, not full ReasoningTurn objects, so
+ * `turns` is no longer guaranteed on session payloads. Readers should
+ * prefer `ReasoningTurnDigest[]` from the pull-fallback / dendrite
+ * stream and fetch full turns on-demand via
+ * `/api/v2/reasoning_turns/{id}/`.
+ */
 export interface ReasoningSessionData {
     id: string;
     status_name: string;
-    current_level: number;
-    current_focus: number;
-    max_focus: number;
-    total_xp: number;
+    current_level?: number;
+    current_focus?: number;
+    max_focus?: number;
+    total_xp?: number;
     created: string;
     modified?: string;
     turns_count?: number;
     goals?: ReasoningGoalData[];
-    turns: ReasoningTurnData[];
-    engrams: TalosEngramData[];
+    turns?: ReasoningTurnData[];
+    engrams?: TalosEngramData[];
     conclusion?: SessionConclusionData;
+}
+
+export interface ReasoningToolCallSummary {
+    id: string;
+    tool_name: string;
+    success: boolean | null;
+    target: string;
+}
+
+export interface ReasoningTurnDigest {
+    turn_id: string;
+    session_id: string;
+    turn_number: number;
+    status_name: string;
+    model_name: string;
+    tokens_in: number;
+    tokens_out: number;
+    excerpt: string;
+    tool_calls_summary: ReasoningToolCallSummary[];
+    engram_ids: string[];
+    created: string | null;
+    modified: string | null;
 }
 
 // 3D Graph specific node injection
@@ -147,6 +187,19 @@ export interface GraphNode {
     label?: string;
     status_name?: string;
     sizeRatio?: number;
+    // Digest-sourced fields on turn nodes. Optional so tool/engram nodes
+    // can share the type; readers should null-check before use.
+    turn_id?: string;
+    session_id?: string;
+    turn_number?: number;
+    model_name?: string;
+    tokens_in?: number;
+    tokens_out?: number;
+    excerpt?: string;
+    tool_calls_summary?: ReasoningToolCallSummary[];
+    engram_ids?: string[];
+    created?: string | null;
+    modified?: string | null;
     [key: string]: unknown;
 }
 

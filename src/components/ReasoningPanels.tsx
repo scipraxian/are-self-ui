@@ -4,40 +4,16 @@ import { Power, RefreshCw, Terminal, Database, Target, Download, MessageSquare, 
 import { useDendrite } from './SynapticCleft';
 import type {
     GraphNode,
-    ModelUsageRecord,
     ReasoningSessionData,
+    ReasoningToolCallSummary,
     ReasoningTurnData,
+    ReasoningTurnDigest,
     ToolCallData,
     TalosEngramData,
     SessionConclusionData
 } from "../types.ts";
 import { getCookie } from '../api';
 import { summarizeTool } from '../utils/toolFormatters';
-
-// --- Shared thought extraction (same logic as ReasoningGraph3D) ---
-const extractThoughtFromUsageRecord = (record?: ModelUsageRecord): string => {
-    if (!record?.response_payload?.choices?.length) return '';
-    const message = record.response_payload.choices[0].message;
-
-    if (typeof message.content === 'string' && message.content.trim()) {
-        return message.content.trim();
-    }
-
-    if (Array.isArray(message.tool_calls)) {
-        for (const tc of message.tool_calls) {
-            if (tc.function?.name === 'mcp_respond_to_user') {
-                try {
-                    const parsed = JSON.parse(tc.function.arguments);
-                    if (typeof parsed.thought === 'string' && parsed.thought.trim()) {
-                        return parsed.thought.trim();
-                    }
-                } catch { /* ignore parse errors */ }
-            }
-        }
-    }
-
-    return '';
-};
 
 // --- Relative time formatter for "ago" strings ---
 const formatAgo = (iso?: string): string => {
@@ -86,61 +62,54 @@ const Accordion = ({ title, color, open = false, children }: AccordionProps) => 
 // --- SESSION OVERVIEW CARD (when node is null) ---
 interface SessionOverviewCardProps {
     session: ReasoningSessionData;
+    digests: ReasoningTurnDigest[];
 }
 
-const SessionOverviewCard = ({ session }: SessionOverviewCardProps) => {
-    // Session ID prefix + identity name
+const SessionOverviewCard = ({ session, digests }: SessionOverviewCardProps) => {
     const sessionIdPrefix = session.id?.split('-')[0]?.toUpperCase() || 'SESSION';
 
-    // Status and turn count
-    const turnCount = session.turns?.length || 0;
+    const turnCount = digests.length;
     const statusBadgeClass = session.status_name === 'Error'
         ? 'session-overview-status--error'
         : ['Active', 'Running', 'Pending', 'Thinking'].includes(session.status_name)
             ? 'session-overview-status--active'
             : 'session-overview-status--completed';
 
-    // Total duration: sum all turn deltas
-    const totalDuration = session.turns?.reduce((sum, turn) => {
-        if (!turn.delta) return sum;
-        const timeStr = String(turn.delta).match(/[\d.]+/)?.[0];
-        return sum + (timeStr ? parseFloat(timeStr) : 0);
-    }, 0) || 0;
+    // Total duration from digest timestamps — sum of each turn's
+    // modified-minus-created. Server-side query_time isn't on the digest.
+    const totalDurationSec = digests.reduce((sum, d) => {
+        if (!d.created || !d.modified) return sum;
+        const start = Date.parse(d.created);
+        const end = Date.parse(d.modified);
+        if (isNaN(start) || isNaN(end) || end <= start) return sum;
+        return sum + (end - start) / 1000;
+    }, 0);
 
-    // Started datetime
     const startedDate = session.created ? new Date(session.created).toLocaleString() : 'Unknown';
 
-    // Summary
+    // Conclusion summary used to come from the full blob; the digest
+    // stream doesn't carry it. If inspector needs it, per-session fetch.
     const summary = session.conclusion?.summary || 'No summary available';
 
-    // Aggregate tool calls by tool_name
     const toolCallsByName = new Map<string, number>();
-    session.turns?.forEach(turn => {
-        turn.tool_calls?.forEach(call => {
+    digests.forEach(d => {
+        (d.tool_calls_summary || []).forEach(call => {
             const name = call.tool_name || 'unknown';
             toolCallsByName.set(name, (toolCallsByName.get(name) || 0) + 1);
         });
     });
 
-    // Engrams
-    const engramsList = session.engrams?.map(e => e.name) || [];
+    // Engrams aggregated from digest engram_ids (deduped).
+    const engramIds = new Set<string>();
+    digests.forEach(d => (d.engram_ids || []).forEach(id => engramIds.add(id)));
+    const engramCount = engramIds.size;
 
-    // Token budget: sum input/output tokens across all turns
-    let totalInputTokens = 0;
-    let totalOutputTokens = 0;
-    session.turns?.forEach(turn => {
-        if (turn.model_usage_record) {
-            totalInputTokens += turn.model_usage_record.input_tokens || 0;
-            totalOutputTokens += turn.model_usage_record.output_tokens || 0;
-        }
-    });
+    const totalInputTokens = digests.reduce((s, d) => s + (d.tokens_in || 0), 0);
+    const totalOutputTokens = digests.reduce((s, d) => s + (d.tokens_out || 0), 0);
     const totalTokens = totalInputTokens + totalOutputTokens;
     const avgTokensPerTurn = turnCount > 0 ? Math.round(totalTokens / turnCount) : 0;
 
-    // Identity: model name + provider from first turn
-    const firstTurn = session.turns?.[0];
-    const modelName = firstTurn?.model_usage_record?.ai_model_provider?.ai_model?.name || 'Unknown';
-    const providerName = firstTurn?.model_usage_record?.ai_model_provider?.provider?.name || 'Unknown';
+    const modelName = digests[0]?.model_name || 'Unknown';
 
     return (
         <div className="scroll-hidden inspector-root">
@@ -167,7 +136,7 @@ const SessionOverviewCard = ({ session }: SessionOverviewCardProps) => {
                     </div>
                     <div className="session-overview-info-item">
                         <div className="session-overview-info-label">TOTAL DURATION</div>
-                        <div className="session-overview-info-value">{totalDuration.toFixed(2)}s</div>
+                        <div className="session-overview-info-value">{totalDurationSec.toFixed(2)}s</div>
                     </div>
                 </div>
 
@@ -202,15 +171,13 @@ const SessionOverviewCard = ({ session }: SessionOverviewCardProps) => {
                     </div>
                 </Accordion>
 
-                {/* Engrams */}
-                <Accordion title="ENGRAMS" color="#38bdf8" open={engramsList.length > 0}>
+                {/* Engrams — digest only carries IDs, not names. Show count. */}
+                <Accordion title="ENGRAMS" color="#38bdf8" open={engramCount > 0}>
                     <div className="session-overview-engrams-list">
-                        {engramsList.length > 0 ? (
-                            engramsList.map((name, idx) => (
-                                <div key={idx} className="session-overview-engram-row">
-                                    📚 {name}
-                                </div>
-                            ))
+                        {engramCount > 0 ? (
+                            <div className="session-overview-engram-row">
+                                📚 {engramCount} engram{engramCount === 1 ? '' : 's'} linked
+                            </div>
                         ) : (
                             <div className="session-overview-engrams-empty">None formed</div>
                         )}
@@ -239,16 +206,12 @@ const SessionOverviewCard = ({ session }: SessionOverviewCardProps) => {
                     </div>
                 </Accordion>
 
-                {/* Identity */}
+                {/* Identity — provider isn't on digest; model name only. */}
                 <Accordion title="IDENTITY" color="#38bdf8" open>
                     <div className="session-overview-identity-grid">
                         <div className="session-overview-identity-item">
                             <div className="session-overview-identity-label">Model</div>
                             <div className="session-overview-identity-value">{modelName}</div>
-                        </div>
-                        <div className="session-overview-identity-item">
-                            <div className="session-overview-identity-label">Provider</div>
-                            <div className="session-overview-identity-value">{providerName}</div>
                         </div>
                     </div>
                 </Accordion>
@@ -273,7 +236,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
         let cancelled = false;
         const load = async () => {
             try {
-                const res = await fetch('/api/v1/reasoning_sessions/');
+                const res = await fetch('/api/v2/reasoning_sessions/');
                 if (!res.ok || cancelled) return;
                 const data = await res.json();
                 if (cancelled) return;
@@ -289,7 +252,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
     const handleAction = async (action: string) => {
         if (!confirm(`Are you sure you want to ${action} this session?`)) return;
         const csrfToken = getCookie('csrftoken') || '';
-        await fetch(`/api/v1/reasoning_sessions/${activeSessionId}/${action}/`, {
+        await fetch(`/api/v2/reasoning_sessions/${activeSessionId}/${action}/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
         });
@@ -300,7 +263,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
         if (!confirm('Delete this thread? This cannot be undone.')) return;
         const csrfToken = getCookie('csrftoken') || '';
         try {
-            const res = await fetch(`/api/v1/reasoning_sessions/${id}/`, {
+            const res = await fetch(`/api/v2/reasoning_sessions/${id}/`, {
                 method: 'DELETE',
                 headers: { 'X-CSRFToken': csrfToken }
             });
@@ -319,7 +282,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
 
     const handleDump = async () => {
         try {
-            const res = await fetch(`/api/v1/reasoning_sessions/${activeSessionId}/summary_dump/`);
+            const res = await fetch(`/api/v2/reasoning_sessions/${activeSessionId}/summary_dump/`);
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -422,14 +385,19 @@ interface ReasoningInspectorProps {
 
 export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps) => {
     const [sessionData, setSessionData] = useState<ReasoningSessionData | null>(null);
-    const sessionEvent = useDendrite('ReasoningSession', null);
+    const [digests, setDigests] = useState<ReasoningTurnDigest[]>([]);
+    const [turnDetail, setTurnDetail] = useState<ReasoningTurnData | null>(null);
+    const sessionEvent = useDendrite('ReasoningSession', sessionId ?? null);
+    const digestEvent = useDendrite('ReasoningTurnDigest', null);
 
+    // Minimal session fetch (status, created, turns_count). Replaces
+    // the full blob — downstream consumers that need turns use digests.
     useEffect(() => {
         let cancelled = false;
         if (!sessionId) return;
         const load = async () => {
             try {
-                const res = await fetch(`/api/v1/reasoning_sessions/${sessionId}/graph_data/`);
+                const res = await fetch(`/api/v2/reasoning_sessions/${sessionId}/`);
                 if (!res.ok || cancelled) return;
                 const data: ReasoningSessionData = await res.json();
                 if (cancelled) return;
@@ -442,11 +410,77 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
         return () => { cancelled = true; };
     }, [sessionId, sessionEvent]);
 
+    // Digest pull-fallback on mount + live upsert on vesicle.
+    useEffect(() => {
+        let cancelled = false;
+        if (!sessionId) return;
+        const load = async () => {
+            try {
+                const res = await fetch(
+                    `/api/v2/reasoning_sessions/${sessionId}/graph_data/?since_turn_number=-1`
+                );
+                if (!res.ok || cancelled) return;
+                const list: ReasoningTurnDigest[] = await res.json();
+                if (cancelled) return;
+                setDigests(list);
+            } catch (err) {
+                console.error('Failed to fetch digests', err);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [sessionId]);
+
+    useEffect(() => {
+        if (!digestEvent || !sessionId) return;
+        const vesicle = digestEvent.vesicle as ReasoningTurnDigest | undefined;
+        if (!vesicle || vesicle.session_id !== sessionId) return;
+        setDigests(prev => {
+            const idx = prev.findIndex(d => d.turn_id === vesicle.turn_id);
+            if (idx === -1) return [...prev, vesicle].sort((a, b) => a.turn_number - b.turn_number);
+            const next = prev.slice();
+            next[idx] = vesicle;
+            return next;
+        });
+    }, [digestEvent, sessionId]);
+
+    // Per-turn on-demand fetch — fires for both turn nodes (obvious)
+    // and tool sub-nodes (the tool inspector reads arguments,
+    // result_payload, and traceback off the ToolCall, which only lives
+    // on the full turn payload; the digest carries only a compact
+    // summary). Full ModelUsageRecord + ToolCall objects are never
+    // cached on the session; we re-fetch every time the user opens a
+    // different turn. That's the whole point of the digest cutover.
+    const turnId = node?.type === 'turn' || node?.type === 'tool'
+        ? (node.turn_id as string | undefined)
+        : undefined;
+    useEffect(() => {
+        let cancelled = false;
+        if (!turnId) {
+            setTurnDetail(null);
+            return;
+        }
+        const load = async () => {
+            try {
+                const res = await fetch(`/api/v2/reasoning_turns/${turnId}/`);
+                if (!res.ok || cancelled) return;
+                const data: ReasoningTurnData = await res.json();
+                if (cancelled) return;
+                setTurnDetail(data);
+            } catch (err) {
+                console.error('Failed to fetch turn detail', err);
+            }
+        };
+        setTurnDetail(null);
+        load();
+        return () => { cancelled = true; };
+    }, [turnId]);
+
     if (!node) {
         if (!sessionData) {
             return <div className="inspector-placeholder font-mono text-sm">Select a node on the graph.</div>;
         }
-        return <SessionOverviewCard session={sessionData} />;
+        return <SessionOverviewCard session={sessionData} digests={digests} />;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -454,7 +488,9 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
 
     const getAdminUrl = (nodeData: GraphNode) => {
         if (!nodeData || !nodeData.id) return '#';
-        const dbId = String(nodeData.id).split('-').slice(1).join('-');
+        const dbId = nodeData.type === 'turn' && nodeData.turn_id
+            ? String(nodeData.turn_id)
+            : String(nodeData.id).split('-').slice(1).join('-');
 
         switch (nodeData.type) {
             case 'turn':
@@ -528,27 +564,38 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                 {n.type === 'turn' && (
                     <div className="inspector-turn-content">
                         {(() => {
-                            const turn = n as ReasoningTurnData;
-                            const tokensIn = turn.model_usage_record?.input_tokens ?? 0;
-                            const tokensOut = turn.model_usage_record?.output_tokens ?? 0;
-                            const timing = turn.model_usage_record?.query_time || turn.delta || '--';
-                            const modelName = turn.model_usage_record?.ai_model_provider?.ai_model?.name || 'Unknown';
-                            const turnThought = extractThoughtFromUsageRecord(turn.model_usage_record);
-                            const messages = turn.model_usage_record?.request_payload || [];
+                            // Digest data always available on the node (push/pull);
+                            // full turn body fetched lazily when the turn is opened.
+                            const digestExcerpt = (n.excerpt as string | undefined) || '';
+                            const digestTokensIn = (n.tokens_in as number | undefined) ?? 0;
+                            const digestTokensOut = (n.tokens_out as number | undefined) ?? 0;
+                            const digestModelName = (n.model_name as string | undefined) || 'Unknown';
+                            const digestToolSummaries = (n.tool_calls_summary as ReasoningToolCallSummary[] | undefined) || [];
+
+                            const turn = turnDetail;
+                            const tokensIn = turn?.model_usage_record?.input_tokens ?? digestTokensIn;
+                            const tokensOut = turn?.model_usage_record?.output_tokens ?? digestTokensOut;
+                            const timing = turn?.model_usage_record?.query_time || turn?.delta || '--';
+                            const modelName = turn?.model_usage_record?.ai_model_provider?.ai_model?.name || digestModelName;
+                            const messages = turn?.model_usage_record?.request_payload || [];
                             const hasMessages = Array.isArray(messages) && messages.length > 0;
                             const statusClass = n.status_name === 'Error'
                                 ? 'inspector-status--error'
                                 : ['Active', 'Running', 'Pending', 'Thinking'].includes(n.status_name)
                                     ? 'inspector-status--active'
                                     : 'inspector-status--completed';
-                            const toolCallsCount = turn.tool_calls?.length || 0;
+                            const turnNumber = turn?.turn_number ?? n.turn_number ?? '?';
+                            const created = turn?.created ?? n.created;
+                            const startedLabel = created ? new Date(created).toLocaleTimeString() : '--';
+                            const toolCalls: ToolCallData[] = turn?.tool_calls || [];
+                            const hasFullCalls = toolCalls.length > 0;
 
                             return (
                                 <>
-                        {/* TIER 1: Always visible header */}
+                        {/* TIER 1: Always visible header (digest-backed until full turn loads) */}
                         <div className="turn-tier-1">
                             <div className="turn-tier-1-header">
-                                <span className="turn-tier-1-title">TURN {turn.turn_number} of {sessionData?.turns?.length || '?'}</span>
+                                <span className="turn-tier-1-title">TURN {turnNumber} of {sessionData?.turns_count ?? digests.length ?? '?'}</span>
                                 <span className={`inspector-turn-status ${statusClass}`}>
                                     {n.status_name}
                                 </span>
@@ -557,15 +604,15 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                                 <span>{modelName} · {timing} · {tokensIn}→{tokensOut} tokens</span>
                             </div>
                             <div className="turn-tier-1-timing">
-                                Started {new Date(turn.created).toLocaleTimeString()} · On task {(turn.delta || '--')}
+                                Started {startedLabel}{turn?.delta ? ` · On task ${turn.delta}` : ''}
                             </div>
                         </div>
 
-                        {/* TIER 2: PARIETAL LOBE section (default open) */}
-                        {toolCallsCount > 0 && (
+                        {/* TIER 2: PARIETAL LOBE — prefer full tool calls once loaded, else digest summary */}
+                        {hasFullCalls ? (
                             <Accordion title="PARIETAL LOBE" color="#a855f7" open>
                                 <div className="turn-parietal-lobe-list">
-                                    {turn.tool_calls?.map((call: ToolCallData, idx: number) => {
+                                    {toolCalls.map((call: ToolCallData, idx: number) => {
                                         const summary = summarizeTool(call);
                                         const thought = summary.thought;
                                         const showError = summary.hasError || summary.success === false;
@@ -601,19 +648,36 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                                     })}
                                 </div>
                             </Accordion>
-                        )}
+                        ) : digestToolSummaries.length > 0 ? (
+                            <Accordion title="PARIETAL LOBE" color="#a855f7" open>
+                                <div className="turn-parietal-lobe-list">
+                                    {digestToolSummaries.map((call, idx: number) => {
+                                        const marker = call.success === true ? '✓' : call.success === false ? '✗' : '○';
+                                        const markerClass = call.success === true ? 'turn-parietal-status--success' : call.success === false ? 'turn-parietal-status--error' : 'turn-parietal-status--neutral';
+                                        return (
+                                            <div key={idx} className="turn-parietal-call">
+                                                <div className="turn-parietal-call-header">
+                                                    <span>⚙ {call.tool_name}{call.target ? ` → ${call.target}` : ''}</span>
+                                                    <span className={`turn-parietal-status ${markerClass}`}>{marker}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </Accordion>
+                        ) : null}
 
-                        {/* TIER 3: Collapsed accordions */}
+                        {/* TIER 3: Collapsed accordions (full body required) */}
                         {hasMessages && (
                             <Accordion title="WHAT THE AGENT SAW" color="#38bdf8">
                                 {renderMessages(messages)}
                             </Accordion>
                         )}
 
-                        {turn.tool_calls && Array.isArray(turn.tool_calls) && turn.tool_calls.length > 0 && (
+                        {hasFullCalls && (
                             <Accordion title="RAW PAYLOADS" color="#f59e0b">
                                 <div className="turn-raw-payloads">
-                                    {turn.tool_calls.map((call: ToolCallData, idx: number) => {
+                                    {toolCalls.map((call: ToolCallData, idx: number) => {
                                         const argsStr = typeof call.arguments === 'object' ? JSON.stringify(call.arguments, null, 2) : String(call.arguments || '');
                                         const resultStr = call.result_payload || call.traceback || "Pending...";
 
@@ -640,10 +704,10 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                             </Accordion>
                         )}
 
-                        {turnThought && (
+                        {digestExcerpt && (
                             <Accordion title="AGENT THOUGHT" color="#a855f7" open>
                                 <div className="inspector-thought-text">
-                                    {turnThought}
+                                    {digestExcerpt}
                                 </div>
                             </Accordion>
                         )}
@@ -656,7 +720,32 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                 {n.type === 'tool' && (
                     <div className="inspector-node-content">
                         {(() => {
-                            const tool = n as ToolCallData;
+                            // Tool sub-nodes carry only the compact
+                            // {id, tool_name, success, target} summary from
+                            // the digest. The full ToolCall row (arguments,
+                            // result_payload, traceback) is on the fetched
+                            // turn — we look it up by stable id so a
+                            // reordered or deleted call doesn't mis-match.
+                            const toolCallId = (n.tool_call_id as string | undefined) || '';
+                            const toolCalls: ToolCallData[] = turnDetail?.tool_calls || [];
+                            const tool = toolCalls.find(
+                                (c) => String(c.id) === toolCallId
+                            );
+
+                            if (!tool) {
+                                const digestToolName = (n.tool_name as string | undefined) || n.label || 'Tool';
+                                return (
+                                    <>
+                                        <div className="tool-inspector-header">
+                                            <Terminal size={16} /> {digestToolName}
+                                        </div>
+                                        <div className="inspector-placeholder font-mono text-sm">
+                                            Data loading...
+                                        </div>
+                                    </>
+                                );
+                            }
+
                             const summary = summarizeTool(tool);
                             const argsStr = typeof tool.arguments === 'object' ? JSON.stringify(tool.arguments, null, 2) : String(tool.arguments || '');
 

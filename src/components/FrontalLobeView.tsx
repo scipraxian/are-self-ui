@@ -2,6 +2,7 @@ import "./FrontalLobeView.css";
 import { useState, useEffect } from 'react';
 import { Loader2, Activity, Brain } from 'lucide-react';
 import { FrontalLobeDetail } from './FrontalLobeDetail';
+import { useDendrite } from './SynapticCleft';
 
 interface ReasoningSession {
     id: string;
@@ -17,37 +18,35 @@ export const FrontalLobeView = () => {
     const [sessions, setSessions] = useState<ReasoningSession[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+    const sessionEvent = useDendrite('ReasoningSession', null);
 
     const signature = (items: ReasoningSession[]) =>
         (items || [])
             .map((s) => `${s.id}:${s.status_name}:${s.current_focus}:${s.current_level}:${s.total_xp}:${s.max_turns}`)
             .join("|");
 
-    const fetchSessions = async () => {
-        try {
-            // FIX: Added missing trailing slash for Django API
-            const res = await fetch('/api/v1/reasoning_sessions/');
-            if (res.ok) {
+    useEffect(() => {
+        if (selectedThreadId) return;
+        let cancelled = false;
+
+        const load = async () => {
+            try {
+                const res = await fetch('/api/v2/reasoning_sessions/');
+                if (!res.ok || cancelled) return;
                 const data = await res.json();
+                if (cancelled) return;
                 const next = (data.results || data) as ReasoningSession[];
                 setSessions((prev) => (signature(prev) === signature(next) ? prev : next));
-            } else {
-                console.error("API returned non-200 status:", res.status);
+            } catch (err) {
+                console.error("Failed to fetch reasoning sessions", err);
+            } finally {
+                if (!cancelled) setIsLoading(false);
             }
-        } catch (err) {
-            console.error("Failed to fetch reasoning sessions", err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        };
 
-    useEffect(() => {
-        if (!selectedThreadId) {
-            fetchSessions();
-            const intervalId = setInterval(fetchSessions, 3000);
-            return () => clearInterval(intervalId);
-        }
-    }, [selectedThreadId]);
+        load();
+        return () => { cancelled = true; };
+    }, [selectedThreadId, sessionEvent]);
 
     if (selectedThreadId) {
         return <FrontalLobeDetail sessionId={selectedThreadId} onBack={() => setSelectedThreadId(null)} />;

@@ -3,11 +3,33 @@
 The single source of truth for any AI agent working on the are-self-ui codebase.
 Read completely before making any changes.
 
-> **Active thread (April 11, 2026):** PNS dashboard churn — agent cards and refresh
-> button blink because `handleRefresh` in `PNSPage.tsx` is a monolithic five-endpoint
-> refetch fired on every dendrite event. Blocked on a backend fix first (see
-> are-self-api/TASKS.md). Frontend follow-ups queued in TASKS.md → "In Progress — PNS
-> Dashboard Churn." Resume there.
+> **Active thread (April 18, 2026 — Cowork continuation):** incremental
+> reasoning-graph load via `ReasoningTurnDigest` push. `ReasoningGraph3D.tsx`
+> currently hits `/api/v1/reasoning_sessions/{id}/graph_data/`, which returns
+> a full-session blob that wedges the UI on any machine whose GPU/RAM is
+> already pegged by Ollama. The backend side-car + Acetylcholine broadcast
+> landed this session — see `are-self-api/TASKS.md` → "In Progress —
+> ReasoningTurnDigest Side-car". **Frontend cutover still open:**
+> `ReasoningGraph3D` (and every inspector that currently reads
+> `response_payload` out of the blob — `FrontalLobeView.tsx`,
+> `FrontalLobeDetail.tsx`, `ReasoningPanels.tsx`, `SessionChat.tsx`) swap
+> the big GET for `useDendrite('ReasoningTurnDigest', null)` + client-side
+> `vesicle.session_id` filter. Full per-turn payload fetched on explicit
+> click via `/api/v2/reasoning_turns/{id}/` — never cached on the session
+> object. Pull fallback (`graph_data?since_turn_number=N`) is still open on
+> the backend. Tracked in TASKS.md → "Open Tasks → ReasoningGraph3D".
+>
+> Also shipped this session: cognitive-threads list delete button
+> (`DELETE /api/v1/reasoning_sessions/{id}/`), turn count + datetime +
+> relative "ago" on each thread card, `ReasoningSessionData` typed up with
+> `turns_count?: number` and `modified?: string`.
+>
+> **Prior thread (April 11):** PNS dashboard churn — agent cards and refresh
+> button blink because `handleRefresh` in `PNSPage.tsx` is a monolithic
+> five-endpoint refetch fired on every dendrite event. Blocked on a backend
+> fix first (see are-self-api/TASKS.md → "In Progress — Nerve Terminal Scan
+> Reconcile"). Frontend follow-ups queued in TASKS.md → "In Progress — PNS
+> Dashboard Churn."
 
 
 ## The Developer

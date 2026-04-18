@@ -33,6 +33,157 @@ subscription event — so a terminal save also rehits celery-workers and beat fo
 - [ ] **Beat status & spikes via subscription.** `/beat/status/` and `/spikes/?is_active=true`
   should likewise be event-driven — they only change when beat restarts or spikes start/end.
 
+## Recently Done — Engram nodes back on graph + tool-node inspector fix (April 18, 2026)
+
+Two fixes tied to the digest cutover. Backend companion committed the same
+day: `?sessions=<uuid>` filter on `EngramViewSet` and stable `id:
+str(call.id)` on every `tool_calls_summary` entry.
+
+- **Engrams are back on the 3D graph** (approach-(b) override of the
+  original cutover approach-(a) decision; Michael's call — engrams are
+  core domain data, not inspector-only). `ReasoningGraph3D.tsx` now fires
+  a thin dedicated fetch `GET /api/v2/engrams/?sessions={sessionId}` in
+  parallel with the digest cold-start. Engrams render as purple
+  octahedrons (`#a855f7`, `OctahedronGeometry(5)`) linked to each of
+  their `source_turns` that's already rendered, link-type `'memory'`
+  (existing link-color branch). On every incoming digest vesicle the
+  vesicle's `engram_ids[]` is compared against the running
+  `engramsRef: Map<id, TalosEngramData>`; if any id is unseen, a
+  250ms trailing-edge debounced refetch of the engram layer fires.
+  Mount-fetch + vesicle-driven refresh only — no polling, same
+  contract as the turn digests.
+- **Tool-node inspector fix.** Tool sub-nodes are built from
+  `tool_calls_summary` entries — `{id, tool_name, success, target}` —
+  so clicking one used to render an empty inspector because the branch
+  was reading `arguments` / `result_payload` / `traceback` off the
+  node, and the digest deliberately doesn't carry them. Fix: each tool
+  sub-node now carries `turn_id` (parent turn UUID) and `tool_call_id`
+  (the ToolCall pk as a string); the per-turn fetch effect in
+  `ReasoningPanels.tsx` now fires for both `type === 'turn'` and
+  `type === 'tool'` (reading `node.turn_id`); the tool-inspector
+  branch looks the matching `ToolCall` up by
+  `String(c.id) === node.tool_call_id` on the fetched turn's
+  `tool_calls[]` and renders arguments/result/traceback from there,
+  falling back to a "Data loading..." state while the fetch is in
+  flight. Stable-id lookup instead of array index, so retries /
+  deletions / reorders don't mis-match.
+- **`types.ts`** — added `id: string` to `ReasoningToolCallSummary`;
+  fleshed out `TalosEngramData` to match what
+  `EngramSerializer(fields=ALL_FIELDS)` actually returns (
+  `is_active`, `created`, `modified`, `sessions`, `source_turns`,
+  `spikes`, `tags`, `tasks`, `identity_discs`, `creator`). `source_turns`
+  corrected from `number[]` → `string[]` (ReasoningTurn is UUID-keyed).
+- **Build state.** `npm run build` — zero net-new type errors from
+  this change. The same 10 pre-existing `EffectorEditorPage.tsx`
+  errors (from the prior CNS UUID migration) still block a clean
+  `tsc -b`; unrelated to this work.
+
+**Standing decisions:** approach-(a) scope (goals + conclusion stay
+inspector-only, not on the graph) is unchanged — only engrams got
+promoted back to approach-(b). If goals or conclusion are later
+overridden the same way, they'd get their own dedicated thin fetch
+(not put on the digest vesicle).
+
+## Recently Done — ReasoningTurnDigest frontend cutover (April 18, 2026)
+
+Paired with the backend digest side-car + push-first broadcast landed
+earlier the same day. Frontend has swapped off the full-session
+`graph_data/` blob in all five reasoning views.
+
+- **`ReasoningGraph3D.tsx`** — one-shot cold-start against
+  `GET /api/v2/reasoning_sessions/{id}/graph_data/?since_turn_number=-1`
+  (DigestSerializer list) + live `useDendrite('ReasoningTurnDigest', null)`
+  with a client-side `vesicle.session_id` filter. Digests are upserted
+  into a `Map<turn_id, ReasoningTurnDigest>` so reconnect replay merges
+  cleanly. Dropped the local `extractThoughtFromUsageRecord` and the
+  `ReasoningTurn` / `ReasoningSession` dendrites.
+- **Scope decision (goals/engrams/conclusion):** narrowed the 3D graph
+  to **turn-only nodes** (approach (a) from the prompt). Goal, engram,
+  and conclusion nodes/links removed. Those surfaces now live on the
+  right-side inspector (`ReasoningInspector`), which has its own
+  session-level fetch. Cleanest in a digest-only world and avoids extra
+  per-session secondary fetches on the hot path.
+- **Size-ratio heuristic:** replaced the old `avgDelta`
+  (query_time-based) heuristic with **tokens_out normalized against the
+  session's running mean** (clamped 0.3x–4.0x). `query_time`/`delta`
+  aren't on the digest. Verbose turns render as bigger spheres; chatty
+  one-liners shrink.
+- **`ReasoningPanels.tsx`** — duplicate
+  `extractThoughtFromUsageRecord` deleted. `ReasoningInspector` now
+  does three separate fetches: minimal session GET
+  (`/api/v2/reasoning_sessions/{id}/`), digest pull-fallback
+  (`graph_data?since_turn_number=-1`) with live vesicle upsert, and an
+  **on-demand per-turn fetch** (`/api/v2/reasoning_turns/{id}/`) keyed
+  off `node.turn_id` when a turn node is selected. Full ModelUsageRecord
+  and ToolCall bodies are never cached on the session object — they
+  re-fetch every time the user opens a turn. Session overview card
+  aggregates token totals and tool-call counts from digests.
+- **`FrontalLobeDetail.tsx`** — dropped the 3-second
+  `setInterval(fetchCortexStream, 3000)` poll. Now: cold-start digest
+  pull + `useDendrite('ReasoningTurnDigest', null)` for live upserts +
+  explicit "Show full payloads" button per turn that triggers the
+  on-demand per-turn fetch. Goals/engrams right-column panels removed
+  to stay consistent with `ReasoningGraph3D`'s turn-only scope.
+- **`FrontalLobeView.tsx`** — dropped the 3-second
+  `setInterval(fetchSessions, 3000)` poll. Now:
+  `useDendrite('ReasoningSession', null)` + one-shot mount fetch.
+- **`SessionChat.tsx`** — zero changes needed (already on `/api/v2/`,
+  doesn't read `response_payload`).
+- **`types.ts`** — added `ReasoningTurnDigest` and
+  `ReasoningToolCallSummary` interfaces matching the vesicle shape
+  byte-for-byte. Extended `GraphNode` with explicit optional digest
+  fields so TypeScript catches rename typos. Marked
+  `ReasoningSessionData.turns` / `.engrams` / `.current_level` /
+  `.current_focus` / `.max_focus` / `.total_xp` as optional, since
+  the minimal serializer at `/api/v2/reasoning_sessions/{id}/` doesn't
+  populate them.
+
+**Deferred follow-ups:**
+- `ParietalActivityPanel` (on the /frontal/:sessionId Parietal tab)
+  still reads `sessionData.turns` for the all-calls flattened list.
+  With the digest cutover, `turns` is no longer populated on the
+  session object, so the panel renders empty. Not in the prompt's
+  5-file scope; queued as its own task. Either migrate it to consume
+  digests (`tool_calls_summary` gives the same flat list without args)
+  or have it fetch each turn on-demand when expanded.
+- Tool sub-node inspector in `ReasoningPanels` (clicking a `tool`
+  node in the 3D graph) shows summary-only fields now — the sub-node
+  doesn't carry `arguments` / `result_payload` / `traceback`. Full
+  tool details still reachable by clicking the parent turn and
+  expanding **RAW PAYLOADS**.
+- 10 pre-existing `EffectorEditorPage.tsx` type errors from the prior
+  CNS UUID migration are still blocking `npm run build`. Unrelated to
+  this cutover — own task.
+
+## Recently Done — Cognitive-threads delete + turn count + ago (April 18, 2026)
+
+Cowork session. Michael asked for three things off the session view:
+
+- **Delete on threads (all-or-nothing, UI button only).** `ReasoningPanels.tsx`
+  gained a `Trash2` button on each session card. Click → `stopPropagation` +
+  `confirm()` → `DELETE /api/v1/reasoning_sessions/{id}/` with CSRF → local
+  state filter → `onSelectSession('')` if the active thread was the one
+  deleted. v1 and v2 mount the same `ModelViewSet` registry, so no backend
+  change was needed. Pruning (pick a turn and trim forward) is deferred —
+  you can't just lop turns when side effects have already fired downstream.
+- **Turn count + datetime + relative "ago" on each thread card.** New
+  `formatAgo()` helper (multi-unit: s / m / h / d / w / mo / y) feeds a
+  "Status · N turns · 5m ago" meta line; ISO datetime rendered below.
+  `ReasoningSessionData` gained `turns_count?: number` and `modified?: string`.
+  `ReasoningSessionMinimalSerializer` already exposed both, so no backend
+  work was needed. Line 339 also fixed — `activeSession?.turns_count ??
+  activeSession?.turns?.length ?? 0` — so the header count is right for
+  both digest-populated and blob-populated sessions.
+- **CSS touch-ups** in `ReasoningPanels.css`: `.sidebar-session-card-header`
+  (flex justify-between), `.sidebar-session-delete` (transparent → red on
+  hover, opacity 0.55), `.sidebar-session-datetime` (small, muted).
+
+Backend side of the same session: `ReasoningTurnDigest` side-car + push-first
+broadcast (see `are-self-api/TASKS.md` → "In Progress — ReasoningTurnDigest").
+The frontend cutover from `graph_data/` blob to
+`useDendrite('ReasoningTurnDigest', null)` is tracked under "Open Tasks →
+ReasoningGraph3D" below.
+
 ## Recently Done — Hypothalamus UUID propagation (April 17, 2026)
 
 Backend flipped all 28 hypothalamus models to UUID PKs (commit `1e98e303`). Frontend
@@ -76,54 +227,6 @@ scope for this pass, needs its own fix.
   server-side still open (it lives in `river_of_six_addon.py`).
 
 ## Open Tasks
-
-- [ ] **ReasoningGraph3D — large sessions take forever to load.** `ReasoningGraph3D.tsx:159`
-  hits `/api/v1/reasoning_sessions/{id}/graph_data/` which returns the entire session in one
-  blob: every turn (with full `model_usage_record.response_payload`), every engram, every
-  tool call, and the conclusion. For long sessions that payload is enormous and the whole
-  UI waits on one request. Knee-jerk fix is a "next turn / next turn / next turn" pull that
-  fills the graph in as the page loads — **but the backend does not currently support this.**
-  Endpoint audit (see are-self-api `frontal_lobe/api.py:60-78` + `api.py:547-570`):
-    - `graph_data` action takes no query params — no `since_turn`, `offset`, or `limit`.
-    - `/api/v2/reasoning_turns/?session={id}` exists and filters by session, but has NO
-      pagination class configured and is ordered `-created`.
-    - No standalone endpoints for `SessionConclusion` or `ToolCall` — they only come nested
-      in `graph_data` / `ReasoningTurnSerializer`.
-    - Engrams DO have their own endpoint (`/api/v2/engrams/`).
-  **Decided approach (April 13, 2026):** map-reduce at turn-completion, stream via cursor,
-  full payload only on explicit click.
-    1. **Pre-compute a refined "turn summary" when the turn closes (the map-reduce).** When
-       a `ReasoningTurn` transitions to terminal status, the backend computes and persists
-       the small stuff the frontend actually needs to draw the graph and the chat row:
-       `latest_thought` (extracted from `response_payload` via the same logic currently in
-       `ReasoningGraph3D.extractThoughtFromUsageRecord`), tool call one-liners (name,
-       status, compact action summary), duration, token/cost totals. Store on the turn row
-       (new fields) or a 1:1 `ReasoningTurnDigest` sidecar — sidecar is probably cleaner
-       so the digest schema can evolve without migrating the fat table. Do the extraction
-       server-side once, not on every frontend read.
-    2. **`graph_data` reads the digest, not the payload.** Serializer pulls from the
-       pre-computed fields. Response is near-instant because there's no JSON-parse-and-
-       extract work per turn per request. The fat `response_payload` is no longer in the
-       list response at all.
-    3. **Add `?since_turn_number=N` to `graph_data`** so the frontend can pull "next turn"
-       style as the session grows, instead of refetching everything on each dendrite ping.
-       Pairs cleanly with the existing `ReasoningTurn` dendrite subscription.
-    4. **Full payload is one explicit click away.** Chat views and the right-panel
-       inspector fetch full per-turn detail via `/api/v2/reasoning_turns/{id}/` (already
-       exists as ReadOnly) when the user actually opens a turn. **Do not cache it on the
-       session object.** Every turn's payload sitting in memory for a session the user is
-       scrolling through is exactly the bloat we're avoiding.
-    5. **Backfill for existing sessions.** A management command that walks existing turns
-       and computes the digest retroactively, so this isn't only a forward-looking fix.
-       Worth gating the serializer behind "digest present? use it : fall back to on-the-fly
-       extraction" during the rollout window.
-  Touch points on the UI side: `ReasoningGraph3D.tsx`, `FrontalLobeView.tsx`,
-  `FrontalLobeDetail.tsx`, `ReasoningPanels.tsx`, `SessionChat.tsx` — all currently read
-  `response_payload` out of the graph blob. They'll need to switch to per-turn fetch when
-  the inspector/chat opens a specific turn.
-  Also fold in the `/api/v1/` → `/api/v2/` migration for this file while we're in there
-  (listed below). **Paired with backend task — don't start until the slim serializer and
-  `since_turn_number` param land.**
 
 - [ ] **Neural Pathway Graph Editor — right-click context menu.** Demo feedback: "in Unreal you can
   right-click." Add right-click functionality with search of available items (neurons, effectors) for
