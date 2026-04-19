@@ -25,6 +25,14 @@
     line-height: 1;
 }
 
+.modifier-status-pill--available {
+    --pill-fg: #e2e8f0;
+    --pill-bg: rgba(100, 116, 139, 0.14);
+    --pill-border: rgba(148, 163, 184, 0.55);
+    --pill-dot: #cbd5e1;
+    border-style: dashed;
+}
+
 .modifier-status-pill--discovered {
     --pill-fg: #cbd5e1;
     --pill-bg: rgba(148, 163, 184, 0.12);

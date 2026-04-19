@@ -6,6 +6,7 @@ interface ModifierStatusPillProps {
 }
 
 const STATUS_MODIFIER: Record<number, string> = {
+    0: 'modifier-status-pill--available',
     1: 'modifier-status-pill--discovered',
     2: 'modifier-status-pill--installed',
     3: 'modifier-status-pill--enabled',

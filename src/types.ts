@@ -525,3 +525,14 @@ export interface NeuralModifierImpact {
     contribution_count: number;
     breakdown: NeuralModifierImpactRow[];
 }
+
+export interface NeuralModifierCatalogEntry {
+    slug: string;
+    name: string;
+    version: string;
+    author: string;
+    license: string;
+    description: string;
+    archive_name: string;
+    installed: boolean;
+}

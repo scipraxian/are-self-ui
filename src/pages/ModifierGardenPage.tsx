@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { apiFetch } from '../api';
@@ -9,12 +9,16 @@ import { useDendrite } from '../components/SynapticCleft';
 import { ThreePanel } from '../components/ThreePanel';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import type {
+    NeuralModifierCatalogEntry,
     NeuralModifierDetail,
     NeuralModifierImpact,
     NeuralModifierSummary,
 } from '../types';
 import './ModifierGardenPage.css';
 
+const STATUS_AVAILABLE = 0;
+// STATUS_DISCOVERED retired as a surfaced status on 2026-04-19; the constant
+// stays because historical log events may still reference id 1.
 const STATUS_DISCOVERED = 1;
 const STATUS_INSTALLED = 2;
 const STATUS_ENABLED = 3;
@@ -23,12 +27,20 @@ const STATUS_BROKEN = 5;
 
 const STATUS_FILTER_LABELS: Record<string, string> = {
     all: 'All',
-    active: 'Enabled',
+    available: 'Available',
     installed: 'Installed',
+    active: 'Enabled',
     disabled: 'Disabled',
     broken: 'Broken',
-    discovered: 'Discovered',
 };
+
+type UnifiedRow =
+    | { kind: 'installed'; row: NeuralModifierSummary }
+    | { kind: 'available'; entry: NeuralModifierCatalogEntry };
+
+function rowSlug(row: UnifiedRow): string {
+    return row.kind === 'installed' ? row.row.slug : row.entry.slug;
+}
 
 function formatRelative(iso: string | null): string {
     if (!iso) return '—';
@@ -44,22 +56,27 @@ function formatRelative(iso: string | null): string {
     return `${days}d ago`;
 }
 
-function filterByStatus(list: NeuralModifierSummary[], key: string): NeuralModifierSummary[] {
+function filterByStatus(list: UnifiedRow[], key: string): UnifiedRow[] {
     switch (key) {
+        case 'available':
+            return list.filter((r) => r.kind === 'available');
         case 'active':
-            return list.filter((m) => m.status_id === STATUS_ENABLED);
+            return list.filter((r) => r.kind === 'installed' && r.row.status_id === STATUS_ENABLED);
         case 'installed':
-            return list.filter((m) =>
-                m.status_id === STATUS_INSTALLED
-                || m.status_id === STATUS_ENABLED
-                || m.status_id === STATUS_DISABLED
+            return list.filter((r) =>
+                r.kind === 'installed' && (
+                    r.row.status_id === STATUS_INSTALLED
+                    || r.row.status_id === STATUS_ENABLED
+                    || r.row.status_id === STATUS_DISABLED
+                ),
             );
         case 'disabled':
-            return list.filter((m) => m.status_id === STATUS_DISABLED);
+            return list.filter((r) => r.kind === 'installed' && r.row.status_id === STATUS_DISABLED);
         case 'broken':
-            return list.filter((m) => m.status_id === STATUS_BROKEN);
-        case 'discovered':
-            return list.filter((m) => m.status_id === STATUS_DISCOVERED);
+            return list.filter((r) =>
+                r.kind === 'installed'
+                && (r.row.status_id === STATUS_BROKEN || r.row.status_id === STATUS_DISCOVERED),
+            );
         default:
             return list;
     }
@@ -69,12 +86,17 @@ export function ModifierGardenPage() {
     const { setCrumbs } = useBreadcrumbs();
 
     const [modifiers, setModifiers] = useState<NeuralModifierSummary[]>([]);
+    const [catalog, setCatalog] = useState<NeuralModifierCatalogEntry[]>([]);
     const [detail, setDetail] = useState<NeuralModifierDetail | null>(null);
     const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [search, setSearch] = useState('');
     const [busySlug, setBusySlug] = useState<string | null>(null);
     const [confirming, setConfirming] = useState<NeuralModifierImpact | null>(null);
+    const [deleting, setDeleting] = useState<NeuralModifierCatalogEntry | null>(null);
+    const [overflowSlug, setOverflowSlug] = useState<string | null>(null);
+
+    const overflowRef = useRef<HTMLDivElement | null>(null);
 
     const modifierEvent = useDendrite('NeuralModifier', null);
 
@@ -93,11 +115,26 @@ export function ModifierGardenPage() {
         let cancelled = false;
         const load = async () => {
             try {
-                const res = await apiFetch('/api/v2/neural-modifiers/');
-                if (!res.ok || cancelled) return;
-                const data = await res.json();
+                const [installedRes, catalogRes] = await Promise.all([
+                    apiFetch('/api/v2/neural-modifiers/'),
+                    apiFetch('/api/v2/neural-modifiers/catalog/'),
+                ]);
+
+                let installedList: NeuralModifierSummary[] = [];
+                if (installedRes.ok) {
+                    const data = await installedRes.json();
+                    installedList = Array.isArray(data) ? data : data.results ?? [];
+                }
+
+                let catalogList: NeuralModifierCatalogEntry[] = [];
+                if (catalogRes.ok) {
+                    const data = await catalogRes.json();
+                    catalogList = Array.isArray(data) ? data : data.results ?? [];
+                }
+
                 if (cancelled) return;
-                setModifiers(Array.isArray(data) ? data : data.results ?? []);
+                setModifiers(installedList);
+                setCatalog(catalogList);
             } catch (err) {
                 console.error('Failed to fetch modifiers', err);
             }
@@ -108,6 +145,11 @@ export function ModifierGardenPage() {
 
     useEffect(() => {
         if (!selectedSlug) {
+            setDetail(null);
+            return;
+        }
+        const isInstalled = modifiers.some((m) => m.slug === selectedSlug);
+        if (!isInstalled) {
             setDetail(null);
             return;
         }
@@ -124,20 +166,44 @@ export function ModifierGardenPage() {
         };
         load();
         return () => { cancelled = true; };
-    }, [selectedSlug, modifierEvent]);
+    }, [selectedSlug, modifiers, modifierEvent]);
+
+    useEffect(() => {
+        if (!overflowSlug) return;
+        const onDocClick = (e: MouseEvent) => {
+            if (!overflowRef.current) return;
+            if (!overflowRef.current.contains(e.target as Node)) setOverflowSlug(null);
+        };
+        document.addEventListener('mousedown', onDocClick);
+        return () => document.removeEventListener('mousedown', onDocClick);
+    }, [overflowSlug]);
+
+    const unified = useMemo<UnifiedRow[]>(() => {
+        const installedSlugs = new Set(modifiers.map((m) => m.slug));
+        const installedRows: UnifiedRow[] = modifiers.map((row) => ({ kind: 'installed', row }));
+        const availableRows: UnifiedRow[] = catalog
+            .filter((entry) => !installedSlugs.has(entry.slug))
+            .map((entry) => ({ kind: 'available', entry }));
+        return [...installedRows, ...availableRows];
+    }, [modifiers, catalog]);
 
     const filtered = useMemo(() => {
-        let list = filterByStatus(modifiers, statusFilter);
+        let list = filterByStatus(unified, statusFilter);
         if (search.trim()) {
             const q = search.toLowerCase();
-            list = list.filter((m) =>
-                m.slug.toLowerCase().includes(q)
-                || m.name.toLowerCase().includes(q)
-                || m.author.toLowerCase().includes(q),
-            );
+            list = list.filter((r) => {
+                if (r.kind === 'installed') {
+                    return r.row.slug.toLowerCase().includes(q)
+                        || r.row.name.toLowerCase().includes(q)
+                        || r.row.author.toLowerCase().includes(q);
+                }
+                return r.entry.slug.toLowerCase().includes(q)
+                    || r.entry.name.toLowerCase().includes(q)
+                    || r.entry.author.toLowerCase().includes(q);
+            });
         }
         return list;
-    }, [modifiers, statusFilter, search]);
+    }, [unified, statusFilter, search]);
 
     const toggleEnabled = async (modifier: NeuralModifierSummary) => {
         if (busySlug) return;
@@ -151,6 +217,35 @@ export function ModifierGardenPage() {
             if (!res.ok) {
                 console.error(`Failed to ${next} modifier ${modifier.slug}`);
             }
+        } finally {
+            setBusySlug(null);
+        }
+    };
+
+    const installFromCatalog = async (entry: NeuralModifierCatalogEntry) => {
+        if (busySlug) return;
+        setBusySlug(entry.slug);
+        try {
+            const res = await apiFetch(
+                `/api/v2/neural-modifiers/catalog/${entry.slug}/install/`,
+                { method: 'POST' },
+            );
+            if (!res.ok) console.error(`Failed to install ${entry.slug}`);
+        } finally {
+            setBusySlug(null);
+        }
+    };
+
+    const deleteFromCatalog = async () => {
+        if (!deleting) return;
+        setBusySlug(deleting.slug);
+        try {
+            const res = await apiFetch(
+                `/api/v2/neural-modifiers/catalog/${deleting.slug}/delete/`,
+                { method: 'POST' },
+            );
+            if (!res.ok) console.error(`Failed to delete ${deleting.slug}`);
+            setDeleting(null);
         } finally {
             setBusySlug(null);
         }
@@ -186,34 +281,39 @@ export function ModifierGardenPage() {
         }
     };
 
-    const renderActionButton = (modifier: NeuralModifierSummary) => {
-        const isBusy = busySlug === modifier.slug;
-        if (modifier.status_id === STATUS_BROKEN || modifier.status_id === STATUS_DISCOVERED) {
+    const renderActionButton = (entry: UnifiedRow) => {
+        const slug = rowSlug(entry);
+        const isBusy = busySlug === slug;
+
+        if (entry.kind === 'available') {
             return (
                 <button
                     type="button"
-                    className="modifier-garden-action"
-                    disabled
-                    title="Install or repair first."
+                    className="modifier-garden-action modifier-garden-action--install"
+                    onClick={(e) => { e.stopPropagation(); installFromCatalog(entry.entry); }}
+                    disabled={isBusy}
+                    title="Install this bundle so its rows land in the database. Install does not enable."
                 >
-                    Enable
+                    Install
                 </button>
             );
+        }
+
+        const modifier = entry.row;
+        if (modifier.status_id === STATUS_BROKEN || modifier.status_id === STATUS_DISCOVERED) {
+            return null;
         }
         const isEnabled = modifier.status_id === STATUS_ENABLED;
         return (
             <button
                 type="button"
                 className={`modifier-garden-action ${isEnabled ? 'modifier-garden-action--disable' : 'modifier-garden-action--enable'}`}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    toggleEnabled(modifier);
-                }}
+                onClick={(e) => { e.stopPropagation(); toggleEnabled(modifier); }}
                 disabled={isBusy}
                 title={
                     isEnabled
-                        ? 'Disabling keeps this bundle\'s configuration but hides its tools from reasoning sessions. No data is removed.'
-                        : 'Re-enable this bundle so its tools become available to reasoning sessions.'
+                        ? "Disabling keeps this bundle's configuration but hides its tools from reasoning sessions. No data is removed."
+                        : 'Enable this bundle so its tools become available to reasoning sessions.'
                 }
             >
                 {isEnabled ? 'Disable' : 'Enable'}
@@ -263,8 +363,9 @@ export function ModifierGardenPage() {
             <header className="modifier-garden-header">
                 <h1 className="modifier-garden-title">Modifier Garden</h1>
                 <p className="modifier-garden-subtitle">
-                    Bundles currently registered with this Are-Self. Installing a bundle copies
-                    it into <code>neural_modifiers/</code>, loads its data, and wires its code.
+                    Bundles live here as zip files. Install lands a bundle's rows in the
+                    database. Enable exposes its tools to reasoning sessions. Uninstall clears
+                    the rows but keeps the zip. Delete removes the zip too.
                 </p>
             </header>
 
@@ -287,12 +388,83 @@ export function ModifierGardenPage() {
                                 No modifiers match these filters.
                             </td>
                         </tr>
-                    ) : filtered.map((modifier) => {
-                        const isActive = modifier.slug === selectedSlug;
+                    ) : filtered.map((entry) => {
+                        const slug = rowSlug(entry);
+                        const isActive = slug === selectedSlug;
+                        const isBusy = busySlug === slug;
+                        const rowClass = isActive
+                            ? 'modifier-garden-row modifier-garden-row--selected'
+                            : 'modifier-garden-row';
+
+                        if (entry.kind === 'available') {
+                            const e = entry.entry;
+                            const overflowOpen = overflowSlug === slug;
+                            return (
+                                <tr
+                                    key={`available:${slug}`}
+                                    className={rowClass}
+                                    onClick={() => setSelectedSlug(slug)}
+                                >
+                                    <td className="modifier-garden-cell-slug">
+                                        <code>{e.slug}</code>
+                                    </td>
+                                    <td>{e.name}</td>
+                                    <td>{e.version}</td>
+                                    <td>
+                                        <ModifierStatusPill
+                                            statusId={STATUS_AVAILABLE}
+                                            statusName="AVAILABLE"
+                                        />
+                                    </td>
+                                    <td>—</td>
+                                    <td>
+                                        <span className="modifier-garden-cell-event">—</span>
+                                    </td>
+                                    <td
+                                        className="modifier-garden-actions"
+                                        onClick={(ev) => ev.stopPropagation()}
+                                    >
+                                        {renderActionButton(entry)}
+                                        <div
+                                            className="modifier-garden-overflow"
+                                            ref={overflowOpen ? overflowRef : null}
+                                        >
+                                            <button
+                                                type="button"
+                                                className="modifier-garden-action modifier-garden-overflow-trigger"
+                                                onClick={() => setOverflowSlug(overflowOpen ? null : slug)}
+                                                disabled={isBusy}
+                                                aria-label="More actions"
+                                                title="More actions"
+                                            >
+                                                ⋯
+                                            </button>
+                                            {overflowOpen && (
+                                                <div className="modifier-garden-overflow-menu" role="menu">
+                                                    <button
+                                                        type="button"
+                                                        className="modifier-garden-overflow-item modifier-garden-overflow-item--danger"
+                                                        role="menuitem"
+                                                        onClick={() => {
+                                                            setOverflowSlug(null);
+                                                            setDeleting(e);
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        }
+
+                        const modifier = entry.row;
                         return (
                             <tr
-                                key={modifier.id}
-                                className={isActive ? 'modifier-garden-row modifier-garden-row--selected' : 'modifier-garden-row'}
+                                key={`installed:${modifier.id}`}
+                                className={rowClass}
                                 onClick={() => setSelectedSlug(modifier.slug)}
                             >
                                 <td className="modifier-garden-cell-slug">
@@ -317,17 +489,14 @@ export function ModifierGardenPage() {
                                 </td>
                                 <td
                                     className="modifier-garden-actions"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(ev) => ev.stopPropagation()}
                                 >
-                                    {renderActionButton(modifier)}
+                                    {renderActionButton(entry)}
                                     <button
                                         type="button"
                                         className="modifier-garden-action modifier-garden-action--danger"
                                         onClick={() => openUninstall(modifier)}
-                                        disabled={
-                                            busySlug === modifier.slug
-                                            || modifier.status_id === STATUS_DISCOVERED
-                                        }
+                                        disabled={isBusy}
                                         title="Uninstall and remove all contribution rows."
                                     >
                                         Uninstall
@@ -347,55 +516,102 @@ export function ModifierGardenPage() {
         </div>
     );
 
-    const right = selectedSlug ? (
-        <div className="modifier-garden-inspector">
-            <div className="modifier-garden-inspector-header">
-                <h2 className="modifier-garden-inspector-title">
-                    {detail?.name ?? selectedSlug}
-                </h2>
-                <button
-                    type="button"
-                    className="modifier-garden-inspector-close"
-                    onClick={() => setSelectedSlug(null)}
-                    aria-label="Close inspector"
-                >
-                    ×
-                </button>
-            </div>
-            {detail && (
-                <>
+    const right = selectedSlug ? (() => {
+        const availableSelected = catalog.find((c) => c.slug === selectedSlug);
+        const installedSelected = modifiers.find((m) => m.slug === selectedSlug);
+
+        if (!installedSelected && availableSelected) {
+            return (
+                <div className="modifier-garden-inspector">
+                    <div className="modifier-garden-inspector-header">
+                        <h2 className="modifier-garden-inspector-title">
+                            {availableSelected.name}
+                        </h2>
+                        <button
+                            type="button"
+                            className="modifier-garden-inspector-close"
+                            onClick={() => setSelectedSlug(null)}
+                            aria-label="Close inspector"
+                        >
+                            ×
+                        </button>
+                    </div>
                     <div className="modifier-garden-inspector-meta">
-                        <div><span>Slug</span><code>{detail.slug}</code></div>
-                        <div><span>Version</span><code>{detail.version}</code></div>
-                        <div><span>Author</span><code>{detail.author}</code></div>
-                        <div><span>License</span><code>{detail.license}</code></div>
+                        <div><span>Slug</span><code>{availableSelected.slug}</code></div>
+                        <div><span>Version</span><code>{availableSelected.version}</code></div>
+                        <div><span>Author</span><code>{availableSelected.author}</code></div>
+                        <div><span>License</span><code>{availableSelected.license}</code></div>
                         <div>
                             <span>Status</span>
                             <ModifierStatusPill
-                                statusId={detail.status_id}
-                                statusName={detail.status_name}
+                                statusId={STATUS_AVAILABLE}
+                                statusName="AVAILABLE"
                             />
                         </div>
-                        <div><span>Contributions</span><code>{detail.contribution_count}</code></div>
+                        <div><span>Archive</span><code>{availableSelected.archive_name}</code></div>
                     </div>
+                    {availableSelected.description && (
+                        <div className="modifier-garden-inspector-section">
+                            <h3>Description</h3>
+                            <p className="modifier-garden-inspector-description">
+                                {availableSelected.description}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
-                    <div className="modifier-garden-inspector-section">
-                        <h3>Recent events</h3>
-                        <ModifierEventList
-                            logs={detail.installation_logs?.slice(0, 2) ?? []}
-                        />
-                    </div>
-
-                    <Link
-                        to={`/modifiers/${detail.slug}`}
-                        className="modifier-garden-action modifier-garden-action--link modifier-garden-inspector-deep-link"
+        return (
+            <div className="modifier-garden-inspector">
+                <div className="modifier-garden-inspector-header">
+                    <h2 className="modifier-garden-inspector-title">
+                        {detail?.name ?? selectedSlug}
+                    </h2>
+                    <button
+                        type="button"
+                        className="modifier-garden-inspector-close"
+                        onClick={() => setSelectedSlug(null)}
+                        aria-label="Close inspector"
                     >
-                        Open full detail
-                    </Link>
-                </>
-            )}
-        </div>
-    ) : null;
+                        ×
+                    </button>
+                </div>
+                {detail && (
+                    <>
+                        <div className="modifier-garden-inspector-meta">
+                            <div><span>Slug</span><code>{detail.slug}</code></div>
+                            <div><span>Version</span><code>{detail.version}</code></div>
+                            <div><span>Author</span><code>{detail.author}</code></div>
+                            <div><span>License</span><code>{detail.license}</code></div>
+                            <div>
+                                <span>Status</span>
+                                <ModifierStatusPill
+                                    statusId={detail.status_id}
+                                    statusName={detail.status_name}
+                                />
+                            </div>
+                            <div><span>Contributions</span><code>{detail.contribution_count}</code></div>
+                        </div>
+
+                        <div className="modifier-garden-inspector-section">
+                            <h3>Recent events</h3>
+                            <ModifierEventList
+                                logs={detail.installation_logs?.slice(0, 2) ?? []}
+                            />
+                        </div>
+
+                        <Link
+                            to={`/modifiers/${detail.slug}`}
+                            className="modifier-garden-action modifier-garden-action--link modifier-garden-inspector-deep-link"
+                        >
+                            Open full detail
+                        </Link>
+                    </>
+                )}
+            </div>
+        );
+    })() : null;
 
     return (
         <>
@@ -436,6 +652,35 @@ export function ModifierGardenPage() {
                                 disabled={busySlug === confirming.slug}
                             >
                                 Uninstall
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {deleting && (
+                <div className="modifier-garden-dialog-overlay" role="presentation">
+                    <div role="dialog" aria-modal="true" className="modifier-garden-dialog">
+                        <h2>Delete {deleting.name} bundle?</h2>
+                        <p>
+                            This removes <code>{deleting.archive_name}</code> from your computer.
+                            You'll need to re-obtain it to install again.
+                        </p>
+                        <div className="modifier-garden-dialog-actions">
+                            <button
+                                type="button"
+                                className="modifier-garden-action"
+                                onClick={() => setDeleting(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="modifier-garden-action modifier-garden-action--danger"
+                                onClick={deleteFromCatalog}
+                                disabled={busySlug === deleting.slug}
+                            >
+                                Delete
                             </button>
                         </div>
                     </div>
