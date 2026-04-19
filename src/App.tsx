@@ -26,6 +26,8 @@ import { CNSSpikeForensics } from './pages/CNSSpikeForensics';
 import { EnvironmentEditor } from './pages/EnvironmentEditor';
 import { HippocampusPage } from './pages/HippocampusPage';
 import { HypothalamusPage } from './pages/HypothalamusPage';
+import { ModifierDetailPage } from './pages/ModifierDetailPage';
+import { ModifierGardenPage } from './pages/ModifierGardenPage';
 import { PFCEditPage } from './pages/PFCEditPage';
 import { EffectorEditorPage } from './pages/EffectorEditorPage';
 
@@ -72,6 +74,8 @@ function App() {
                                 <Route path="environments" element={<EnvironmentEditor />} />
                                 <Route path="hippocampus" element={<HippocampusPage />} />
                                 <Route path="hypothalamus" element={<HypothalamusPage />} />
+                                <Route path="modifiers" element={<ModifierGardenPage />} />
+                                <Route path="modifiers/:slug" element={<ModifierDetailPage />} />
                                 <Route path="pns" element={<PNSPage />} />
                                 <Route path="pns/monitor" element={<PNSMonitorPage />} />
                             </Route>

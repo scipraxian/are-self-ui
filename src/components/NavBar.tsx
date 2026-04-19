@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     Activity, BookOpen, Brain, Clock, Home, LayoutGrid, Menu,
-    Network, Settings, TrendingUp, X, Zap
+    Network, Puzzle, Settings, TrendingUp, X, Zap
 } from 'lucide-react';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
@@ -143,6 +143,11 @@ export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
                         <Zap size={15} className="nav-dd-icon" style={{ color: '#34d399' }} />
                         <span className="nav-dd-route">Hypothalamus</span>
                         <span className="nav-dd-label">Models</span>
+                    </Link>
+                    <Link to="/modifiers" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                        <Puzzle size={15} className="nav-dd-icon" style={{ color: '#c084fc' }} />
+                        <span className="nav-dd-route">Neuroplasticity</span>
+                        <span className="nav-dd-label">Modifiers</span>
                     </Link>
                     <Link to="/identity" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         <Brain size={15} className="nav-dd-icon" style={{ color: '#38bdf8' }} />

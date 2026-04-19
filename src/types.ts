@@ -468,3 +468,60 @@ export interface NerveTerminal {
     version: string | null;
     last_seen: string | null;
 }
+
+// --- NEURAL MODIFIER (MODIFIER GARDEN) TYPES ---
+
+export interface NeuralModifierInstallationEvent {
+    id: number;
+    event_type_id: number;
+    event_type_name: string;
+    event_data: Record<string, unknown>;
+    created: string;
+}
+
+export interface NeuralModifierInstallationLog {
+    id: number;
+    installation_manifest: Record<string, unknown>;
+    events: NeuralModifierInstallationEvent[];
+    created: string;
+}
+
+export interface NeuralModifierLatestEvent {
+    event_type_id: number;
+    event_type_name: string;
+    created: string;
+    event_data: Record<string, unknown>;
+}
+
+export interface NeuralModifierSummary {
+    id: string;
+    slug: string;
+    name: string;
+    version: string;
+    author: string;
+    license: string;
+    manifest_hash: string;
+    manifest_json: Record<string, unknown>;
+    // 1=DISCOVERED 2=INSTALLED 3=ENABLED 4=DISABLED 5=BROKEN
+    status_id: number;
+    status_name: string;
+    contribution_count: number;
+    latest_event: NeuralModifierLatestEvent | null;
+    created: string;
+    modified: string;
+}
+
+export interface NeuralModifierDetail extends NeuralModifierSummary {
+    installation_logs: NeuralModifierInstallationLog[];
+}
+
+export interface NeuralModifierImpactRow {
+    content_type: string;
+    count: number;
+}
+
+export interface NeuralModifierImpact {
+    slug: string;
+    contribution_count: number;
+    breakdown: NeuralModifierImpactRow[];
+}

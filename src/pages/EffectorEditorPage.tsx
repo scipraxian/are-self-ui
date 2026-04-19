@@ -214,7 +214,7 @@ export function EffectorEditorPage() {
     }, []);
 
     // Imperative fetch — can be called after mutations to refresh detail in-place
-    const fetchDetail = useCallback(async (id?: number) => {
+    const fetchDetail = useCallback(async (id?: string) => {
         const targetId = id ?? selectedId;
         if (!targetId) {
             setDetail(null);

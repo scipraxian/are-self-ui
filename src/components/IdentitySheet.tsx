@@ -702,23 +702,44 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                         </div>
                         <div className="badge-container">
                             {isEditMode ? (
-                                allTools.length ? allTools.map(tool => {
-                                    const checked = !!formState?.enabled_tool_ids.includes(tool.id);
-                                    return (
-                                        <button
-                                            key={`tool-${tool.id}`}
-                                            type="button"
-                                            className={`badge badge-tool ${checked ? 'badge-selected' : ''}`}
-                                            onClick={() => setFormState(prev => prev ? ({
-                                                ...prev,
-                                                enabled_tool_ids: toggleIdInList(prev.enabled_tool_ids, tool.id),
-                                            }) : prev)}
-                                        >
-                                            <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
-                                            {tool.name}
-                                        </button>
-                                    );
-                                }) : <span className="font-mono text-xs text-muted">No tools available.</span>
+                                <>
+                                    {allTools.length ? allTools.map(tool => {
+                                        const checked = !!formState?.enabled_tool_ids.includes(tool.id);
+                                        return (
+                                            <button
+                                                key={`tool-${tool.id}`}
+                                                type="button"
+                                                className={`badge badge-tool ${checked ? 'badge-selected' : ''}`}
+                                                onClick={() => setFormState(prev => prev ? ({
+                                                    ...prev,
+                                                    enabled_tool_ids: toggleIdInList(prev.enabled_tool_ids, tool.id),
+                                                }) : prev)}
+                                            >
+                                                <span className="badge-toggle-dot">{checked ? '●' : '○'}</span>
+                                                {tool.name}
+                                            </button>
+                                        );
+                                    }) : <span className="font-mono text-xs text-muted">No tools available.</span>}
+                                    {(() => {
+                                        const knownIds = new Set(allTools.map(t => String(t.id)));
+                                        const orphanIds = (formState?.enabled_tool_ids ?? []).filter(
+                                            id => !knownIds.has(String(id))
+                                        );
+                                        if (orphanIds.length === 0) return null;
+                                        return orphanIds.map(id => {
+                                            const short = String(id).slice(0, 8);
+                                            return (
+                                                <span
+                                                    key={`orphan-tool-${id}`}
+                                                    className="badge badge-tool badge-unresolved"
+                                                    title="This tool was provided by a NeuralModifier bundle that is no longer installed. Reinstall the bundle to restore it."
+                                                >
+                                                    unknown tool · {short}
+                                                </span>
+                                            );
+                                        });
+                                    })()}
+                                </>
                             ) : (
                                 baseData?.enabled_tools?.length ? baseData.enabled_tools.map(tool => (
                                     <button key={`tool-${tool.id}`} type="button" className="badge badge-tool">

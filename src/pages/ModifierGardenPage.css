@@ -1,0 +1,367 @@
+/* Layout root */
+
+.modifier-garden-center {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 20px;
+    min-height: 0;
+    overflow: auto;
+    pointer-events: auto;
+}
+
+.modifier-garden-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modifier-garden-title {
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+}
+
+.modifier-garden-subtitle {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+/* Left filter panel */
+
+.modifier-garden-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+}
+
+.modifier-garden-filters-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modifier-garden-filters-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.modifier-garden-search {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.9);
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.modifier-garden-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.modifier-garden-chip {
+    border: 1px solid var(--border-glass);
+    background: rgba(30, 41, 59, 0.55);
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.modifier-garden-chip:hover {
+    background: rgba(30, 41, 59, 0.85);
+}
+
+.modifier-garden-chip--active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #e0f2fe;
+}
+
+/* Table */
+
+.modifier-garden-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.modifier-garden-table thead th {
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.5);
+    position: sticky;
+    top: 0;
+}
+
+.modifier-garden-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-glass);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.modifier-garden-row {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.modifier-garden-row:hover {
+    background: rgba(30, 41, 59, 0.35);
+}
+
+.modifier-garden-row--selected {
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.modifier-garden-cell-slug code {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+}
+
+.modifier-garden-cell-event {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.modifier-garden-cell-timestamp {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.modifier-garden-table-actions-col {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.modifier-garden-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.modifier-garden-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+/* Buttons */
+
+.modifier-garden-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    background: rgba(30, 41, 59, 0.5);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.modifier-garden-action:hover:not(:disabled) {
+    background: rgba(30, 41, 59, 0.85);
+}
+
+.modifier-garden-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.modifier-garden-action--enable {
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #bbf7d0;
+}
+
+.modifier-garden-action--disable {
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #fde68a;
+}
+
+.modifier-garden-action--danger {
+    border-color: rgba(239, 68, 68, 0.55);
+    color: #fecaca;
+}
+
+.modifier-garden-action--link {
+    border-color: rgba(148, 163, 184, 0.4);
+    color: var(--text-secondary);
+}
+
+/* Inspector */
+
+.modifier-garden-inspector {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+}
+
+.modifier-garden-inspector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.modifier-garden-inspector-title {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.modifier-garden-inspector-close {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+}
+
+.modifier-garden-inspector-close:hover {
+    color: var(--text-primary);
+}
+
+.modifier-garden-inspector-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.78rem;
+}
+
+.modifier-garden-inspector-meta div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border-glass);
+}
+
+.modifier-garden-inspector-meta span {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+}
+
+.modifier-garden-inspector-meta code {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+}
+
+.modifier-garden-inspector-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.modifier-garden-inspector-deep-link {
+    align-self: flex-start;
+}
+
+/* Dialog */
+
+.modifier-garden-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.modifier-garden-dialog {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--text-primary);
+    pointer-events: auto;
+}
+
+.modifier-garden-dialog h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.modifier-garden-dialog p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.modifier-garden-dialog-breakdown {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.modifier-garden-dialog-breakdown li {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(30, 41, 59, 0.5);
+}
+
+.modifier-garden-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

@@ -1,0 +1,57 @@
+.modifier-install-button-root {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modifier-install-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    background: rgba(14, 165, 233, 0.2);
+    color: #e0f2fe;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.modifier-install-button:hover:not(:disabled) {
+    background: rgba(14, 165, 233, 0.35);
+}
+
+.modifier-install-button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.modifier-install-input {
+    display: none;
+}
+
+.modifier-install-message {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    border: 1px solid var(--border-glass);
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.modifier-install-message--error {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.15);
+    color: #fecaca;
+}
+
+.modifier-install-message--info {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(14, 165, 233, 0.15);
+    color: #e0f2fe;
+}

@@ -204,6 +204,14 @@
     border-color: rgba(250, 204, 21, 0.2);
 }
 
+.badge-unresolved {
+    background: rgba(148, 163, 184, 0.08);
+    color: var(--text-muted);
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    opacity: 0.75;
+    cursor: help;
+}
+
 .disc-specific-panel {
     background: linear-gradient(
         135deg,

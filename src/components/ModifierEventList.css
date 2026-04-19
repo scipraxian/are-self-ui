@@ -1,0 +1,124 @@
+.modifier-event-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.modifier-event-empty {
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.modifier-event-log {
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.35);
+    overflow: hidden;
+}
+
+.modifier-event-log-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(30, 41, 59, 0.55);
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.modifier-event-log-header:hover {
+    background: rgba(30, 41, 59, 0.75);
+}
+
+.modifier-event-log-title {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+
+.modifier-event-log-time {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+.modifier-event-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border-glass);
+}
+
+.modifier-event-row {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.modifier-event-row:last-child {
+    border-bottom: none;
+}
+
+.modifier-event-icon-wrap {
+    flex: none;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+}
+
+.modifier-event-icon--install { color: #38bdf8; }
+.modifier-event-icon--uninstall { color: #f87171; }
+.modifier-event-icon--enable { color: #22c55e; }
+.modifier-event-icon--disable { color: #f59e0b; }
+.modifier-event-icon--broken { color: #ef4444; }
+
+.modifier-event-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modifier-event-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.modifier-event-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modifier-event-time {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+.modifier-event-data {
+    margin: 0;
+    padding: 8px 10px;
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+}
