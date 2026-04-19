@@ -9,6 +9,7 @@ import type {
     ReasoningSessionData,
     ReasoningToolCallSummary,
     ReasoningTurnDigest,
+    SessionConclusionData,
     TalosEngramData,
 } from "../types.ts";
 
@@ -55,6 +56,12 @@ const generateHoverCardLines = (node: GraphNode): string[] => {
         const marker = tool.success === true ? '✓' : tool.success === false ? '✗' : '○';
         lines.push(`⚙ ${tool.tool_name} ${marker}`);
         if (tool.target) lines.push(tool.target);
+    } else if (node.type === 'conclusion') {
+        const conclusion = node as unknown as SessionConclusionData & { id: string };
+        const status = conclusion.outcome_status || conclusion.status_name || 'Complete';
+        lines.push(`◼ ${status}`);
+        const summaryPreview = conclusion.summary?.slice(0, 100) || '';
+        if (summaryPreview) lines.push(`"${summaryPreview}"`);
     }
 
     return lines;
@@ -113,6 +120,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
     const digestsRef = useRef<Map<string, ReasoningTurnDigest>>(new Map());
     const engramsRef = useRef<Map<string, TalosEngramData>>(new Map());
+    const conclusionRef = useRef<SessionConclusionData | null>(null);
     const highestTurnRef = useRef<number>(-1);
     const engramRefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -178,6 +186,30 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                 links.push({ source: tId, target: cId, type: 'tool_call' });
             });
         });
+
+        // Conclusion node: one octahedron per session, hung off the
+        // current last turn by a 'sequence' link. Link re-anchors on
+        // every rebuild so it tracks late-arriving turns (matches the
+        // pre-cutover behavior).
+        const conclusion = conclusionRef.current;
+        if (conclusion) {
+            const cId = `conclusion-${conclusion.id}`;
+            nodes.push({
+                ...(conclusion as unknown as Record<string, unknown>),
+                id: cId,
+                type: 'conclusion',
+                label: 'Final Report',
+                status_name: conclusion.status_name,
+            });
+            if (digests.length > 0) {
+                const last = digests[digests.length - 1];
+                links.push({
+                    source: `turn-${last.turn_id}`,
+                    target: cId,
+                    type: 'sequence',
+                });
+            }
+        }
 
         // Engram layer: one octahedron per engram linked to this session,
         // with a 'memory' link to each source turn already rendered.
@@ -255,6 +287,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     }, [loadEngrams]);
 
     const digestEvent = useDendrite('ReasoningTurnDigest', null);
+    const conclusionEvent = useDendrite('SessionConclusion', null);
 
     // Cold-start fetch + reset when session changes. Digest blob and
     // engram side-fetch fire in parallel.
@@ -264,6 +297,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
         digestsRef.current = new Map();
         engramsRef.current = new Map();
+        conclusionRef.current = null;
         highestTurnRef.current = -1;
         setGraphData({ nodes: [], links: [] });
 
@@ -282,8 +316,29 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
             }
         };
 
+        // Conclusion cold-start — 404 means the session isn't concluded
+        // yet; we render nothing and let the dendrite deliver the node
+        // when mcp_done writes it.
+        const loadConclusion = async () => {
+            try {
+                const res = await fetch(
+                    `/api/v2/reasoning_sessions/${sessionId}/conclusion/`
+                );
+                if (cancelled) return;
+                if (res.status === 404) return;
+                if (!res.ok) return;
+                const conclusion: SessionConclusionData = await res.json();
+                if (cancelled) return;
+                conclusionRef.current = conclusion;
+                rebuild();
+            } catch (err) {
+                console.error('Conclusion fetch failed:', err);
+            }
+        };
+
         loadDigests();
         loadEngrams();
+        loadConclusion();
         return () => {
             cancelled = true;
             if (engramRefetchTimerRef.current) {
@@ -306,6 +361,16 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         if (hasUnseen) scheduleEngramRefetch();
         rebuild();
     }, [digestEvent, sessionId, upsertDigest, rebuild, scheduleEngramRefetch]);
+
+    // Live push: SessionConclusion vesicle lands when mcp_done writes
+    // the conclusion row. Same session-id filter as the digest stream.
+    useEffect(() => {
+        if (!conclusionEvent || !sessionId) return;
+        const vesicle = conclusionEvent.vesicle as SessionConclusionData | undefined;
+        if (!vesicle || vesicle.session_id !== sessionId) return;
+        conclusionRef.current = vesicle;
+        rebuild();
+    }, [conclusionEvent, sessionId, rebuild]);
 
     useEffect(() => {
         let frameId: number;
@@ -452,6 +517,9 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         } else if (node.type === 'engram') {
             geometry = new THREE.OctahedronGeometry(5);
             color = '#a855f7';
+        } else if (node.type === 'conclusion') {
+            geometry = new THREE.OctahedronGeometry(10);
+            color = '#4ade80';
         }
 
         if (!geometry) {

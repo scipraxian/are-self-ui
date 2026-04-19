@@ -125,12 +125,16 @@ export interface TalosEngramData {
 
 export interface SessionConclusionData {
     id: number;
+    session_id: string;
     status_name: string;
     summary: string;
     reasoning_trace: string;
     outcome_status: string;
     recommended_action: string;
-    next_goal_suggestion: string;
+    next_goal_suggestion: string | null;
+    system_persona_and_prompt_feedback: string | null;
+    created: string | null;
+    modified: string | null;
 }
 
 /**
