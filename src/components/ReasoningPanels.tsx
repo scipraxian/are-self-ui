@@ -2,6 +2,7 @@ import "./ReasoningPanels.css";
 import { type ReactNode, useEffect, useState } from 'react';
 import { Power, RefreshCw, Terminal, Database, Target, Download, MessageSquare, Trash2 } from 'lucide-react';
 import { useDendrite } from './SynapticCleft';
+import { useSessionDigests } from '../hooks/useSessionDigests';
 import type {
     GraphNode,
     ReasoningSessionData,
@@ -377,6 +378,53 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
         </div>
     );
 };
+
+// --- LIVE ELAPSED TIMER ---
+// rAF-based ticking component: updates once per second by comparing
+// performance.now() against the last tick. Avoids setInterval per the
+// CLAUDE.md dataflow rules. Renders "0.3s" / "12s" / "1m 23s" / "1h 2m".
+const TURN_ACTIVE_STATUSES = ['Active', 'Running', 'Pending', 'Thinking'];
+
+const formatElapsed = (ms: number): string => {
+    if (ms < 0) return '0s';
+    const totalSec = ms / 1000;
+    if (totalSec < 1) return `${totalSec.toFixed(1)}s`;
+    if (totalSec < 60) return `${Math.floor(totalSec)}s`;
+    const min = Math.floor(totalSec / 60);
+    const sec = Math.floor(totalSec - min * 60);
+    if (min < 60) return `${min}m ${sec}s`;
+    const hr = Math.floor(min / 60);
+    const remMin = min - hr * 60;
+    return `${hr}h ${remMin}m`;
+};
+
+interface LiveElapsedProps {
+    startedAt: string;
+}
+
+const LiveElapsed = ({ startedAt }: LiveElapsedProps) => {
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        let frameId: number;
+        let lastTickMs = performance.now();
+        const loop = () => {
+            const perfNow = performance.now();
+            if (perfNow - lastTickMs >= 1000) {
+                lastTickMs = perfNow;
+                setNow(Date.now());
+            }
+            frameId = requestAnimationFrame(loop);
+        };
+        frameId = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(frameId);
+    }, []);
+
+    const startMs = Date.parse(startedAt);
+    const elapsed = isNaN(startMs) ? 0 : Math.max(0, now - startMs);
+    return <span className="inspector-live-elapsed">{formatElapsed(elapsed)}</span>;
+};
+
 // --- RIGHT PANEL: Node Inspector Parity ---
 interface ReasoningInspectorProps {
     node: GraphNode | null;
@@ -385,10 +433,9 @@ interface ReasoningInspectorProps {
 
 export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps) => {
     const [sessionData, setSessionData] = useState<ReasoningSessionData | null>(null);
-    const [digests, setDigests] = useState<ReasoningTurnDigest[]>([]);
     const [turnDetail, setTurnDetail] = useState<ReasoningTurnData | null>(null);
     const sessionEvent = useDendrite('ReasoningSession', sessionId ?? null);
-    const digestEvent = useDendrite('ReasoningTurnDigest', null);
+    const { digests } = useSessionDigests(sessionId ?? null);
 
     // Minimal session fetch (status, created, turns_count). Replaces
     // the full blob — downstream consumers that need turns use digests.
@@ -410,40 +457,6 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
         return () => { cancelled = true; };
     }, [sessionId, sessionEvent]);
 
-    // Digest pull-fallback on mount + live upsert on vesicle.
-    useEffect(() => {
-        let cancelled = false;
-        if (!sessionId) return;
-        const load = async () => {
-            try {
-                const res = await fetch(
-                    `/api/v2/reasoning_sessions/${sessionId}/graph_data/?since_turn_number=-1`
-                );
-                if (!res.ok || cancelled) return;
-                const list: ReasoningTurnDigest[] = await res.json();
-                if (cancelled) return;
-                setDigests(list);
-            } catch (err) {
-                console.error('Failed to fetch digests', err);
-            }
-        };
-        load();
-        return () => { cancelled = true; };
-    }, [sessionId]);
-
-    useEffect(() => {
-        if (!digestEvent || !sessionId) return;
-        const vesicle = digestEvent.vesicle as ReasoningTurnDigest | undefined;
-        if (!vesicle || vesicle.session_id !== sessionId) return;
-        setDigests(prev => {
-            const idx = prev.findIndex(d => d.turn_id === vesicle.turn_id);
-            if (idx === -1) return [...prev, vesicle].sort((a, b) => a.turn_number - b.turn_number);
-            const next = prev.slice();
-            next[idx] = vesicle;
-            return next;
-        });
-    }, [digestEvent, sessionId]);
-
     // Per-turn on-demand fetch — fires for both turn nodes (obvious)
     // and tool sub-nodes (the tool inspector reads arguments,
     // result_payload, and traceback off the ToolCall, which only lives
@@ -456,11 +469,9 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
         : undefined;
     useEffect(() => {
         let cancelled = false;
-        if (!turnId) {
-            setTurnDetail(null);
-            return;
-        }
         const load = async () => {
+            setTurnDetail(null);
+            if (!turnId) return;
             try {
                 const res = await fetch(`/api/v2/reasoning_turns/${turnId}/`);
                 if (!res.ok || cancelled) return;
@@ -471,7 +482,6 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                 console.error('Failed to fetch turn detail', err);
             }
         };
-        setTurnDetail(null);
         load();
         return () => { cancelled = true; };
     }, [turnId]);
@@ -604,7 +614,10 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                                 <span>{modelName} · {timing} · {tokensIn}→{tokensOut} tokens</span>
                             </div>
                             <div className="turn-tier-1-timing">
-                                Started {startedLabel}{turn?.delta ? ` · On task ${turn.delta}` : ''}
+                                Started {startedLabel}
+                                {TURN_ACTIVE_STATUSES.includes(n.status_name) && created ? (
+                                    <> · Live <LiveElapsed startedAt={created} /></>
+                                ) : turn?.delta ? ` · On task ${turn.delta}` : ''}
                             </div>
                         </div>
 
@@ -749,10 +762,17 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                             const summary = summarizeTool(tool);
                             const argsStr = typeof tool.arguments === 'object' ? JSON.stringify(tool.arguments, null, 2) : String(tool.arguments || '');
 
+                            const toolActive = TURN_ACTIVE_STATUSES.includes(tool.status_name || '');
+
                             return (
                                 <>
                                     <div className="tool-inspector-header">
                                         <Terminal size={16} /> {tool.tool_name}
+                                        {toolActive && tool.created && (
+                                            <span className="tool-inspector-live">
+                                                · <LiveElapsed startedAt={tool.created} />
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="tool-inspector-summary">

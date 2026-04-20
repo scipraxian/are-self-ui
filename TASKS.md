@@ -33,6 +33,78 @@ subscription event — so a terminal save also rehits celery-workers and beat fo
 - [ ] **Beat status & spikes via subscription.** `/beat/status/` and `/spikes/?is_active=true`
   should likewise be event-driven — they only change when beat restarts or spikes start/end.
 
+## Recently Done — Modifier Garden scaffolding (April 19, 2026)
+
+FE-1, FE-2, FE-4 of `are-self-api/NEURAL_MODIFIER_COMPLETION_PLAN.md` §Frontend track
+landed in one pass alongside the thin DRF surface the UI needs.
+
+- **Types.** `NeuralModifierSummary`, `NeuralModifierDetail`,
+  `NeuralModifierInstallationLog`, `NeuralModifierInstallationEvent`,
+  `NeuralModifierImpact` in `types.ts`.
+- **Components.** `ModifierStatusPill` (5-state color pill),
+  `ModifierEventList` (per-log timeline with expand/collapse + icons per
+  event type), `ModifierInstallButton` (zip picker → POST multipart).
+- **Pages.** `ModifierGardenPage` at `/modifiers` — ThreePanel with status
+  filter chips + search on the left, sortable table in the center
+  (slug / name / version / status / contribution count / last event /
+  actions), inline enable/disable toggle per row, uninstall button that
+  fetches `/impact/` and opens a confirmation dialog showing the
+  contribution breakdown by ContentType before the final POST. Selection
+  opens an inspector on the right with manifest + recent events.
+  `ModifierDetailPage` at `/modifiers/:slug` — full manifest dump +
+  installation history via `ModifierEventList`.
+- **Real-time.** `useDendrite('NeuralModifier', null)` drives refetch of
+  both list and detail; backend fires Acetylcholine with
+  `receptor_class='NeuralModifier'` from the viewset after each
+  lifecycle op (install / uninstall / enable / disable).
+- **Nav + routes.** `App.tsx` registers `/modifiers` and
+  `/modifiers/:slug`. HamburgerMenu entry "Neuroplasticity / Modifiers"
+  with a Puzzle icon, slotted between Hypothalamus and Identity.
+- **Identity tool picker soft-lookup (FE-4).** Edit-mode view in
+  `IdentitySheet.tsx` now derives orphan IDs by diffing
+  `formState.enabled_tool_ids` against `allTools`. Orphans render as
+  gray dashed `.badge-unresolved` chips reading "unknown tool · {first 8}"
+  with a tooltip explaining the bundle is uninstalled. Orphans are
+  preserved on save — not stripped — so reinstalling the bundle
+  restores the assignment.
+
+### Not yet landed (follow-up prompts)
+
+- **FE-3 — Row-provenance chip.** Needs a cross-cutting per-row lookup
+  endpoint. Design deferred to its own prompt. See
+  `are-self-api/NEURAL_MODIFIER_COMPLETION_PLAN.md` §FE-3.
+- **FE-5 / FE-6 / FE-7.** Deep-inspector polish, bundle marketplace
+  search, manifest linter — out of scope for this pass; same plan doc.
+
+## Recently Done — Conclusion node back on reasoning graph (April 19, 2026)
+
+Third and last domain node back on the 3D graph (after digests and engrams),
+same push-first + pull-fallback contract. Goals stay dropped as legacy.
+
+- **Types.** `SessionConclusionData` in `types.ts` now matches the backend
+  `SessionConclusionSerializer`: added `session_id`, `system_persona_and_prompt_feedback`,
+  `created`, `modified`; flagged `next_goal_suggestion` and
+  `system_persona_and_prompt_feedback` as `string | null`. `id` stays `number`
+  (backend `SessionConclusion` uses `BigAutoField`, not `UUIDIdMixin`).
+- **`ReasoningGraph3D.tsx`.** On mount, a parallel `GET /api/v2/reasoning_sessions/{sessionId}/conclusion/`
+  fires alongside the digest and engram fetches. 404 → no conclusion yet,
+  no node. 200 → the conclusion is held in `conclusionRef` and `rebuild()`
+  appends a `'conclusion'`-type node (green `#4ade80` octahedron, size 10)
+  with a `'sequence'` link from the current last turn. The link re-anchors
+  on every rebuild so late-arriving turns move it to the new last turn
+  (matches pre-cutover behavior). Live push via
+  `useDendrite('SessionConclusion', null)` — vesicles are filtered on
+  `vesicle.session_id === sessionId` and upsert into `conclusionRef`.
+  Hover card: `◼ {outcome_status || status_name}` + summary slice.
+  Goals are not rendered — legacy, dropped.
+- **Inspector.** The existing `'conclusion'` branch in `ReasoningPanels.tsx`
+  (accordions for SUMMARY, OUTCOME, RECOMMENDED ACTION, NEXT GOAL,
+  REASONING TRACE) reads fields straight off the node and works as-is
+  with the digest/dendrite-sourced conclusion data.
+- **Build state.** `npm run build` — zero net-new type errors from this
+  change. Same 10 pre-existing `EffectorEditorPage.tsx` errors still
+  block a clean `tsc -b`; unrelated.
+
 ## Recently Done — Engram nodes back on graph + tool-node inspector fix (April 18, 2026)
 
 Two fixes tied to the digest cutover. Backend companion committed the same

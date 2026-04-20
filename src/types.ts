@@ -43,6 +43,8 @@ export interface ToolCallData {
     traceback: string;
     status_name?: string;
     is_async: boolean;
+    created?: string;
+    modified?: string;
 }
 
 export interface ReasoningMessageRole {

@@ -1,25 +1,28 @@
 import "./ReasoningGraph3D.css";
-import { memo, useRef, useCallback, useEffect, useState } from 'react';
+import { memo, useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import { useDendrite } from './SynapticCleft';
+import { useSessionDigests } from '../hooks/useSessionDigests';
 import type {
     GraphLink,
     GraphNode,
-    ReasoningSessionData,
     ReasoningToolCallSummary,
-    ReasoningTurnDigest,
     SessionConclusionData,
     TalosEngramData,
 } from "../types.ts";
 
-// Scope: turns + their tool sub-nodes come from the digest stream;
-// engrams piggyback a thin dedicated fetch (/api/v2/engrams/?sessions=X)
-// on mount and get refreshed when a vesicle brings an engram_id we
-// haven't seen before. Goals and session conclusion still live behind
-// the right-side inspector.
+// Scope: turns + their tool sub-nodes come from the digest stream
+// (via useSessionDigests); engrams piggyback a thin dedicated fetch
+// (/api/v2/engrams/?sessions=X) on mount and get refreshed when a
+// digest brings an engram_id we haven't seen before. Session conclusion
+// has its own dendrite.
 const MAX_THOUGHT_LENGTH = 140;
 const ENGRAM_REFETCH_DEBOUNCE_MS = 250;
+const TURN_ACTIVE_STATUSES = ['Active', 'Running', 'Pending', 'Thinking'];
+const IN_FLIGHT_PREFIX = 'turn-in-flight-';
+const IN_FLIGHT_GROWTH_CAP = 4;
+const IN_FLIGHT_GROWTH_SECONDS = 30;
 
 const clipExcerpt = (text: string | undefined): string => {
     if (!text) return '';
@@ -92,11 +95,17 @@ interface HoverCard {
     lines: string[];
 }
 
+interface InFlightTurn {
+    turn_id: string;
+    turn_number: number;
+    status_name: string;
+    created: string;
+}
+
 interface ReasoningGraphProps {
     sessionId: string;
     onNodeSelect: (node: GraphNode) => void;
     onStatsUpdate: (stats: { level: number, focus: string, xp: number, status: string, latestThought: string }) => void;
-    onSessionDataUpdate?: (data: ReasoningSessionData) => void;
 }
 
 // Size-ratio heuristic replaces the old avgDelta-based one. We no longer
@@ -113,38 +122,188 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     sessionId,
     onNodeSelect,
     onStatsUpdate,
-    onSessionDataUpdate,
 }: ReasoningGraphProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
-    const [graphData, setGraphData] = useState<{ nodes: GraphNode[], links: GraphLink[] }>({ nodes: [], links: [] });
-    const digestsRef = useRef<Map<string, ReasoningTurnDigest>>(new Map());
-    const engramsRef = useRef<Map<string, TalosEngramData>>(new Map());
-    const conclusionRef = useRef<SessionConclusionData | null>(null);
-    const highestTurnRef = useRef<number>(-1);
+    const [engrams, setEngrams] = useState<Map<string, TalosEngramData>>(new Map());
+    const [conclusion, setConclusion] = useState<SessionConclusionData | null>(null);
+    const [inFlightTurns, setInFlightTurns] = useState<Map<string, InFlightTurn>>(new Map());
     const engramRefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const activeMeshesRef = useRef<THREE.Mesh[]>([]);
+    const inFlightMeshesRef = useRef<Map<string, THREE.Mesh>>(new Map());
     const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
     const [hoverCard, setHoverCard] = useState<HoverCard | null>(null);
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Rebuild nodes/links from the digest map. Idempotent: same map in,
-    // same arrays out (modulo Map iteration order, which is insertion
-    // order, which matches the order we upsert in).
-    const rebuild = useCallback(() => {
-        const digests = Array.from(digestsRef.current.values())
-            .sort((a, b) => a.turn_number - b.turn_number);
+    const { digests } = useSessionDigests(sessionId);
+    const digestEvent = useDendrite('ReasoningTurnDigest', null);
+    const conclusionEvent = useDendrite('SessionConclusion', null);
+    const turnEvent = useDendrite('ReasoningTurn', sessionId ?? null);
 
+    // Reset per-session stores + cold-fetch engrams and conclusion.
+    // All setState calls happen inside async functions so the
+    // react-hooks/set-state-in-effect rule is satisfied.
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadEngrams = async () => {
+            if (!sessionId) {
+                setEngrams(new Map());
+                return;
+            }
+            setEngrams(new Map());
+            try {
+                const res = await fetch(`/api/v2/engrams/?sessions=${sessionId}`);
+                if (!res.ok || cancelled) return;
+                const list: TalosEngramData[] = await res.json();
+                if (cancelled) return;
+                const next = new Map<string, TalosEngramData>();
+                list.forEach(e => next.set(e.id, e));
+                setEngrams(next);
+            } catch (err) {
+                console.error('Engram fetch failed:', err);
+            }
+        };
+
+        // Conclusion cold-start — 404 means the session isn't concluded
+        // yet; we render nothing and let the dendrite deliver the node
+        // when mcp_done writes it.
+        const loadConclusion = async () => {
+            if (!sessionId) {
+                setConclusion(null);
+                return;
+            }
+            setConclusion(null);
+            try {
+                const res = await fetch(
+                    `/api/v2/reasoning_sessions/${sessionId}/conclusion/`
+                );
+                if (cancelled) return;
+                if (res.status === 404) return;
+                if (!res.ok) return;
+                const data: SessionConclusionData = await res.json();
+                if (cancelled) return;
+                setConclusion(data);
+            } catch (err) {
+                console.error('Conclusion fetch failed:', err);
+            }
+        };
+
+        const resetInFlight = async () => {
+            setInFlightTurns(new Map());
+        };
+
+        loadEngrams();
+        loadConclusion();
+        resetInFlight();
+        return () => {
+            cancelled = true;
+            if (engramRefetchTimerRef.current) {
+                clearTimeout(engramRefetchTimerRef.current);
+                engramRefetchTimerRef.current = null;
+            }
+        };
+    }, [sessionId]);
+
+    // Schedule a debounced engram refetch when a digest brings an
+    // engram_id we haven't rendered yet.
+    useEffect(() => {
+        if (!digestEvent || !sessionId) return;
+        const vesicle = digestEvent.vesicle as { session_id?: string; engram_ids?: string[] } | undefined;
+        if (!vesicle || vesicle.session_id !== sessionId) return;
+        const incoming = vesicle.engram_ids || [];
+        const hasUnseen = incoming.some(id => !engrams.has(id));
+        if (!hasUnseen) return;
+
+        if (engramRefetchTimerRef.current) {
+            clearTimeout(engramRefetchTimerRef.current);
+        }
+        engramRefetchTimerRef.current = setTimeout(async () => {
+            engramRefetchTimerRef.current = null;
+            try {
+                const res = await fetch(`/api/v2/engrams/?sessions=${sessionId}`);
+                if (!res.ok) return;
+                const list: TalosEngramData[] = await res.json();
+                const next = new Map<string, TalosEngramData>();
+                list.forEach(e => next.set(e.id, e));
+                setEngrams(next);
+            } catch (err) {
+                console.error('Engram refetch failed:', err);
+            }
+        }, ENGRAM_REFETCH_DEBOUNCE_MS);
+    }, [digestEvent, sessionId, engrams]);
+
+    // Live push: SessionConclusion vesicle lands when mcp_done writes
+    // the conclusion row. Same session-id filter as the digest stream.
+    useEffect(() => {
+        if (!conclusionEvent || !sessionId) return;
+        const vesicle = conclusionEvent.vesicle as SessionConclusionData | undefined;
+        if (!vesicle || vesicle.session_id !== sessionId) return;
+        const apply = async () => {
+            setConclusion(vesicle);
+        };
+        apply();
+    }, [conclusionEvent, sessionId]);
+
+    // In-flight turn signal: broadcast by frontal_lobe/signals.py when
+    // a ReasoningTurn is created/saved without a model_usage_record.
+    // Keyed on dendrite_id=session_id so useDendrite filters for us.
+    useEffect(() => {
+        if (!turnEvent || !sessionId) return;
+        const vesicle = turnEvent.vesicle as InFlightTurn & { session_id?: string } | undefined;
+        if (!vesicle || !vesicle.turn_id || vesicle.session_id !== sessionId) return;
+        const apply = async () => {
+            setInFlightTurns(prev => {
+                const next = new Map(prev);
+                next.set(vesicle.turn_id, {
+                    turn_id: vesicle.turn_id,
+                    turn_number: vesicle.turn_number,
+                    status_name: vesicle.status_name,
+                    created: vesicle.created,
+                });
+                return next;
+            });
+        };
+        apply();
+    }, [turnEvent, sessionId]);
+
+    // Drop ghost placeholders once the real digest arrives for that turn.
+    useEffect(() => {
+        if (inFlightTurns.size === 0) return;
+        const digestIds = new Set(digests.map(d => d.turn_id));
+        let shouldPrune = false;
+        inFlightTurns.forEach((_, turnId) => {
+            if (digestIds.has(turnId)) shouldPrune = true;
+        });
+        if (!shouldPrune) return;
+        const apply = async () => {
+            setInFlightTurns(prev => {
+                const next = new Map<string, InFlightTurn>();
+                prev.forEach((val, key) => {
+                    if (!digestIds.has(key)) next.set(key, val);
+                });
+                return next;
+            });
+        };
+        apply();
+    }, [digests, inFlightTurns]);
+
+    // Derive nodes/links from digests + engrams + conclusion + in-flight.
+    // Pure computation over state, so it belongs in useMemo rather than
+    // a setState-in-effect (which the lint rule forbids).
+    const graphData = useMemo<{ nodes: GraphNode[], links: GraphLink[] }>(() => {
         const meanTokens = digests.length
             ? digests.reduce((s, d) => s + (d.tokens_out || 0), 0) / digests.length
             : 0;
 
         const nodes: GraphNode[] = [];
         const links: GraphLink[] = [];
+        const digestTurnIds = new Set<string>();
 
         digests.forEach((d, index) => {
             const tId = `turn-${d.turn_id}`;
+            digestTurnIds.add(d.turn_id);
             const sizeRatio = computeSizeRatio(d.tokens_out, meanTokens);
             nodes.push({
                 id: tId,
@@ -187,11 +346,45 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
             });
         });
 
+        // Ghost in-flight turn(s) — skip any whose digest already landed.
+        const inFlightSorted = Array.from(inFlightTurns.values())
+            .filter(t => !digestTurnIds.has(t.turn_id))
+            .sort((a, b) => a.turn_number - b.turn_number);
+        inFlightSorted.forEach((t, idx) => {
+            const ghostId = `${IN_FLIGHT_PREFIX}${t.turn_id}`;
+            nodes.push({
+                id: ghostId,
+                type: 'turn',
+                label: `Turn ${t.turn_number}`,
+                status_name: t.status_name || 'Active',
+                sizeRatio: 1,
+                turn_id: t.turn_id,
+                session_id: sessionId,
+                turn_number: t.turn_number,
+                created: t.created,
+                in_flight: true,
+            });
+            // Chain ghost after the last real turn (or the prior ghost).
+            if (idx === 0 && digests.length > 0) {
+                const last = digests[digests.length - 1];
+                links.push({
+                    source: `turn-${last.turn_id}`,
+                    target: ghostId,
+                    type: 'sequence',
+                });
+            } else if (idx > 0) {
+                const prev = inFlightSorted[idx - 1];
+                links.push({
+                    source: `${IN_FLIGHT_PREFIX}${prev.turn_id}`,
+                    target: ghostId,
+                    type: 'sequence',
+                });
+            }
+        });
+
         // Conclusion node: one octahedron per session, hung off the
         // current last turn by a 'sequence' link. Link re-anchors on
-        // every rebuild so it tracks late-arriving turns (matches the
-        // pre-cutover behavior).
-        const conclusion = conclusionRef.current;
+        // every rebuild so it tracks late-arriving turns.
         if (conclusion) {
             const cId = `conclusion-${conclusion.id}`;
             nodes.push({
@@ -213,7 +406,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
         // Engram layer: one octahedron per engram linked to this session,
         // with a 'memory' link to each source turn already rendered.
-        engramsRef.current.forEach((engram) => {
+        engrams.forEach((engram) => {
             const eId = `engram-${engram.id}`;
             nodes.push({
                 ...engram,
@@ -222,7 +415,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                 label: engram.name,
             });
             (engram.source_turns || []).forEach((turnId) => {
-                if (digestsRef.current.has(turnId)) {
+                if (digestTurnIds.has(turnId)) {
                     links.push({
                         source: `turn-${turnId}`,
                         target: eId,
@@ -232,145 +425,39 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
             });
         });
 
+        // Clear the mesh registries in lockstep with the graph rebuild.
+        // ForceGraph3D repopulates them via nodeThreeObject as it
+        // renders the new graph; without the clear, stale meshes would
+        // accumulate across rebuilds and keep receiving scale updates
+        // in the animate loop.
+        // eslint-disable-next-line react-hooks/refs
         activeMeshesRef.current = [];
-        setGraphData({ nodes, links });
+        // eslint-disable-next-line react-hooks/refs
+        inFlightMeshesRef.current = new Map();
+        return { nodes, links };
+    }, [digests, engrams, conclusion, inFlightTurns, sessionId]);
 
-        const latest = digests[digests.length - 1];
-        onStatsUpdate({
-            level: 1,
-            focus: `${digests.length} / ?`,
-            xp: digests.reduce((s, d) => s + (d.tokens_out || 0), 0),
-            status: latest?.status_name || 'Unknown',
-            latestThought: latest?.excerpt || 'Awaiting cortex synchronization...',
-        });
-        // Partial ReasoningSessionData — goals/engrams/conclusion/full turns
-        // aren't available from the digest stream. Downstream consumers
-        // should null-check rather than assume these are populated.
-        onSessionDataUpdate?.({
-            id: sessionId,
-            status_name: latest?.status_name || 'Unknown',
-            created: latest?.created || '',
-            turns_count: digests.length,
-        });
-    }, [sessionId, onStatsUpdate, onSessionDataUpdate]);
-
-    const upsertDigest = useCallback((digest: ReasoningTurnDigest) => {
-        digestsRef.current.set(digest.turn_id, digest);
-        if (digest.turn_number > highestTurnRef.current) {
-            highestTurnRef.current = digest.turn_number;
-        }
-    }, []);
-
-    const loadEngrams = useCallback(async () => {
-        if (!sessionId) return;
-        try {
-            const res = await fetch(`/api/v2/engrams/?sessions=${sessionId}`);
-            if (!res.ok) return;
-            const engrams: TalosEngramData[] = await res.json();
-            const nextMap = new Map<string, TalosEngramData>();
-            engrams.forEach(e => nextMap.set(e.id, e));
-            engramsRef.current = nextMap;
-            rebuild();
-        } catch (err) {
-            console.error('Engram fetch failed:', err);
-        }
-    }, [sessionId, rebuild]);
-
-    const scheduleEngramRefetch = useCallback(() => {
-        if (engramRefetchTimerRef.current) {
-            clearTimeout(engramRefetchTimerRef.current);
-        }
-        engramRefetchTimerRef.current = setTimeout(() => {
-            engramRefetchTimerRef.current = null;
-            loadEngrams();
-        }, ENGRAM_REFETCH_DEBOUNCE_MS);
-    }, [loadEngrams]);
-
-    const digestEvent = useDendrite('ReasoningTurnDigest', null);
-    const conclusionEvent = useDendrite('SessionConclusion', null);
-
-    // Cold-start fetch + reset when session changes. Digest blob and
-    // engram side-fetch fire in parallel.
+    // Push cortex stats to the parent whenever our input state changes.
+    // onStatsUpdate is a setState on the parent; wrapping in async
+    // satisfies the set-state-in-effect rule.
     useEffect(() => {
-        if (!sessionId) return;
-        let cancelled = false;
-
-        digestsRef.current = new Map();
-        engramsRef.current = new Map();
-        conclusionRef.current = null;
-        highestTurnRef.current = -1;
-        setGraphData({ nodes: [], links: [] });
-
-        const loadDigests = async () => {
-            try {
-                const res = await fetch(
-                    `/api/v2/reasoning_sessions/${sessionId}/graph_data/?since_turn_number=-1`
-                );
-                if (!res.ok || cancelled) return;
-                const digests: ReasoningTurnDigest[] = await res.json();
-                if (cancelled) return;
-                digests.forEach(upsertDigest);
-                rebuild();
-            } catch (err) {
-                console.error('Graph cold-start fetch failed:', err);
-            }
+        const publish = async () => {
+            const latest = digests[digests.length - 1];
+            const liveGhosts = Array.from(inFlightTurns.values())
+                .filter(t => !digests.some(d => d.turn_id === t.turn_id));
+            const inFlightCount = liveGhosts.length;
+            const statusOverride = inFlightCount > 0 ? 'Active' : (latest?.status_name || 'Unknown');
+            const thoughtOverride = inFlightCount > 0 ? 'Thinking...' : (latest?.excerpt || 'Awaiting cortex synchronization...');
+            onStatsUpdate({
+                level: 1,
+                focus: `${digests.length} / ?`,
+                xp: digests.reduce((s, d) => s + (d.tokens_out || 0), 0),
+                status: statusOverride,
+                latestThought: thoughtOverride,
+            });
         };
-
-        // Conclusion cold-start — 404 means the session isn't concluded
-        // yet; we render nothing and let the dendrite deliver the node
-        // when mcp_done writes it.
-        const loadConclusion = async () => {
-            try {
-                const res = await fetch(
-                    `/api/v2/reasoning_sessions/${sessionId}/conclusion/`
-                );
-                if (cancelled) return;
-                if (res.status === 404) return;
-                if (!res.ok) return;
-                const conclusion: SessionConclusionData = await res.json();
-                if (cancelled) return;
-                conclusionRef.current = conclusion;
-                rebuild();
-            } catch (err) {
-                console.error('Conclusion fetch failed:', err);
-            }
-        };
-
-        loadDigests();
-        loadEngrams();
-        loadConclusion();
-        return () => {
-            cancelled = true;
-            if (engramRefetchTimerRef.current) {
-                clearTimeout(engramRefetchTimerRef.current);
-                engramRefetchTimerRef.current = null;
-            }
-        };
-    }, [sessionId, upsertDigest, rebuild, loadEngrams]);
-
-    // Live push: Acetylcholine vesicles per turn close. If a vesicle
-    // references an engram id we haven't rendered yet, trigger a
-    // debounced re-fetch of the engram layer.
-    useEffect(() => {
-        if (!digestEvent || !sessionId) return;
-        const vesicle = digestEvent.vesicle as ReasoningTurnDigest | undefined;
-        if (!vesicle || vesicle.session_id !== sessionId) return;
-        upsertDigest(vesicle);
-        const incoming = vesicle.engram_ids || [];
-        const hasUnseen = incoming.some(id => !engramsRef.current.has(id));
-        if (hasUnseen) scheduleEngramRefetch();
-        rebuild();
-    }, [digestEvent, sessionId, upsertDigest, rebuild, scheduleEngramRefetch]);
-
-    // Live push: SessionConclusion vesicle lands when mcp_done writes
-    // the conclusion row. Same session-id filter as the digest stream.
-    useEffect(() => {
-        if (!conclusionEvent || !sessionId) return;
-        const vesicle = conclusionEvent.vesicle as SessionConclusionData | undefined;
-        if (!vesicle || vesicle.session_id !== sessionId) return;
-        conclusionRef.current = vesicle;
-        rebuild();
-    }, [conclusionEvent, sessionId, rebuild]);
+        publish();
+    }, [digests, inFlightTurns, onStatsUpdate]);
 
     useEffect(() => {
         let frameId: number;
@@ -387,11 +474,28 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
                     }
                 }
             });
+
+            // In-flight ghosts: grow with elapsed time, layered on top of
+            // the active-pulse scale so they still breathe.
+            inFlightMeshesRef.current.forEach((mesh, ghostId) => {
+                const ghost = inFlightTurns.get(ghostId);
+                if (!mesh || !ghost) return;
+                const createdMs = Date.parse(ghost.created);
+                const elapsedSec = isNaN(createdMs)
+                    ? 0
+                    : Math.max(0, (Date.now() - createdMs) / 1000);
+                const growth = 1 + Math.min(elapsedSec / IN_FLIGHT_GROWTH_SECONDS, IN_FLIGHT_GROWTH_CAP - 1);
+                const combined = growth * scale;
+                mesh.scale.set(combined, combined, combined);
+                if (mesh.material instanceof THREE.MeshPhongMaterial) {
+                    mesh.material.emissiveIntensity = intensity;
+                }
+            });
             frameId = requestAnimationFrame(animate);
         };
         animate();
         return () => cancelAnimationFrame(frameId);
-    }, []);
+    }, [inFlightTurns]);
 
     useEffect(() => {
         const fg = fgRef.current;
@@ -497,20 +601,25 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         let geometry;
         let color: THREE.Color | string = '#ffffff';
         let emissiveIntensity = 0.5;
-        const isActive = ['Active', 'Running', 'Pending', 'Thinking'].includes(node.status_name || '');
+        const isActive = TURN_ACTIVE_STATUSES.includes(node.status_name || '');
+        const isInFlight = node.in_flight === true;
 
         if (node.type === 'turn') {
             const ratio = node.sizeRatio || 1;
             const baseRadius = 6 * ratio;
             geometry = new THREE.SphereGeometry(baseRadius, 32, 32);
 
-            const t = Math.max(0, Math.min(1, (ratio - 0.5) / 2.0));
-            const colorGreen = new THREE.Color('#4ade80');
-            const colorOrange = new THREE.Color('#f99f1b');
-
-            color = colorGreen.clone().lerp(colorOrange, t);
-
-            if (isActive) emissiveIntensity = 1.0;
+            if (isInFlight) {
+                // Yellow/amber ghost — visually distinct from completed turns.
+                color = new THREE.Color('#facc15');
+                emissiveIntensity = 1.0;
+            } else {
+                const t = Math.max(0, Math.min(1, (ratio - 0.5) / 2.0));
+                const colorGreen = new THREE.Color('#4ade80');
+                const colorOrange = new THREE.Color('#f99f1b');
+                color = colorGreen.clone().lerp(colorOrange, t);
+                if (isActive) emissiveIntensity = 1.0;
+            }
         } else if (node.type === 'tool') {
             geometry = new THREE.BoxGeometry(6, 6, 6);
             color = '#ef4444';
@@ -536,7 +645,9 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
         const mesh = new THREE.Mesh(geometry, material);
 
-        if (isActive && node.type === 'turn') {
+        if (isInFlight && node.turn_id) {
+            inFlightMeshesRef.current.set(node.turn_id as string, mesh);
+        } else if (isActive && node.type === 'turn') {
             activeMeshesRef.current.push(mesh);
         }
 

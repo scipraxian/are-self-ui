@@ -3,34 +3,11 @@
 The single source of truth for any AI agent working on the are-self-ui codebase.
 Read completely before making any changes.
 
-> **Active thread (April 18, 2026 — Cowork continuation):** incremental
-> reasoning-graph load via `ReasoningTurnDigest` push. `ReasoningGraph3D.tsx`
-> currently hits `/api/v1/reasoning_sessions/{id}/graph_data/`, which returns
-> a full-session blob that wedges the UI on any machine whose GPU/RAM is
-> already pegged by Ollama. The backend side-car + Acetylcholine broadcast
-> landed this session — see `are-self-api/TASKS.md` → "In Progress —
-> ReasoningTurnDigest Side-car". **Frontend cutover still open:**
-> `ReasoningGraph3D` (and every inspector that currently reads
-> `response_payload` out of the blob — `FrontalLobeView.tsx`,
-> `FrontalLobeDetail.tsx`, `ReasoningPanels.tsx`, `SessionChat.tsx`) swap
-> the big GET for `useDendrite('ReasoningTurnDigest', null)` + client-side
-> `vesicle.session_id` filter. Full per-turn payload fetched on explicit
-> click via `/api/v2/reasoning_turns/{id}/` — never cached on the session
-> object. Pull fallback (`graph_data?since_turn_number=N`) is still open on
-> the backend. Tracked in TASKS.md → "Open Tasks → ReasoningGraph3D".
->
-> Also shipped this session: cognitive-threads list delete button
-> (`DELETE /api/v1/reasoning_sessions/{id}/`), turn count + datetime +
-> relative "ago" on each thread card, `ReasoningSessionData` typed up with
-> `turns_count?: number` and `modified?: string`.
->
-> **Prior thread (April 11):** PNS dashboard churn — agent cards and refresh
-> button blink because `handleRefresh` in `PNSPage.tsx` is a monolithic
-> five-endpoint refetch fired on every dendrite event. Blocked on a backend
-> fix first (see are-self-api/TASKS.md → "In Progress — Nerve Terminal Scan
-> Reconcile"). Frontend follow-ups queued in TASKS.md → "In Progress — PNS
-> Dashboard Churn."
-
+> **Active work lives elsewhere.** See `TASKS.md` for in-progress items and the
+> companion backend `are-self-api/TASKS.md` for cross-repo threads. `git log`
+> is the changelog. Do NOT replay session diaries in this file — when work
+> lands, lift the durable rule into the appropriate section below, then delete
+> the notes. This file is the *standing reference*.
 
 ## The Developer
 
@@ -239,7 +216,8 @@ anywhere in the system.
 
 **receptor_class convention (critical):** The first arg to `useDendrite` is the
 `receptor_class` — a domain entity or brain region name. Valid examples:
-`'PFCEpic'`, `'IdentityDisc'`, `'ReasoningTurn'`, `'Hypothalamus'`, `'SpikeTrain'`.
+`'PFCEpic'`, `'IdentityDisc'`, `'ReasoningTurn'`, `'ReasoningTurnDigest'`,
+`'Hypothalamus'`, `'SpikeTrain'`.
 **NEVER** use internal ORM models (`'AIModel'`, `'AIModelProvider'`) or molecule types
 (`'Acetylcholine'`, `'Dopamine'`) as the receptor_class. Molecules are Layer 3 routing
 (the neurotransmitter type), not Layer 1 (the Channels group). Brain regions that fire
@@ -502,6 +480,19 @@ navigate(`/cns/spiketrain/${childTrainId}`, {
 Read it back with `useLocation().state` and build breadcrumbs that include the parent chain.
 When opened fresh (no navigation state), show the shorter breadcrumb — that's correct.
 
+### Thalamus dendrite_id convention
+The thalamus `broadcast_status` signal always uses `instance.id` as `dendrite_id`. Frontend
+subscriptions must match this — subscribe to the correct receptor_class and either pass
+`null` or the exact instance ID. Do not assume parent IDs will be used as dendrite_id.
+
+### Debounced dendrite refetch
+`CNSMonitorPage.tsx` debounces dendrite-triggered refetches with a 500ms coalesce window
+(`useRef` + `setTimeout`). Rapid spike status changes during execution are batched into a
+single GET. Once the train reaches terminal status, refetching stops entirely via a
+`trainTerminalRef`. This prevents the "polls over and over" flood otherwise caused by
+`useDendrite('Spike', null)` firing for every spike globally. Any new live monitor view
+should follow the same debounce + terminal-stop pattern.
+
 ## Custom Neuron Nodes (CNS Graph Editor)
 
 The CNS graph editor uses specialized ReactFlow node components for canonical effector types.
@@ -553,12 +544,6 @@ are POSTed to `/api/v1/node-contexts/` so new logic nodes start with sensible de
 + a local `EFFECTOR_ICON` map for visual consistency between editor and viewer. The monitor shows
 type badge, accent color, and icon alongside the standard spike status indicators.
 
-**Polling fix:** `CNSMonitorPage.tsx` debounces dendrite-triggered refetches with a 500ms coalesce
-window (via `useRef` + `setTimeout`). Rapid spike status changes during execution are batched into
-a single GET request. Once the train reaches terminal status, refetching stops entirely via a
-`trainTerminalRef`. This prevents the "polls over and over" flood observed when `useDendrite('Spike', null)`
-fires for every spike globally.
-
 ### Backend Mirror
 
 Python constants in `central_nervous_system/models.py` (`Effector.BEGIN_PLAY`, `.LOGIC_GATE`, etc.)
@@ -592,67 +577,25 @@ stable — never change an existing canonical UUID.
 - Do not delete AIModel or AIModelProvider records — disable them instead (enabled=False, is_enabled=False).
 - Do not mix fixture data across apps — each Django app has its own `fixtures/initial_data.json`.
 
-## Current State (April 5, 2026)
+## Shared Utilities
 
-**What works:** Every brain region has a functional UI. The full drill chain works: Identity →
-Temporal → PFC → CNS → Frontal → Hippocampus. Real-time updates via useDendrite throughout.
-Hypothalamus model catalog with sync, pull, routing, and budget tabs. All navigation is
-URL-driven and bookmarkable. Root dashboard (BloodBrainBarrier) with stats cards and quick nav.
-4 custom neuron nodes (Gate, Retry, Delay, Frontal Lobe) with inline editing and PK-based type
-resolution. Effector Editor page with full CRUD. Effector palette grouped by role with search.
-Reasoning view with three-tier turn inspector, Parietal Activity tab, tool call rendering with
-thought extraction, graph hover cards. Tool formatting via shared `toolFormatters.ts`. Monitor
-view with live dendrite refresh (debounced 500ms coalesce). SystemControlPanel on PNS page.
-Expanded addon and tool editors. SelectionFilter and Budget click-throughs to Hypothalamus.
-Environment editor with inline context key creation.
+**`src/utils/toolFormatters.ts`** — semantic rendering for known tools (mcp_ticket, mcp_done,
+mcp_pass, etc). Use `summarizeTool()` for structured data, `toolOneLiner()` for compact
+strings. Always import from here when rendering tool calls; do not reinvent per-component.
 
-**Top priority:** PNS expansion (multiple Ollama endpoint UI, live agent monitoring). Image/audio
-generation UI deferred to post-release.
+## Design Docs
 
-**What's in progress:** See TASKS.md. Key items: PNS expansion, graph editor right-click context
-menu, temporal URL-driven selection, shutdown/restart CSS fix, PNS page layout, session chat
-delivery bug.
-
-**Shared utility — toolFormatters.ts:** `src/utils/toolFormatters.ts` — semantic rendering for
-known tools (mcp_ticket, mcp_done, mcp_pass, etc). Use `summarizeTool()` for structured data,
-`toolOneLiner()` for compact strings. Always import from here when rendering tool calls.
-
-**Design doc:** `REASONING_VIEW_RETHINK.md` in the repo root.
-
-**Critical dendrite design rule:** The thalamus `broadcast_status` signal always uses
-`instance.id` as `dendrite_id`. Frontend subscriptions must match this — subscribe to the correct
-receptor_class and either pass `null` or the exact instance ID. Do not assume parent IDs will be
-used as dendrite_id.
-
-**Legacy remnants:** Talos → Are-Self rename is complete (only migration history retains old
-names). The backend CLAUDE.md has full details.
-
-## Documentation
-
-See [FEATURES.md](FEATURES.md) for a complete list of what's built.
-See [TASKS.md](TASKS.md) for what's next.
+- `FEATURES.md` — complete list of what's built.
+- `TASKS.md` — what's next and what's in flight.
+- `REASONING_VIEW_RETHINK.md` — design doc for the reasoning view.
 
 ## Scipraxianism
 
-Are-Self exists inside a philosophy called **Scipraxianism**, co-developed by
-Michael Clark ("The Scipraxian") and **Andrew Piper** over many years. You do
-not need to master it to work in this repo, but if a design question touches
-*why* something is free, local, or shaped the way it is, the answer usually
-traces back to scipraxianism. The Creed is AI-facing (ten binary-numbered
-assertions at [scipraxian.org](https://scipraxian.org)). The working layer is
-the **Twelve Variables**: Inclusion · Humility · Inquiry · Fulfillment or
-Happiness · Religion or Profit · Fun · Fear · Responsibility · Perseverance ·
-Perception · Time · Permadeath. The first three are the kid-scale compression
-used in the curriculum and the storybook — **do not mistake the three for the
-whole philosophy**.
-
-Are-Self is Michael's solo handiwork (though he bounces everything off Andrew,
-the way they always have). The sister franchise **Haunted Space Hotel** is
-Andrew and Michael jointly — HSH's in-world Factional Omniarchy of Snohe is
-the galactic government that adopted scipraxianism as its official ethical
-framework. HSH lives at [hauntedspacehotel.com](https://hauntedspacehotel.com)
-and is deliberately kept off the scipraxian GitHub profile.
-
-Full Claude-facing briefing:
-`are-self-documents/scipraxian/scipraxian-tldr.md`. Master reference:
-`are-self-documents/scipraxian/scipraxian.md`.
+The philosophy this project lives inside. When a design question touches *why*
+something is free, local, or shaped the way it is, the answer usually traces back
+here. **Twelve Variables, not three** — the three-variable version is the
+kid-scale compression used in the curriculum only. Are-Self is Michael's solo
+handiwork; the sister franchise Haunted Space Hotel
+([hauntedspacehotel.com](https://hauntedspacehotel.com)) is a joint effort with
+Andrew Piper and is deliberately kept off the scipraxian GitHub profile. Full
+Claude-facing briefing: `are-self-documents/scipraxian/scipraxian-tldr.md`.

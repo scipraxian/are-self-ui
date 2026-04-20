@@ -6,9 +6,10 @@ import { ReasoningSidebar, ReasoningInspector } from '../components/ReasoningPan
 import { ReasoningGraph3D } from '../components/ReasoningGraph3D';
 import { SessionChat } from '../components/SessionChat';
 import { ParietalActivityPanel } from '../components/ParietalActivityPanel';
+import { useSessionDigests } from '../hooks/useSessionDigests';
 import { useGABA } from '../context/GABAProvider';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
-import type { GraphNode, ReasoningSessionData } from '../types';
+import type { GraphNode } from '../types';
 import './FrontalSession.css';
 
 interface CortexStats {
@@ -29,9 +30,9 @@ export function FrontalSession() {
     const [viewMode, setViewMode] = useState<SessionViewMode>('graph');
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [cortexStats, setCortexStats] = useState<CortexStats | null>(null);
-    const [sessionData, setSessionData] = useState<ReasoningSessionData | null>(null);
 
-    // Breadcrumbs
+    const { digests } = useSessionDigests(sessionId ?? null);
+
     useEffect(() => {
         if (sessionId) {
             setCrumbs([
@@ -47,14 +48,12 @@ export function FrontalSession() {
         return () => setCrumbs([]);
     }, [sessionId, setCrumbs]);
 
-    // Redirect if no sessionId
     useEffect(() => {
         if (!sessionId) {
             navigate('/frontal', { replace: true });
         }
     }, [sessionId, navigate]);
 
-    // ESC: switch back through modes, then go back to /frontal
     useEffect(() => {
         const unregister = registerEscapeHandler(() => {
             if (viewMode === 'parietal' || viewMode === 'chat') {
@@ -69,6 +68,24 @@ export function FrontalSession() {
     if (!sessionId) return null;
 
     const isAlive = cortexStats && ['Active', 'Running', 'Pending', 'Thinking'].includes(cortexStats.status);
+
+    const handleParietalToolSelect = (turnId: string, toolCallId: string) => {
+        const digest = digests.find((d) => d.turn_id === turnId);
+        const summary = digest?.tool_calls_summary.find((tc) => tc.id === toolCallId);
+        const synthetic: GraphNode = {
+            id: `tool-${toolCallId}`,
+            type: 'tool',
+            label: summary?.tool_name,
+            status_name: summary?.success === true ? 'Completed' : summary?.success === false ? 'Error' : 'Pending',
+            turn_id: turnId,
+            session_id: sessionId,
+            tool_call_id: toolCallId,
+            tool_name: summary?.tool_name,
+            success: summary?.success ?? null,
+            target: summary?.target ?? '',
+        };
+        setSelectedNode(synthetic);
+    };
 
     return (
         <ThreePanel
@@ -127,7 +144,6 @@ export function FrontalSession() {
                                 sessionId={sessionId}
                                 onNodeSelect={setSelectedNode}
                                 onStatsUpdate={setCortexStats}
-                                onSessionDataUpdate={setSessionData}
                             />
                         ) : viewMode === 'chat' ? (
                             <SessionChat
@@ -136,11 +152,8 @@ export function FrontalSession() {
                             />
                         ) : (
                             <ParietalActivityPanel
-                                sessionData={sessionData}
-                                onToolSelect={(turnNumber, toolIndex) => {
-                                    // Could expand to highlight specific tool in future
-                                    console.log(`Selected tool at T${turnNumber}:${toolIndex}`);
-                                }}
+                                digests={digests}
+                                onToolSelect={handleParietalToolSelect}
                             />
                         )}
                     </div>
