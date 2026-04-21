@@ -49,7 +49,7 @@ export function IdentityDetailStub() {
                     <button className="panel-close-btn" onClick={() => navigate('/identity')}>
                         ✕
                     </button>
-                    <IdentitySheet id={discId} type={type} />
+                    <IdentitySheet key={`${type}-${discId}`} id={discId} type={type} />
                 </div>
             }
             right={null}

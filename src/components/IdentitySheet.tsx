@@ -237,7 +237,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                 const [toolRes, addonRes, tagRes, filterRes, budgetRes] = await Promise.all([
                     apiFetch('/api/v2/tool-definitions/'),
                     apiFetch('/api/v2/identity_addons/'),
-                    apiFetch('/api/v2/identity-tags/'),
+                    apiFetch('/api/v2/identity_tags/'),
                     apiFetch('/api/v2/selection-filters/'),
                     apiFetch('/api/v2/identity-budgets/'),
                 ]);
@@ -328,6 +328,9 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             if (!res.ok) {
                 throw new Error(`Spawn Disc failed (${res.status})`);
             }
+
+            const newDisc = await res.json();
+            navigate(`/identity/${newDisc.id}?type=disc`);
         } catch (err: any) {
             console.error('Spawn Disc failed', err);
             setError(err.message ?? 'Failed to spawn Disc.');
