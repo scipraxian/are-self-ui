@@ -2,6 +2,7 @@ import "./CNSInspector.css";
 import { type ReactNode, useEffect, useState } from 'react';
 import { Trash2, Plus, AlertCircle } from 'lucide-react';
 import { apiFetch } from '../api';
+import { EFFECTOR } from './nodeConstants';
 import type { CNSContextRow } from "../types.ts";
 
 interface CNSInspectorProps {
@@ -34,6 +35,19 @@ interface EnvironmentOption {
     name: string;
 }
 
+interface ModifierOption {
+    slug: string;
+    name: string;
+}
+
+interface CascadeConflict {
+    app_label: string;
+    model: string;
+    pk: string;
+    name_or_repr: string;
+    owned_by: string | null;
+}
+
 interface AccordionProps {
     title: string;
     variant?: 'green' | 'blue' | 'yellow' | 'red';
@@ -56,7 +70,7 @@ const Accordion = ({ title, variant = 'green', open = false, children, rightElem
     );
 };
 
-export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorProps) => {
+export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNSInspectorProps) => {
     const [details, setDetails] = useState<NodeDetails | null>(null);
     const [distributionModes, setDistributionModes] = useState<DistributionMode[]>([]);
     const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
@@ -64,6 +78,16 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
     const [isLoadingEnvs, setIsLoadingEnvs] = useState(false);
     const [isSavingMode, setIsSavingMode] = useState(false);
     const [isSavingEnv, setIsSavingEnv] = useState(false);
+
+    // Genome assignment surface — only used when the selected neuron is
+    // a BEGIN_PLAY root. The dropdown stamps / clears the bundle FK on
+    // the entire pathway reach via /set-genome/.
+    const isBeginPlay = (node?.effector ?? null) === EFFECTOR.BEGIN_PLAY;
+    const [installedModifiers, setInstalledModifiers] = useState<ModifierOption[]>([]);
+    const [currentGenomeSlug, setCurrentGenomeSlug] = useState<string | null>(null);
+    const [isSavingGenome, setIsSavingGenome] = useState(false);
+    const [genomeError, setGenomeError] = useState<string | null>(null);
+    const [genomeConflicts, setGenomeConflicts] = useState<CascadeConflict[]>([]);
 
     useEffect(() => {
         if (!node?.id) return;
@@ -132,6 +156,45 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
         };
     }, []);
 
+    // Genome dropdown sources: list of installed bundles + the
+    // pathway's current owner. Re-fetched whenever the selected
+    // BEGIN_PLAY neuron or pathway changes. Lives here above the
+    // early returns so React hook order stays stable across renders
+    // (Rules of Hooks — even when the effect's body bails immediately
+    // because !isBeginPlay, the hook itself still has to be called).
+    useEffect(() => {
+        if (!isBeginPlay || !pathwayId) return;
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const [modRes, pathRes] = await Promise.all([
+                    apiFetch('/api/v2/neural-modifiers/'),
+                    apiFetch(`/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/`),
+                ]);
+                if (cancelled) return;
+                if (modRes.ok) {
+                    const data = await modRes.json();
+                    const list = (Array.isArray(data) ? data : data.results ?? []) as Array<{
+                        slug: string; name: string;
+                    }>;
+                    setInstalledModifiers(list.map((m) => ({ slug: m.slug, name: m.name })));
+                }
+                if (pathRes.ok) {
+                    const data = await pathRes.json();
+                    // The pathway serializer exposes `genome_slug` as a
+                    // read-only mirror of the genome FK; null when the
+                    // pathway isn't part of any bundle.
+                    const slug = (data.genome_slug ?? null) as string | null;
+                    setCurrentGenomeSlug(slug);
+                }
+            } catch (err) {
+                console.error('Failed to load genome state:', err);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [isBeginPlay, pathwayId]);
+
     if (!node) {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-center h-full">
@@ -192,6 +255,40 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
         }
     };
 
+    const handleGenomeChange = async (nextSlug: string | null) => {
+        if (!pathwayId) return;
+        setIsSavingGenome(true);
+        setGenomeError(null);
+        setGenomeConflicts([]);
+        try {
+            const res = await apiFetch(
+                `/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/set-genome/`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ genome_slug: nextSlug }),
+                },
+            );
+            if (res.status === 409) {
+                const data = await res.json().catch(() => ({}));
+                setGenomeError(data.detail || 'Cascade refused.');
+                setGenomeConflicts((data.conflicts as CascadeConflict[]) || []);
+                return;
+            }
+            if (!res.ok) {
+                const text = await res.text();
+                setGenomeError(text || `Set-genome failed (${res.status}).`);
+                return;
+            }
+            const data = await res.json();
+            setCurrentGenomeSlug((data.target_slug as string | null) ?? null);
+        } catch (err) {
+            setGenomeError(String(err));
+        } finally {
+            setIsSavingGenome(false);
+        }
+    };
+
     const handleEnvironmentChange = async (envId: string | null) => {
         if (!node?.id) return;
         setIsSavingEnv(true);
@@ -241,6 +338,69 @@ export const CNSInspector = ({ node, onDelete, onContextChange }: CNSInspectorPr
                     <div className="cns-inspector-description-box">
                         {details.description || 'No specialized purpose defined for this neuron.'}
                     </div>
+
+                    {/* Genome Section — only visible on a BEGIN_PLAY root.
+                        Selecting a bundle stamps every GenomeOwnedMixin
+                        row reachable from this pathway with that
+                        bundle's genome FK; "None" clears. */}
+                    {isBeginPlay && (
+                        <Accordion
+                            title="GENOME"
+                            variant="red"
+                            open={true}
+                        >
+                            <div className="cns-inspector-mode-section">
+                                <select
+                                    className="cns-inspector-select"
+                                    value={currentGenomeSlug ?? ''}
+                                    onChange={(e) =>
+                                        handleGenomeChange(e.target.value || null)
+                                    }
+                                    disabled={isSavingGenome}
+                                >
+                                    <option value="">None (user-owned)</option>
+                                    {installedModifiers.map((m) => (
+                                        <option key={m.slug} value={m.slug}>
+                                            {m.slug} — {m.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="cns-inspector-mode-status">
+                                    {currentGenomeSlug ? (
+                                        <div className="cns-inspector-mode-override">
+                                            <AlertCircle size={14} />
+                                            <span className="cns-inspector-mode-badge">
+                                                BUNDLE: {currentGenomeSlug}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="cns-inspector-mode-default">
+                                            <span className="cns-inspector-mode-inherit">
+                                                Not part of any bundle.
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                {genomeError && (
+                                    <div className="cns-inspector-genome-error">
+                                        <AlertCircle size={14} />
+                                        <span>{genomeError}</span>
+                                    </div>
+                                )}
+                                {genomeConflicts.length > 0 && (
+                                    <ul className="cns-inspector-genome-conflicts">
+                                        {genomeConflicts.map((c) => (
+                                            <li key={`${c.app_label}.${c.model}.${c.pk}`}>
+                                                <code>{c.model}</code> {c.name_or_repr}
+                                                {' — owned by '}
+                                                <code>{c.owned_by ?? 'unknown'}</code>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </Accordion>
+                    )}
 
                     {/* Distribution Mode Section */}
                     <Accordion

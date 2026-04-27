@@ -2,9 +2,14 @@ import { useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 
 import { apiFetch } from '../api';
+import type { NeuralModifierDetail } from '../types';
 import './ModifierInstallButton.css';
 
-export function ModifierInstallButton() {
+export function ModifierInstallButton({
+    onInstalled,
+}: {
+    onInstalled?: (data: NeuralModifierDetail) => void;
+} = {}) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isBusy, setIsBusy] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -43,6 +48,7 @@ export function ModifierInstallButton() {
             const bundleName = (payload as { name?: string; slug?: string }).name
                 ?? (payload as { slug?: string }).slug
                 ?? 'bundle';
+            onInstalled?.(payload as NeuralModifierDetail);
             setMessage(`Installed ${bundleName}.`);
             setMessageKind('info');
         } catch (err) {

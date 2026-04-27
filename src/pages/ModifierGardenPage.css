@@ -232,6 +232,56 @@
     background: rgba(56, 189, 248, 0.25);
 }
 
+.modifier-garden-action--save {
+    border-color: rgba(168, 85, 247, 0.55);
+    background: rgba(168, 85, 247, 0.14);
+    color: #f3e8ff;
+}
+
+.modifier-garden-action--save:hover:not(:disabled) {
+    background: rgba(168, 85, 247, 0.25);
+}
+
+.modifier-garden-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.modifier-garden-dialog-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.modifier-garden-dialog-form input {
+    padding: 6px 8px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #e2e8f0;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9rem;
+}
+
+.modifier-garden-dialog-form input:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.7);
+}
+
+.modifier-garden-dialog-error {
+    margin: 8px 0;
+    padding: 8px 10px;
+    border: 1px solid rgba(239, 68, 68, 0.55);
+    background: rgba(239, 68, 68, 0.12);
+    color: #fecaca;
+    font-size: 0.85rem;
+    border-radius: 4px;
+}
+
 /* Overflow menu */
 
 .modifier-garden-overflow {
@@ -412,29 +462,117 @@
     color: var(--text-secondary);
 }
 
-.modifier-garden-dialog-breakdown {
+.modifier-garden-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.modifier-garden-dialog--cascade {
+    max-width: 640px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modifier-garden-cascade-bucket {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.modifier-garden-cascade-bucket--direct {
+    border-left: 3px solid #3b82f6;
+}
+
+.modifier-garden-cascade-bucket--cascade {
+    border-left: 3px solid #f97316;
+}
+
+.modifier-garden-cascade-bucket--set-null {
+    border-left: 3px solid #a855f7;
+}
+
+.modifier-garden-cascade-bucket--protected {
+    border-left: 3px solid #ef4444;
+    background: rgba(127, 29, 29, 0.25);
+}
+
+.modifier-garden-cascade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modifier-garden-cascade-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(30, 41, 59, 0.8);
+    padding: 1px 8px;
+    border-radius: 999px;
+}
+
+.modifier-garden-cascade-tree {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
     max-height: 200px;
     overflow-y: auto;
 }
 
-.modifier-garden-dialog-breakdown li {
+.modifier-garden-cascade-model {
     display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: rgba(30, 41, 59, 0.5);
+    flex-direction: column;
+    gap: 2px;
 }
 
-.modifier-garden-dialog-actions {
+.modifier-garden-cascade-model-header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    padding: 2px 0;
+}
+
+.modifier-garden-cascade-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 1px dashed rgba(148, 163, 184, 0.25);
+}
+
+.modifier-garden-cascade-rows li {
+    display: flex;
+    justify-content: space-between;
     gap: 8px;
+    font-size: 0.76rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(30, 41, 59, 0.4);
+}
+
+.modifier-garden-cascade-row-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.modifier-garden-cascade-row-reason {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #a855f7;
 }

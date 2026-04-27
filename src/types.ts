@@ -518,14 +518,20 @@ export interface NeuralModifierDetail extends NeuralModifierSummary {
 }
 
 export interface NeuralModifierImpactRow {
-    content_type: string;
-    count: number;
+    app_label: string;
+    model: string;
+    pk: string;
+    name_or_repr: string;
+    reason: string;
 }
 
 export interface NeuralModifierImpact {
     slug: string;
-    contribution_count: number;
-    breakdown: NeuralModifierImpactRow[];
+    row_count: number;
+    direct: NeuralModifierImpactRow[];
+    cascade: NeuralModifierImpactRow[];
+    set_null: NeuralModifierImpactRow[];
+    protected: NeuralModifierImpactRow[];
 }
 
 export interface NeuralModifierCatalogEntry {

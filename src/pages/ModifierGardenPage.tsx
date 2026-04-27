@@ -12,25 +12,26 @@ import type {
     NeuralModifierCatalogEntry,
     NeuralModifierDetail,
     NeuralModifierImpact,
+    NeuralModifierImpactRow,
     NeuralModifierSummary,
 } from '../types';
 import './ModifierGardenPage.css';
 
 const STATUS_AVAILABLE = 0;
-// STATUS_DISCOVERED retired as a surfaced status on 2026-04-19; the constant
-// stays because historical log events may still reference id 1.
+// Retired surfaced statuses — constants kept because historical log events
+// may still reference these ids:
+//   STATUS_DISCOVERED (1) retired 2026-04-19; row-absence semantics for
+//   AVAILABLE replaced it.
+//   STATUS_ENABLED (3) and STATUS_DISABLED (4) retired 2026-04-25 with the
+//   enable/disable feature removal; INSTALLED is now the only live state.
 const STATUS_DISCOVERED = 1;
 const STATUS_INSTALLED = 2;
-const STATUS_ENABLED = 3;
-const STATUS_DISABLED = 4;
 const STATUS_BROKEN = 5;
 
 const STATUS_FILTER_LABELS: Record<string, string> = {
     all: 'All',
     available: 'Available',
     installed: 'Installed',
-    active: 'Enabled',
-    disabled: 'Disabled',
     broken: 'Broken',
 };
 
@@ -60,18 +61,10 @@ function filterByStatus(list: UnifiedRow[], key: string): UnifiedRow[] {
     switch (key) {
         case 'available':
             return list.filter((r) => r.kind === 'available');
-        case 'active':
-            return list.filter((r) => r.kind === 'installed' && r.row.status_id === STATUS_ENABLED);
         case 'installed':
-            return list.filter((r) =>
-                r.kind === 'installed' && (
-                    r.row.status_id === STATUS_INSTALLED
-                    || r.row.status_id === STATUS_ENABLED
-                    || r.row.status_id === STATUS_DISABLED
-                ),
+            return list.filter(
+                (r) => r.kind === 'installed' && r.row.status_id === STATUS_INSTALLED,
             );
-        case 'disabled':
-            return list.filter((r) => r.kind === 'installed' && r.row.status_id === STATUS_DISABLED);
         case 'broken':
             return list.filter((r) =>
                 r.kind === 'installed'
@@ -80,6 +73,77 @@ function filterByStatus(list: UnifiedRow[], key: string): UnifiedRow[] {
         default:
             return list;
     }
+}
+
+function groupByModel(
+    rows: NeuralModifierImpactRow[],
+): Array<{ model: string; rows: NeuralModifierImpactRow[] }> {
+    // Collector.fast_deletes and field_updates can legitimately yield the
+    // same (model, pk) more than once — multiple M2M through-rows collected
+    // via different paths, or two FKs on the same row getting set_null.
+    // Dedupe per (model, pk) so React keys stay unique, and concatenate
+    // distinct reasons when they differ.
+    const byModel = new Map<string, Map<string, NeuralModifierImpactRow>>();
+    for (const row of rows) {
+        let inner = byModel.get(row.model);
+        if (!inner) {
+            inner = new Map();
+            byModel.set(row.model, inner);
+        }
+        const existing = inner.get(row.pk);
+        if (existing) {
+            if (!existing.reason.split(', ').includes(row.reason)) {
+                existing.reason = `${existing.reason}, ${row.reason}`;
+            }
+        } else {
+            inner.set(row.pk, { ...row });
+        }
+    }
+    return Array.from(byModel.entries())
+        .map(([model, inner]) => ({ model, rows: Array.from(inner.values()) }))
+        .sort((a, b) => a.model.localeCompare(b.model));
+}
+
+function CascadeBucket(props: {
+    label: string;
+    tone: 'direct' | 'cascade' | 'set-null' | 'protected';
+    rows: NeuralModifierImpactRow[];
+}) {
+    const grouped = groupByModel(props.rows);
+    return (
+        <section
+            className={`modifier-garden-cascade-bucket modifier-garden-cascade-bucket--${props.tone}`}
+        >
+            <header className="modifier-garden-cascade-header">
+                <span className="modifier-garden-cascade-label">{props.label}</span>
+                <span className="modifier-garden-cascade-count">{props.rows.length}</span>
+            </header>
+            <ul className="modifier-garden-cascade-tree">
+                {grouped.map((group) => (
+                    <li key={group.model} className="modifier-garden-cascade-model">
+                        <div className="modifier-garden-cascade-model-header">
+                            <code>{group.model}</code>
+                            <span>{group.rows.length}</span>
+                        </div>
+                        <ul className="modifier-garden-cascade-rows">
+                            {group.rows.map((row) => (
+                                <li key={`${row.model}:${row.pk}`}>
+                                    <span className="modifier-garden-cascade-row-name">
+                                        {row.name_or_repr}
+                                    </span>
+                                    {row.reason.startsWith('set_null:') && (
+                                        <span className="modifier-garden-cascade-row-reason">
+                                            {row.reason}
+                                        </span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </li>
+                ))}
+            </ul>
+        </section>
+    );
 }
 
 export function ModifierGardenPage() {
@@ -95,6 +159,16 @@ export function ModifierGardenPage() {
     const [confirming, setConfirming] = useState<NeuralModifierImpact | null>(null);
     const [deleting, setDeleting] = useState<NeuralModifierCatalogEntry | null>(null);
     const [overflowSlug, setOverflowSlug] = useState<string | null>(null);
+    const [creating, setCreating] = useState<boolean>(false);
+    const [createForm, setCreateForm] = useState({
+        slug: '',
+        name: '',
+        version: '0.1.0',
+        author: '',
+        license: 'MIT',
+    });
+    const [createError, setCreateError] = useState<string | null>(null);
+    const [createBusy, setCreateBusy] = useState<boolean>(false);
 
     const overflowRef = useRef<HTMLDivElement | null>(null);
 
@@ -205,23 +279,6 @@ export function ModifierGardenPage() {
         return list;
     }, [unified, statusFilter, search]);
 
-    const toggleEnabled = async (modifier: NeuralModifierSummary) => {
-        if (busySlug) return;
-        const next = modifier.status_id === STATUS_ENABLED ? 'disable' : 'enable';
-        setBusySlug(modifier.slug);
-        try {
-            const res = await apiFetch(
-                `/api/v2/neural-modifiers/${modifier.slug}/${next}/`,
-                { method: 'POST' },
-            );
-            if (!res.ok) {
-                console.error(`Failed to ${next} modifier ${modifier.slug}`);
-            }
-        } finally {
-            setBusySlug(null);
-        }
-    };
-
     const installFromCatalog = async (entry: NeuralModifierCatalogEntry) => {
         if (busySlug) return;
         setBusySlug(entry.slug);
@@ -230,7 +287,21 @@ export function ModifierGardenPage() {
                 `/api/v2/neural-modifiers/catalog/${entry.slug}/install/`,
                 { method: 'POST' },
             );
-            if (!res.ok) console.error(`Failed to install ${entry.slug}`);
+            if (!res.ok) {
+                console.error(`Failed to install ${entry.slug}`);
+                return;
+            }
+            // Optimistic local update. The install response is
+            // authoritative NeuralModifierDetail (which extends
+            // NeuralModifierSummary); apply it directly so the row
+            // flips from AVAILABLE to INSTALLED without waiting on
+            // an Acetylcholine round-trip that the post-install
+            // Daphne restart may eat.
+            const data = (await res.json()) as NeuralModifierDetail;
+            setModifiers((prev) => {
+                const without = prev.filter((m) => m.slug !== data.slug);
+                return [...without, data];
+            });
         } finally {
             setBusySlug(null);
         }
@@ -238,13 +309,18 @@ export function ModifierGardenPage() {
 
     const deleteFromCatalog = async () => {
         if (!deleting) return;
-        setBusySlug(deleting.slug);
+        const slug = deleting.slug;
+        setBusySlug(slug);
         try {
             const res = await apiFetch(
-                `/api/v2/neural-modifiers/catalog/${deleting.slug}/delete/`,
+                `/api/v2/neural-modifiers/catalog/${slug}/delete/`,
                 { method: 'POST' },
             );
-            if (!res.ok) console.error(`Failed to delete ${deleting.slug}`);
+            if (!res.ok) {
+                console.error(`Failed to delete ${slug}`);
+                return;
+            }
+            setCatalog((prev) => prev.filter((entry) => entry.slug !== slug));
             setDeleting(null);
         } finally {
             setBusySlug(null);
@@ -266,16 +342,105 @@ export function ModifierGardenPage() {
 
     const confirmUninstall = async () => {
         if (!confirming) return;
-        setBusySlug(confirming.slug);
+        const slug = confirming.slug;
+        setBusySlug(slug);
         try {
             const res = await apiFetch(
-                `/api/v2/neural-modifiers/${confirming.slug}/uninstall/`,
+                `/api/v2/neural-modifiers/${slug}/uninstall/`,
                 { method: 'POST' },
             );
             if (!res.ok) {
-                console.error(`Failed to uninstall ${confirming.slug}`);
+                console.error(`Failed to uninstall ${slug}`);
+                return;
             }
+            // Optimistic local update. The backend also fires Acetylcholine
+            // for other tabs, but the originating client can't depend on
+            // the WS round-trip beating the user's next action.
+            setModifiers((prev) => prev.filter((m) => m.slug !== slug));
+            setSelectedSlug((prev) => (prev === slug ? null : prev));
             setConfirming(null);
+        } finally {
+            setBusySlug(null);
+        }
+    };
+
+    const submitCreate = async () => {
+        const slug = createForm.slug.trim();
+        if (!slug) {
+            setCreateError('slug is required');
+            return;
+        }
+        setCreateBusy(true);
+        setCreateError(null);
+        try {
+            const res = await apiFetch(
+                '/api/v2/neural-modifiers/create/',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        slug,
+                        name: createForm.name.trim() || slug,
+                        version: createForm.version.trim() || '0.1.0',
+                        author: createForm.author.trim(),
+                        license: createForm.license.trim(),
+                    }),
+                },
+            );
+            if (!res.ok) {
+                const detail = await res.json().catch(() => null);
+                setCreateError((detail && detail.detail) || `Create failed (${res.status}).`);
+                return;
+            }
+            const data = (await res.json()) as NeuralModifierDetail;
+            setModifiers((prev) => {
+                const without = prev.filter((m) => m.slug !== data.slug);
+                return [...without, data];
+            });
+            setCreating(false);
+            setCreateForm({
+                slug: '',
+                name: '',
+                version: '0.1.0',
+                author: '',
+                license: 'MIT',
+            });
+            setSelectedSlug(data.slug);
+        } catch (err) {
+            setCreateError(String(err));
+        } finally {
+            setCreateBusy(false);
+        }
+    };
+
+    const saveBundle = async (modifier: NeuralModifierSummary) => {
+        if (busySlug) return;
+        const slug = modifier.slug;
+        setBusySlug(slug);
+        try {
+            const res = await apiFetch(
+                `/api/v2/neural-modifiers/${slug}/save/`,
+                { method: 'POST' },
+            );
+            if (!res.ok) {
+                const detail = await res.text();
+                console.error(`Failed to save ${slug}: ${detail}`);
+                return;
+            }
+            // Backend always bumps the semver patch on save and writes
+            // the new version onto the row. Mirror that locally so the
+            // version cell reflects the bump without waiting on a
+            // refetch round-trip.
+            const data = (await res.json()) as {
+                slug: string;
+                new_version: string;
+                row_count: number;
+                bytes_written: number;
+                zip_path: string;
+            };
+            setModifiers((prev) => prev.map((m) =>
+                m.slug === slug ? { ...m, version: data.new_version } : m
+            ));
         } finally {
             setBusySlug(null);
         }
@@ -292,33 +457,17 @@ export function ModifierGardenPage() {
                     className="modifier-garden-action modifier-garden-action--install"
                     onClick={(e) => { e.stopPropagation(); installFromCatalog(entry.entry); }}
                     disabled={isBusy}
-                    title="Install this bundle so its rows land in the database. Install does not enable."
+                    title="Install this bundle so its rows land in the database."
                 >
                     Install
                 </button>
             );
         }
 
-        const modifier = entry.row;
-        if (modifier.status_id === STATUS_BROKEN || modifier.status_id === STATUS_DISCOVERED) {
-            return null;
-        }
-        const isEnabled = modifier.status_id === STATUS_ENABLED;
-        return (
-            <button
-                type="button"
-                className={`modifier-garden-action ${isEnabled ? 'modifier-garden-action--disable' : 'modifier-garden-action--enable'}`}
-                onClick={(e) => { e.stopPropagation(); toggleEnabled(modifier); }}
-                disabled={isBusy}
-                title={
-                    isEnabled
-                        ? "Disabling keeps this bundle's configuration but hides its tools from reasoning sessions. No data is removed."
-                        : 'Enable this bundle so its tools become available to reasoning sessions.'
-                }
-            >
-                {isEnabled ? 'Disable' : 'Enable'}
-            </button>
-        );
+        // Installed rows have no primary action button — the Uninstall and
+        // Details buttons rendered alongside this in the row are the full
+        // surface. (Save lands here as part of the U-cycle work.)
+        return null;
     };
 
     const left = (
@@ -353,7 +502,22 @@ export function ModifierGardenPage() {
             </div>
             <div className="modifier-garden-filters-section">
                 <div className="modifier-garden-filters-label">Actions</div>
-                <ModifierInstallButton />
+                <ModifierInstallButton
+                    onInstalled={(data) => {
+                        setModifiers((prev) => {
+                            const without = prev.filter((m) => m.slug !== data.slug);
+                            return [...without, data];
+                        });
+                    }}
+                />
+                <button
+                    type="button"
+                    className="modifier-garden-action modifier-garden-action--install"
+                    onClick={() => { setCreateError(null); setCreating(true); }}
+                    title="Scaffold a brand-new empty bundle. Stamp rows into it via the begin-play genome dropdown, then Save to pack the first archive."
+                >
+                    New Bundle
+                </button>
             </div>
         </div>
     );
@@ -364,8 +528,8 @@ export function ModifierGardenPage() {
                 <h1 className="modifier-garden-title">Modifier Garden</h1>
                 <p className="modifier-garden-subtitle">
                     Bundles live here as zip files. Install lands a bundle's rows in the
-                    database. Enable exposes its tools to reasoning sessions. Uninstall clears
-                    the rows but keeps the zip. Delete removes the zip too.
+                    database; the bundle's tools become available immediately. Uninstall
+                    clears the rows but keeps the zip. Delete removes the zip too.
                 </p>
             </header>
 
@@ -501,6 +665,15 @@ export function ModifierGardenPage() {
                                     >
                                         Uninstall
                                     </button>
+                                    <button
+                                        type="button"
+                                        className="modifier-garden-action modifier-garden-action--save"
+                                        onClick={(ev) => { ev.stopPropagation(); saveBundle(modifier); }}
+                                        disabled={isBusy}
+                                        title="Serialize bundle-owned rows back into the genome zip. Always bumps the patch version."
+                                    >
+                                        Save
+                                    </button>
                                     <Link
                                         to={`/modifiers/${modifier.slug}`}
                                         className="modifier-garden-action modifier-garden-action--link"
@@ -619,23 +792,44 @@ export function ModifierGardenPage() {
 
             {confirming && (
                 <div className="modifier-garden-dialog-overlay" role="presentation">
-                    <div role="dialog" aria-modal="true" className="modifier-garden-dialog">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        className="modifier-garden-dialog modifier-garden-dialog--cascade"
+                    >
                         <h2>Uninstall {confirming.slug}?</h2>
                         <p>
-                            This will remove <strong>{confirming.contribution_count}</strong>{' '}
-                            contribution {confirming.contribution_count === 1 ? 'row' : 'rows'} across{' '}
-                            {confirming.breakdown.length} content{' '}
-                            {confirming.breakdown.length === 1 ? 'type' : 'types'}.
+                            This will remove <strong>{confirming.row_count}</strong>{' '}
+                            row{confirming.row_count === 1 ? '' : 's'} the bundle owns, plus every
+                            row reached via CASCADE. Set-null and protected rows are listed below.
                         </p>
-                        {confirming.breakdown.length > 0 && (
-                            <ul className="modifier-garden-dialog-breakdown">
-                                {confirming.breakdown.map((row) => (
-                                    <li key={row.content_type}>
-                                        <code>{row.content_type}</code>
-                                        <span>{row.count}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                        {confirming.protected.length > 0 && (
+                            <CascadeBucket
+                                label="Protected (uninstall blocked)"
+                                tone="protected"
+                                rows={confirming.protected}
+                            />
+                        )}
+                        {confirming.direct.length > 0 && (
+                            <CascadeBucket
+                                label="Direct (bundle owns)"
+                                tone="direct"
+                                rows={confirming.direct}
+                            />
+                        )}
+                        {confirming.cascade.length > 0 && (
+                            <CascadeBucket
+                                label="Cascade"
+                                tone="cascade"
+                                rows={confirming.cascade}
+                            />
+                        )}
+                        {confirming.set_null.length > 0 && (
+                            <CascadeBucket
+                                label="Set null"
+                                tone="set-null"
+                                rows={confirming.set_null}
+                            />
                         )}
                         <div className="modifier-garden-dialog-actions">
                             <button
@@ -649,7 +843,10 @@ export function ModifierGardenPage() {
                                 type="button"
                                 className="modifier-garden-action modifier-garden-action--danger"
                                 onClick={confirmUninstall}
-                                disabled={busySlug === confirming.slug}
+                                disabled={
+                                    busySlug === confirming.slug
+                                    || confirming.protected.length > 0
+                                }
                             >
                                 Uninstall
                             </button>
@@ -681,6 +878,86 @@ export function ModifierGardenPage() {
                                 disabled={busySlug === deleting.slug}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {creating && (
+                <div className="modifier-garden-dialog-overlay" role="presentation">
+                    <div role="dialog" aria-modal="true" className="modifier-garden-dialog">
+                        <h2>New bundle</h2>
+                        <p>
+                            Scaffolds an empty bundle. After creating, stamp pathways
+                            into it via the begin-play genome dropdown, then Save to
+                            pack the first archive.
+                        </p>
+                        <div className="modifier-garden-dialog-form">
+                            <label>
+                                <span>Slug</span>
+                                <input
+                                    type="text"
+                                    value={createForm.slug}
+                                    onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
+                                    placeholder="my-bundle"
+                                    autoFocus
+                                />
+                            </label>
+                            <label>
+                                <span>Name</span>
+                                <input
+                                    type="text"
+                                    value={createForm.name}
+                                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                                    placeholder="(defaults to slug)"
+                                />
+                            </label>
+                            <label>
+                                <span>Version</span>
+                                <input
+                                    type="text"
+                                    value={createForm.version}
+                                    onChange={(e) => setCreateForm({ ...createForm, version: e.target.value })}
+                                    placeholder="0.1.0"
+                                />
+                            </label>
+                            <label>
+                                <span>Author</span>
+                                <input
+                                    type="text"
+                                    value={createForm.author}
+                                    onChange={(e) => setCreateForm({ ...createForm, author: e.target.value })}
+                                />
+                            </label>
+                            <label>
+                                <span>License</span>
+                                <input
+                                    type="text"
+                                    value={createForm.license}
+                                    onChange={(e) => setCreateForm({ ...createForm, license: e.target.value })}
+                                />
+                            </label>
+                        </div>
+                        {createError && (
+                            <p className="modifier-garden-dialog-error">{createError}</p>
+                        )}
+                        <div className="modifier-garden-dialog-actions">
+                            <button
+                                type="button"
+                                className="modifier-garden-action"
+                                onClick={() => { setCreating(false); setCreateError(null); }}
+                                disabled={createBusy}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="modifier-garden-action modifier-garden-action--install"
+                                onClick={submitCreate}
+                                disabled={createBusy || !createForm.slug.trim()}
+                            >
+                                {createBusy ? 'Creating…' : 'Create'}
                             </button>
                         </div>
                     </div>
