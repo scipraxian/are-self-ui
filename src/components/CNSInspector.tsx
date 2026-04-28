@@ -2,7 +2,9 @@ import "./CNSInspector.css";
 import { type ReactNode, useEffect, useState } from 'react';
 import { Trash2, Plus, AlertCircle } from 'lucide-react';
 import { apiFetch } from '../api';
+import { maybeFlagRestart, useRestartOverlay } from '../context/RestartOverlayProvider';
 import { EFFECTOR } from './nodeConstants';
+import { GENOME } from './genomeConstants';
 import type { CNSContextRow } from "../types.ts";
 
 interface CNSInspectorProps {
@@ -36,16 +38,9 @@ interface EnvironmentOption {
 }
 
 interface ModifierOption {
+    id: string;
     slug: string;
     name: string;
-}
-
-interface CascadeConflict {
-    app_label: string;
-    model: string;
-    pk: string;
-    name_or_repr: string;
-    owned_by: string | null;
 }
 
 interface AccordionProps {
@@ -79,15 +74,19 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
     const [isSavingMode, setIsSavingMode] = useState(false);
     const [isSavingEnv, setIsSavingEnv] = useState(false);
 
+    const { triggerRestart } = useRestartOverlay();
+
     // Genome assignment surface — only used when the selected neuron is
-    // a BEGIN_PLAY root. The dropdown stamps / clears the bundle FK on
-    // the entire pathway reach via /set-genome/.
+    // a BEGIN_PLAY root. The dropdown promotes the pathway (and its
+    // direct cascade children — neurons, axons, per-neuron contexts —
+    // via the model's save() fan-out) to a chosen bundle. Plain PATCH
+    // on the pathway viewset; no special action endpoint.
     const isBeginPlay = (node?.effector ?? null) === EFFECTOR.BEGIN_PLAY;
     const [installedModifiers, setInstalledModifiers] = useState<ModifierOption[]>([]);
+    const [currentGenomeId, setCurrentGenomeId] = useState<string | null>(null);
     const [currentGenomeSlug, setCurrentGenomeSlug] = useState<string | null>(null);
     const [isSavingGenome, setIsSavingGenome] = useState(false);
     const [genomeError, setGenomeError] = useState<string | null>(null);
-    const [genomeConflicts, setGenomeConflicts] = useState<CascadeConflict[]>([]);
 
     useEffect(() => {
         if (!node?.id) return;
@@ -162,6 +161,10 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
     // early returns so React hook order stays stable across renders
     // (Rules of Hooks — even when the effect's body bails immediately
     // because !isBeginPlay, the hook itself still has to be called).
+    //
+    // CANONICAL is filtered out of the dropdown — promoting *into*
+    // canonical refuses 400 server-side ("canonical is read-only and
+    // git-managed"), and there's no good UX in offering it.
     useEffect(() => {
         if (!isBeginPlay || !pathwayId) return;
         let cancelled = false;
@@ -175,17 +178,21 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                 if (modRes.ok) {
                     const data = await modRes.json();
                     const list = (Array.isArray(data) ? data : data.results ?? []) as Array<{
-                        slug: string; name: string;
+                        id: string; slug: string; name: string;
                     }>;
-                    setInstalledModifiers(list.map((m) => ({ slug: m.slug, name: m.name })));
+                    setInstalledModifiers(
+                        list
+                            .filter((m) => m.id !== GENOME.CANONICAL)
+                            .map((m) => ({ id: m.id, slug: m.slug, name: m.name })),
+                    );
                 }
                 if (pathRes.ok) {
                     const data = await pathRes.json();
-                    // The pathway serializer exposes `genome_slug` as a
-                    // read-only mirror of the genome FK; null when the
-                    // pathway isn't part of any bundle.
-                    const slug = (data.genome_slug ?? null) as string | null;
-                    setCurrentGenomeSlug(slug);
+                    // The pathway serializer exposes `genome` (writable
+                    // UUID FK to NeuralModifier) and `genome_slug`
+                    // (read-only display mirror).
+                    setCurrentGenomeId((data.genome ?? null) as string | null);
+                    setCurrentGenomeSlug((data.genome_slug ?? null) as string | null);
                 }
             } catch (err) {
                 console.error('Failed to load genome state:', err);
@@ -255,33 +262,30 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
         }
     };
 
-    const handleGenomeChange = async (nextSlug: string | null) => {
-        if (!pathwayId) return;
+    const handleGenomeChange = async (nextGenomeId: string) => {
+        if (!pathwayId || !nextGenomeId) return;
         setIsSavingGenome(true);
         setGenomeError(null);
-        setGenomeConflicts([]);
         try {
             const res = await apiFetch(
-                `/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/set-genome/`,
+                `/api/v2/neuralpathways/${encodeURIComponent(pathwayId)}/`,
                 {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ genome_slug: nextSlug }),
+                    body: JSON.stringify({ genome: nextGenomeId }),
                 },
             );
-            if (res.status === 409) {
-                const data = await res.json().catch(() => ({}));
-                setGenomeError(data.detail || 'Cascade refused.');
-                setGenomeConflicts((data.conflicts as CascadeConflict[]) || []);
-                return;
-            }
             if (!res.ok) {
-                const text = await res.text();
-                setGenomeError(text || `Set-genome failed (${res.status}).`);
+                const payload = await res.json().catch(() => ({}));
+                const detail = (payload as { detail?: string }).detail
+                    ?? `Promote failed (${res.status}).`;
+                setGenomeError(detail);
                 return;
             }
             const data = await res.json();
-            setCurrentGenomeSlug((data.target_slug as string | null) ?? null);
+            setCurrentGenomeId((data.genome ?? null) as string | null);
+            setCurrentGenomeSlug((data.genome_slug ?? null) as string | null);
+            maybeFlagRestart(data, triggerRestart);
         } catch (err) {
             setGenomeError(String(err));
         } finally {
@@ -340,9 +344,12 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                     </div>
 
                     {/* Genome Section — only visible on a BEGIN_PLAY root.
-                        Selecting a bundle stamps every GenomeOwnedMixin
-                        row reachable from this pathway with that
-                        bundle's genome FK; "None" clears. */}
+                        PATCHing `genome` on the pathway promotes the
+                        whole reach (neurons, axons, per-neuron contexts)
+                        atomically via the model's save() fan-out.
+                        Effectors and executables those neurons reference
+                        stay where they are — they have their own
+                        per-row genome control on their own viewsets. */}
                     {isBeginPlay && (
                         <Accordion
                             title="GENOME"
@@ -350,53 +357,67 @@ export const CNSInspector = ({ node, pathwayId, onDelete, onContextChange }: CNS
                             open={true}
                         >
                             <div className="cns-inspector-mode-section">
-                                <select
-                                    className="cns-inspector-select"
-                                    value={currentGenomeSlug ?? ''}
-                                    onChange={(e) =>
-                                        handleGenomeChange(e.target.value || null)
-                                    }
-                                    disabled={isSavingGenome}
-                                >
-                                    <option value="">None (user-owned)</option>
-                                    {installedModifiers.map((m) => (
-                                        <option key={m.slug} value={m.slug}>
-                                            {m.slug} — {m.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="cns-inspector-mode-status">
-                                    {currentGenomeSlug ? (
-                                        <div className="cns-inspector-mode-override">
-                                            <AlertCircle size={14} />
-                                            <span className="cns-inspector-mode-badge">
-                                                BUNDLE: {currentGenomeSlug}
-                                            </span>
-                                        </div>
-                                    ) : (
+                                {currentGenomeId === GENOME.CANONICAL ? (
+                                    <>
                                         <div className="cns-inspector-mode-default">
+                                            <AlertCircle size={14} />
                                             <span className="cns-inspector-mode-inherit">
-                                                Not part of any bundle.
+                                                Canonical pathway — read-only and git-managed.
                                             </span>
                                         </div>
-                                    )}
-                                </div>
+                                        <p className="cns-inspector-mode-help">
+                                            Canonical rows ship in core and can't be moved
+                                            from this surface. To experiment, copy into a
+                                            user bundle first.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <select
+                                            className="cns-inspector-select"
+                                            value={currentGenomeId ?? ''}
+                                            onChange={(e) => {
+                                                if (e.target.value) handleGenomeChange(e.target.value);
+                                            }}
+                                            disabled={isSavingGenome}
+                                        >
+                                            {/* If the current bundle isn't in the
+                                                INSTALLED list (edge case — uninstalled
+                                                under foot), keep the value renderable so
+                                                the select doesn't snap to a different
+                                                option without a user gesture. */}
+                                            {currentGenomeId
+                                                && !installedModifiers.some((m) => m.id === currentGenomeId) && (
+                                                    <option value={currentGenomeId}>
+                                                        {currentGenomeSlug ?? currentGenomeId}
+                                                    </option>
+                                                )}
+                                            {installedModifiers.map((m) => (
+                                                <option key={m.id} value={m.id}>
+                                                    {m.slug} — {m.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="cns-inspector-mode-status">
+                                            <div className="cns-inspector-mode-override">
+                                                <AlertCircle size={14} />
+                                                <span className="cns-inspector-mode-badge">
+                                                    BUNDLE: {currentGenomeSlug ?? '—'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p className="cns-inspector-mode-help">
+                                            Moves this pathway and every neuron, axon, and per-neuron
+                                            context under it to the chosen bundle. Effectors and
+                                            executables those neurons reference stay where they are.
+                                        </p>
+                                    </>
+                                )}
                                 {genomeError && (
                                     <div className="cns-inspector-genome-error">
                                         <AlertCircle size={14} />
                                         <span>{genomeError}</span>
                                     </div>
-                                )}
-                                {genomeConflicts.length > 0 && (
-                                    <ul className="cns-inspector-genome-conflicts">
-                                        {genomeConflicts.map((c) => (
-                                            <li key={`${c.app_label}.${c.model}.${c.pk}`}>
-                                                <code>{c.model}</code> {c.name_or_repr}
-                                                {' — owned by '}
-                                                <code>{c.owned_by ?? 'unknown'}</code>
-                                            </li>
-                                        ))}
-                                    </ul>
                                 )}
                             </div>
                         </Accordion>

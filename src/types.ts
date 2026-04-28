@@ -511,6 +511,10 @@ export interface NeuralModifierSummary {
     latest_event: NeuralModifierLatestEvent | null;
     created: string;
     modified: string;
+    // Active workspace marker (model-enforced mutex — exactly one bundle has
+    // this true at a time). Default after install: INCUBATOR. CANONICAL
+    // refuses with 400 if a PATCH tries to set it.
+    selected_for_edit?: boolean;
 }
 
 export interface NeuralModifierDetail extends NeuralModifierSummary {

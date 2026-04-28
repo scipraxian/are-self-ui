@@ -4,6 +4,7 @@ import { ArrowLeft, Zap, Terminal, ChevronUp, ChevronDown, Trash2 } from 'lucide
 import { apiFetch } from '../api';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { ThreePanel } from '../components/ThreePanel';
+import { GenomeRowControl, type GenomeRowModifierOption } from '../components/GenomeRowControl';
 import './EffectorEditorPage.css';
 
 /* ------------------------------------------------------------------ */
@@ -27,6 +28,8 @@ interface ExecutableDetail {
     switches_detail: SwitchDetail[];
     argument_assignments: ArgAssignment[];
     rendered_executable: string;
+    genome?: string | null;
+    genome_slug?: string | null;
 }
 
 interface SwitchDetail {
@@ -41,6 +44,8 @@ interface ArgAssignment {
     order: number;
     argument: string;
     argument_detail: { id: string; name: string; argument: string };
+    genome?: string | null;
+    genome_slug?: string | null;
 }
 
 interface ContextEntry {
@@ -48,6 +53,8 @@ interface ContextEntry {
     effector: string;
     key: string;
     value: string;
+    genome?: string | null;
+    genome_slug?: string | null;
 }
 
 interface DistributionMode {
@@ -77,6 +84,8 @@ interface EffectorFull {
     tags: { id: string; name: string }[];
     is_favorite: boolean;
     rendered_full_command: string[];
+    genome?: string | null;
+    genome_slug?: string | null;
 }
 
 interface ExecutableLight {
@@ -111,6 +120,7 @@ export function EffectorEditorPage() {
     const [distributionModes, setDistributionModes] = useState<DistributionMode[]>([]);
     const [allExecutables, setAllExecutables] = useState<ExecutableLight[]>([]);
     const [allArguments, setAllArguments] = useState<ArgumentDef[]>([]);
+    const [installedModifiers, setInstalledModifiers] = useState<GenomeRowModifierOption[]>([]);
 
     // Executable inline editing
     const [editingExecutable, setEditingExecutable] = useState(false);
@@ -181,15 +191,19 @@ export function EffectorEditorPage() {
 
     useEffect(() => { fetchEffectors(); }, [fetchEffectors]);
 
-    // Fetch lookup data (distribution modes, executables, arguments)
+    // Fetch lookup data (distribution modes, executables, arguments,
+    // installed modifiers). Modifiers fetched once at the page level so
+    // every embedded GenomeRowControl shares one source instead of
+    // each one firing its own GET.
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
             try {
-                const [modesRes, exeRes, argsRes] = await Promise.all([
+                const [modesRes, exeRes, argsRes, modRes] = await Promise.all([
                     apiFetch('/api/v2/distribution-modes/'),
                     apiFetch('/api/v2/executables/'),
                     apiFetch('/api/v2/executable-arguments/'),
+                    apiFetch('/api/v2/neural-modifiers/'),
                 ]);
                 if (cancelled) return;
 
@@ -204,6 +218,17 @@ export function EffectorEditorPage() {
                 if (argsRes.ok) {
                     const data = await argsRes.json();
                     if (!cancelled) setAllArguments(Array.isArray(data) ? data : data.results ?? []);
+                }
+                if (modRes.ok) {
+                    const data = await modRes.json();
+                    const list = (Array.isArray(data) ? data : data.results ?? []) as Array<{
+                        id: string; slug: string; name: string;
+                    }>;
+                    if (!cancelled) {
+                        setInstalledModifiers(list.map((m) => ({
+                            id: m.id, slug: m.slug, name: m.name,
+                        })));
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch lookups', err);
@@ -583,11 +608,18 @@ export function EffectorEditorPage() {
         orderValue: number,
         setOrderValue: (v: number) => void,
         onAdd: () => void,
+        // Per-row genome wiring. `assignmentViewsetPath` is the viewset
+        // for THESE rows — `/api/v2/effector-argument-assignments/` or
+        // `/api/v2/executable-argument-assignments/`. Each row gets its
+        // own compact GenomeRowControl since leaf supplements that hang
+        // off canonical parents are promoted alone.
+        assignmentViewsetPath: string,
+        onAssignmentGenomeChanged: (rowId: string, nextId: string, nextSlug: string | null) => void,
     ) => (
         <>
             <table className="eff-editor-table">
                 <thead>
-                    <tr><th>#</th><th>NAME</th><th>ARGUMENT</th><th></th></tr>
+                    <tr><th>#</th><th>NAME</th><th>ARGUMENT</th><th>GENOME</th><th></th></tr>
                 </thead>
                 <tbody>
                     {assignments.map((aa, idx) => (
@@ -658,6 +690,20 @@ export function EffectorEditorPage() {
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                                     }}
+                                />
+                            </td>
+                            <td>
+                                <GenomeRowControl
+                                    viewsetPath={assignmentViewsetPath}
+                                    rowId={aa.id}
+                                    genomeId={aa.genome ?? null}
+                                    genomeSlug={aa.genome_slug ?? null}
+                                    installedModifiers={installedModifiers}
+                                    variant="compact"
+                                    label=""
+                                    onGenomeChanged={(nextId, nextSlug) =>
+                                        onAssignmentGenomeChanged(aa.id, nextId, nextSlug)
+                                    }
                                 />
                             </td>
                             <td style={{ display: 'flex', gap: '2px' }}>
@@ -764,6 +810,28 @@ export function EffectorEditorPage() {
                 <span className="eff-editor-list-item-meta">ID: {detail.id}</span>
             </div>
 
+            {/* Effector-level genome control. Effector is a parent type:
+                PATCHing genome here also fans the new bundle out to its
+                EffectorContexts and EffectorArgumentAssignments via the
+                model's save() cascade. The per-row controls below stay
+                useful for leaf supplements that hang off canonical
+                parents (where the parent is read-only but the
+                supplement isn't). */}
+            <GenomeRowControl
+                viewsetPath="/api/v2/effectors/"
+                rowId={detail.id}
+                genomeId={detail.genome ?? null}
+                genomeSlug={detail.genome_slug ?? null}
+                installedModifiers={installedModifiers}
+                onGenomeChanged={(nextId, nextSlug) =>
+                    setDetail((prev) => prev
+                        ? { ...prev, genome: nextId, genome_slug: nextSlug }
+                        : prev,
+                    )
+                }
+            />
+
+
             {/* Full Command Preview — the real thing with all args + switches */}
             {detail.rendered_full_command?.length > 0 && (
                 <div className="eff-editor-section">
@@ -844,6 +912,30 @@ export function EffectorEditorPage() {
                             </h4>
                         </div>
 
+                        {/* Executable-level genome. Executable is a parent type:
+                            PATCH cascades to its ExecutableArgumentAssignments
+                            and ExecutableSupplementaryFileOrPath via save(). */}
+                        <GenomeRowControl
+                            viewsetPath="/api/v2/executables/"
+                            rowId={detail.executable_detail.id}
+                            genomeId={detail.executable_detail.genome ?? null}
+                            genomeSlug={detail.executable_detail.genome_slug ?? null}
+                            installedModifiers={installedModifiers}
+                            onGenomeChanged={(nextId, nextSlug) =>
+                                setDetail((prev) => prev
+                                    ? {
+                                        ...prev,
+                                        executable_detail: {
+                                            ...prev.executable_detail,
+                                            genome: nextId,
+                                            genome_slug: nextSlug,
+                                        },
+                                    }
+                                    : prev,
+                                )
+                            }
+                        />
+
                         <label className="eff-editor-label">NAME</label>
                         <input className="eff-editor-input" value={exeName} onChange={(e) => setExeName(e.target.value)} />
 
@@ -884,6 +976,22 @@ export function EffectorEditorPage() {
                             newExeArgOrder,
                             setNewExeArgOrder,
                             handleAddExeArgAssignment,
+                            '/api/v2/executable-argument-assignments/',
+                            (rowId, nextId, nextSlug) =>
+                                setDetail((prev) => prev
+                                    ? {
+                                        ...prev,
+                                        executable_detail: {
+                                            ...prev.executable_detail,
+                                            argument_assignments: prev.executable_detail.argument_assignments.map(
+                                                (aa) => aa.id === rowId
+                                                    ? { ...aa, genome: nextId, genome_slug: nextSlug }
+                                                    : aa,
+                                            ),
+                                        },
+                                    }
+                                    : prev,
+                                ),
                         )}
 
                         <button className="eff-editor-btn-action" onClick={handleExecutableSave} style={{ marginTop: '8px' }}>
@@ -924,6 +1032,19 @@ export function EffectorEditorPage() {
                     newEffArgOrder,
                     setNewEffArgOrder,
                     handleAddEffArgAssignment,
+                    '/api/v2/effector-argument-assignments/',
+                    (rowId, nextId, nextSlug) =>
+                        setDetail((prev) => prev
+                            ? {
+                                ...prev,
+                                argument_assignments: prev.argument_assignments.map(
+                                    (aa) => aa.id === rowId
+                                        ? { ...aa, genome: nextId, genome_slug: nextSlug }
+                                        : aa,
+                                ),
+                            }
+                            : prev,
+                        ),
                 )}
             </div>
 
@@ -958,7 +1079,7 @@ export function EffectorEditorPage() {
                     <h3 className="eff-editor-section-title">CONTEXT ENTRIES</h3>
                 </div>
                 <table className="eff-editor-table">
-                    <thead><tr><th>KEY</th><th>VALUE</th><th></th></tr></thead>
+                    <thead><tr><th>KEY</th><th>VALUE</th><th>GENOME</th><th></th></tr></thead>
                     <tbody>
                         {contextEntries.map(entry => (
                             <tr key={entry.id}>
@@ -977,6 +1098,24 @@ export function EffectorEditorPage() {
                                     />
                                 </td>
                                 <td>
+                                    <GenomeRowControl
+                                        viewsetPath="/api/v2/effector-contexts/"
+                                        rowId={entry.id}
+                                        genomeId={entry.genome ?? null}
+                                        genomeSlug={entry.genome_slug ?? null}
+                                        installedModifiers={installedModifiers}
+                                        variant="compact"
+                                        label=""
+                                        onGenomeChanged={(nextId, nextSlug) =>
+                                            setContextEntries((prev) => prev.map(
+                                                (ce) => ce.id === entry.id
+                                                    ? { ...ce, genome: nextId, genome_slug: nextSlug }
+                                                    : ce,
+                                            ))
+                                        }
+                                    />
+                                </td>
+                                <td>
                                     <button className="eff-editor-btn-delete" onClick={() => handleContextDelete(entry.id)}>
                                         &times;
                                     </button>
@@ -989,6 +1128,11 @@ export function EffectorEditorPage() {
                             </td>
                             <td>
                                 <input className="eff-editor-table-input" value={newCtxValue} onChange={(e) => setNewCtxValue(e.target.value)} placeholder="value..." />
+                            </td>
+                            <td>
+                                <span className="eff-editor-context-key" style={{ opacity: 0.5 }}>
+                                    defaults to workspace
+                                </span>
                             </td>
                             <td>
                                 <button className="eff-editor-btn-small" onClick={handleContextAdd} disabled={!newCtxKey.trim()}>Add</button>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BackgroundCanvas } from './BackgroundCanvas';
 import { NavBar } from './NavBar';
+import { RestartOverlay } from './RestartOverlay';
 import { SpikeSetBar } from './SpikeSetBar';
 import { WorkerSetBar } from './WorkerSetBar';
 import { ThalamusBubble } from './ThalamusBubble';
@@ -98,6 +99,11 @@ export function LayoutShell() {
                 <Outlet />
                 <ThalamusBubble />
             </div>
+
+            {/* Restart overlay — raised by handlers that get
+                `restart_imminent: true` back from a mutation. Polls
+                /api/v2/health/ until Daphne is back, then dismisses. */}
+            <RestartOverlay />
         </div>
     );
 }

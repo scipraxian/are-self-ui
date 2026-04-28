@@ -2,12 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { apiFetch } from '../api';
+import { GENOME } from '../components/genomeConstants';
 import { ModifierEventList } from '../components/ModifierEventList';
 import { ModifierInstallButton } from '../components/ModifierInstallButton';
 import { ModifierStatusPill } from '../components/ModifierStatusPill';
 import { useDendrite } from '../components/SynapticCleft';
 import { ThreePanel } from '../components/ThreePanel';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import {
+    maybeFlagRestart,
+    useRestartOverlay,
+} from '../context/RestartOverlayProvider';
 import type {
     NeuralModifierCatalogEntry,
     NeuralModifierDetail,
@@ -148,6 +153,7 @@ function CascadeBucket(props: {
 
 export function ModifierGardenPage() {
     const { setCrumbs } = useBreadcrumbs();
+    const { triggerRestart } = useRestartOverlay();
 
     const [modifiers, setModifiers] = useState<NeuralModifierSummary[]>([]);
     const [catalog, setCatalog] = useState<NeuralModifierCatalogEntry[]>([]);
@@ -169,6 +175,9 @@ export function ModifierGardenPage() {
     });
     const [createError, setCreateError] = useState<string | null>(null);
     const [createBusy, setCreateBusy] = useState<boolean>(false);
+    // Inline 400 surfaced next to a row's Workspace button. Slug-keyed so
+    // a refusal on bundle A doesn't pollute bundle B's row.
+    const [workspaceErrorBySlug, setWorkspaceErrorBySlug] = useState<Record<string, string>>({});
 
     const overflowRef = useRef<HTMLDivElement | null>(null);
 
@@ -297,11 +306,12 @@ export function ModifierGardenPage() {
             // flips from AVAILABLE to INSTALLED without waiting on
             // an Acetylcholine round-trip that the post-install
             // Daphne restart may eat.
-            const data = (await res.json()) as NeuralModifierDetail;
+            const data = (await res.json()) as NeuralModifierDetail & { restart_imminent?: boolean };
             setModifiers((prev) => {
                 const without = prev.filter((m) => m.slug !== data.slug);
                 return [...without, data];
             });
+            maybeFlagRestart(data, triggerRestart);
         } finally {
             setBusySlug(null);
         }
@@ -320,8 +330,10 @@ export function ModifierGardenPage() {
                 console.error(`Failed to delete ${slug}`);
                 return;
             }
+            const payload = await res.json().catch(() => ({}));
             setCatalog((prev) => prev.filter((entry) => entry.slug !== slug));
             setDeleting(null);
+            maybeFlagRestart(payload, triggerRestart);
         } finally {
             setBusySlug(null);
         }
@@ -353,12 +365,14 @@ export function ModifierGardenPage() {
                 console.error(`Failed to uninstall ${slug}`);
                 return;
             }
+            const payload = await res.json().catch(() => ({}));
             // Optimistic local update. The backend also fires Acetylcholine
             // for other tabs, but the originating client can't depend on
             // the WS round-trip beating the user's next action.
             setModifiers((prev) => prev.filter((m) => m.slug !== slug));
             setSelectedSlug((prev) => (prev === slug ? null : prev));
             setConfirming(null);
+            maybeFlagRestart(payload, triggerRestart);
         } finally {
             setBusySlug(null);
         }
@@ -392,7 +406,7 @@ export function ModifierGardenPage() {
                 setCreateError((detail && detail.detail) || `Create failed (${res.status}).`);
                 return;
             }
-            const data = (await res.json()) as NeuralModifierDetail;
+            const data = (await res.json()) as NeuralModifierDetail & { restart_imminent?: boolean };
             setModifiers((prev) => {
                 const without = prev.filter((m) => m.slug !== data.slug);
                 return [...without, data];
@@ -406,10 +420,59 @@ export function ModifierGardenPage() {
                 license: 'MIT',
             });
             setSelectedSlug(data.slug);
+            maybeFlagRestart(data, triggerRestart);
         } catch (err) {
             setCreateError(String(err));
         } finally {
             setCreateBusy(false);
+        }
+    };
+
+    /**
+     * Promote a bundle to the active edit workspace. Backend mutex
+     * ensures exactly one bundle has `selected_for_edit = true` at a
+     * time; PATCHing one to true atomically clears the previous holder.
+     * CANONICAL refuses with 400 — surface inline next to the row.
+     */
+    const setAsWorkspace = async (modifier: NeuralModifierSummary) => {
+        if (busySlug) return;
+        const slug = modifier.slug;
+        setBusySlug(slug);
+        setWorkspaceErrorBySlug((prev) => {
+            const next = { ...prev };
+            delete next[slug];
+            return next;
+        });
+        try {
+            const res = await apiFetch(
+                `/api/v2/neural-modifiers/${slug}/`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selected_for_edit: true }),
+                },
+            );
+            if (!res.ok) {
+                const payload = await res.json().catch(() => ({}));
+                const detail = (payload as { detail?: string }).detail
+                    ?? `Set workspace failed (${res.status}).`;
+                setWorkspaceErrorBySlug((prev) => ({ ...prev, [slug]: detail }));
+                return;
+            }
+            const data = (await res.json()) as NeuralModifierDetail;
+            // Mirror the mutex locally — only the just-PATCHed row
+            // is selected_for_edit; everything else flips to false.
+            // The backend will also fire Acetylcholine, but the
+            // originating client doesn't depend on the round-trip.
+            setModifiers((prev) => prev.map((m) =>
+                m.slug === data.slug
+                    ? { ...m, ...data, selected_for_edit: true }
+                    : { ...m, selected_for_edit: false }
+            ));
+        } catch (err) {
+            setWorkspaceErrorBySlug((prev) => ({ ...prev, [slug]: String(err) }));
+        } finally {
+            setBusySlug(null);
         }
     };
 
@@ -437,10 +500,12 @@ export function ModifierGardenPage() {
                 row_count: number;
                 bytes_written: number;
                 zip_path: string;
+                restart_imminent?: boolean;
             };
             setModifiers((prev) => prev.map((m) =>
                 m.slug === slug ? { ...m, version: data.new_version } : m
             ));
+            maybeFlagRestart(data, triggerRestart);
         } finally {
             setBusySlug(null);
         }
@@ -625,14 +690,29 @@ export function ModifierGardenPage() {
                         }
 
                         const modifier = entry.row;
+                        const isCanonicalRow = modifier.id === GENOME.CANONICAL;
+                        const isWorkspace = modifier.selected_for_edit === true;
+                        const wsErr = workspaceErrorBySlug[modifier.slug];
                         return (
                             <tr
                                 key={`installed:${modifier.id}`}
-                                className={rowClass}
+                                className={
+                                    isWorkspace
+                                        ? `${rowClass} modifier-garden-row--workspace`
+                                        : rowClass
+                                }
                                 onClick={() => setSelectedSlug(modifier.slug)}
                             >
                                 <td className="modifier-garden-cell-slug">
                                     <code>{modifier.slug}</code>
+                                    {isWorkspace && (
+                                        <span
+                                            className="modifier-garden-workspace-badge"
+                                            title="New rows you create default to this bundle."
+                                        >
+                                            WORKSPACE
+                                        </span>
+                                    )}
                                 </td>
                                 <td>{modifier.name}</td>
                                 <td>{modifier.version}</td>
@@ -656,6 +736,17 @@ export function ModifierGardenPage() {
                                     onClick={(ev) => ev.stopPropagation()}
                                 >
                                     {renderActionButton(entry)}
+                                    {!isCanonicalRow && !isWorkspace && (
+                                        <button
+                                            type="button"
+                                            className="modifier-garden-action modifier-garden-action--workspace"
+                                            onClick={(ev) => { ev.stopPropagation(); setAsWorkspace(modifier); }}
+                                            disabled={isBusy}
+                                            title="Make this the active workspace. New rows you create default into this bundle."
+                                        >
+                                            Set as Workspace
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className="modifier-garden-action modifier-garden-action--danger"
@@ -680,6 +771,15 @@ export function ModifierGardenPage() {
                                     >
                                         Details
                                     </Link>
+                                    {wsErr && (
+                                        <span
+                                            className="modifier-garden-workspace-error"
+                                            role="alert"
+                                            title={wsErr}
+                                        >
+                                            {wsErr}
+                                        </span>
+                                    )}
                                 </td>
                             </tr>
                         );

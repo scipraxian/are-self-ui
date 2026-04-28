@@ -6,6 +6,7 @@ import { EnvironmentProvider } from './context/EnvironmentProvider';
 import { SpikeSetProvider } from './context/SpikeSetProvider';
 import { WorkerSetProvider } from './context/WorkerSetProvider';
 import { SynapticCleftProvider } from './components/SynapticCleft';
+import { RestartOverlayProvider } from './context/RestartOverlayProvider';
 import { LayoutShell } from './components/LayoutShell';
 import { BrainView } from './pages/BrainView';
 import { FrontalIndex } from './pages/FrontalIndex';
@@ -40,6 +41,7 @@ function App() {
                     <BreadcrumbProvider>
                     <SpikeSetProvider>
                     <WorkerSetProvider>
+                    <RestartOverlayProvider>
                     <GABAProvider>
                         <Routes>
                             <Route element={<LayoutShell />}>
@@ -81,6 +83,7 @@ function App() {
                             </Route>
                         </Routes>
                     </GABAProvider>
+                    </RestartOverlayProvider>
                     </WorkerSetProvider>
                     </SpikeSetProvider>
                     </BreadcrumbProvider>

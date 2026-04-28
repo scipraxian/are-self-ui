@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 
 import { apiFetch } from '../api';
+import { maybeFlagRestart, useRestartOverlay } from '../context/RestartOverlayProvider';
 import type { NeuralModifierDetail } from '../types';
 import './ModifierInstallButton.css';
 
@@ -14,6 +15,7 @@ export function ModifierInstallButton({
     const [isBusy, setIsBusy] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [messageKind, setMessageKind] = useState<'info' | 'error'>('info');
+    const { triggerRestart } = useRestartOverlay();
 
     const openPicker = () => {
         if (isBusy) return;
@@ -51,6 +53,7 @@ export function ModifierInstallButton({
             onInstalled?.(payload as NeuralModifierDetail);
             setMessage(`Installed ${bundleName}.`);
             setMessageKind('info');
+            maybeFlagRestart(payload, triggerRestart);
         } catch (err) {
             setMessage(err instanceof Error ? err.message : 'Install failed.');
             setMessageKind('error');

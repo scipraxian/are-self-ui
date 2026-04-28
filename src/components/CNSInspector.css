@@ -403,21 +403,11 @@ textarea.cnsinspector-context-input {
     border-radius: 4px;
 }
 
-.cns-inspector-genome-conflicts {
+/* Sub-text under the GENOME dropdown — the load-bearing copy that
+   tells the user what the cascade actually does. */
+.cns-inspector-mode-help {
     margin: 8px 0 0 0;
-    padding: 8px 12px 8px 28px;
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    background: rgba(239, 68, 68, 0.06);
-    color: #e2e8f0;
-    font-size: 0.8rem;
-    border-radius: 4px;
-}
-
-.cns-inspector-genome-conflicts li {
-    margin-bottom: 4px;
-}
-
-.cns-inspector-genome-conflicts code {
-    color: #fbbf24;
-    font-family: var(--font-mono, monospace);
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.45;
 }

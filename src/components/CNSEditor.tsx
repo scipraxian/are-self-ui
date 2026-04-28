@@ -204,8 +204,18 @@ export const CNSEditor: React.FC<CNSEditorProps> = ({
                             }
                         }
 
-                        // Pick custom node type based on canonical effector PK, fall back to generic
-                        const nodeType = (neuron.effector && EFFECTOR_NODE_TYPE[neuron.effector]) || 'neuron';
+                        // Subgraph neurons (those that invoke another pathway) always
+                        // render via the generic NeuronNode, which has a dedicated
+                        // subgraph branch keyed off `data.invoked_pathway_id`. They
+                        // are stored with `effector = BEGIN_PLAY` on the backend
+                        // because a Neuron row needs a non-null effector FK, but
+                        // they are NOT root-of-pathway nodes — the resolver must
+                        // not route them to BeginPlayNeuronNode. Check
+                        // `invoked_pathway` first; fall through to the canonical
+                        // effector lookup only when the neuron isn't a subgraph.
+                        const nodeType = neuron.invoked_pathway
+                            ? 'neuron'
+                            : (neuron.effector && EFFECTOR_NODE_TYPE[neuron.effector]) || 'neuron';
 
                         return {
                             id: neuron.id.toString(),
