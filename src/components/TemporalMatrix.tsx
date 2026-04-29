@@ -339,6 +339,10 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
     const [dragOverShift, setDragOverShift] = useState<number | null>(null);
     const [confirmDeleteIterationId, setConfirmDeleteIterationId] = useState<number | null>(null);
     const [isDeletingIteration, setIsDeletingIteration] = useState(false);
+    // Bumped after every slot_disc / forge mutation so IdentityRoster
+    // refetches even when the backend hasn't broadcast IdentityDisc yet
+    // (auto-forge in slot_disc isn't reliably wired to a neurotransmitter).
+    const [rosterRefreshKey, setRosterRefreshKey] = useState(0);
 
     const iterationEvent = useDendrite('Iteration', null);
 
@@ -560,6 +564,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             if (res.ok) {
                 const updatedIteration: IterationData = await res.json();
                 updateIterationState(updatedIteration);
+                if (type === 'base') setRosterRefreshKey(k => k + 1);
             }
         } catch (err) {
             console.error("Neural slotting failed:", err);
@@ -681,6 +686,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             if (res.ok) {
                 const updated = await res.json();
                 setDefinitionDetail(updated);
+                if (payload.base_id != null) setRosterRefreshKey(k => k + 1);
             } else {
                 console.error('Definition slot_disc failed');
             }
@@ -1050,7 +1056,7 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
             {hasSelection && (
                 <div className="temporal-identity-panel">
                     <h3 className="roster-section-title">Identity Roster</h3>
-                    <IdentityRoster onSelectIdentity={() => {}} />
+                    <IdentityRoster onSelectIdentity={() => {}} refreshKey={rosterRefreshKey} />
                 </div>
             )}
         </div>

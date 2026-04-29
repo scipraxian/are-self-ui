@@ -209,6 +209,20 @@
     color: #94a3b8;
 }
 
+.parietal-status-inflight {
+    color: #fbbf24;
+    animation: parietal-inflight-pulse 1.2s ease-in-out infinite;
+}
+
+.parietal-row-inflight {
+    background: rgba(251, 191, 36, 0.04);
+}
+
+@keyframes parietal-inflight-pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
 .parietal-row-recovered {
     flex: 0 0 auto;
     color: #84cc16;

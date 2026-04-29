@@ -2,11 +2,38 @@
 
 Remaining work, sifted for the frontend. See FEATURES.md for what's built.
 
+## In Progress — Genome editor spread (April 27, 2026)
+
+**Status:** Working surface landed; spreading to remaining owned-model editors. Michael's read
+2026-04-28 is "seems to work adequately, I'm sure I will touch it again today but it IS working."
+
+The contract and the cross-cutting plumbing are described in FEATURES.md → Neuroplasticity → Genome
+editor + Restart overlay. The remaining frontend work is integration breadth, not new mechanics.
+
+- [x] `RestartOverlayProvider` + `RestartOverlay` mounted in `LayoutShell`. Probes
+  `/api/v2/health/` until Daphne is back.
+- [x] `maybeFlagRestart(payload, trigger)` helper for any mutation response.
+- [x] `GenomeRowControl` reusable per-row component (compact + full variants, canonical
+  read-only block, inline 400 surface, `onGenomeChanged` callback).
+- [x] `genomeConstants.ts` — `CANONICAL` / `INCUBATOR` UUIDs mirrored from Python.
+- [x] Pathway-level genome control inline in `CNSInspector.tsx` — PATCH on the pathway, with the
+  parent's save() fan-out doing the cascade-children atomic move server-side.
+- [x] `EffectorEditorPage` integrated.
+- [x] Modifier Garden `selected_for_edit` mutex — exactly one workspace bundle at a time, where
+  newly-stamped rows land.
+- [ ] Spread `GenomeRowControl` to the remaining owned-model editors that are currently leaf-row
+  promote-able: `EffectorArgumentAssignment`, `EffectorContext`, `Executable`,
+  `ExecutableArgumentAssignment`, `ExecutableSupplementaryFileOrPath`. Each is plain V2 PATCH on
+  its own viewset; the row only needs a `genome_id` / `genome_slug` pair on the serializer (already
+  present per `GenomeWritableMixin`) and the parent page owns the shared `installedModifiers` fetch.
+- [ ] Documentation pass (paired with backend "tie a bow on genome editor work" — see open-threads).
+
 ## In Progress — PNS Dashboard Churn (April 11, 2026)
 
-**Status:** Blocked on backend regression fix (see are-self-api/TASKS.md → "In Progress —
-Nerve Terminal Scan Reconcile"). Frontend has no code changes yet but there are frontend
-follow-ups queued once the backend lands.
+**Status:** Still blocked on backend regression fix (see are-self-api/TASKS.md → "In Progress —
+Nerve Terminal Scan Reconcile"). Confirmed 2026-04-28: backend block remains open, no commits in the
+window have addressed the per-row acetylcholine fan-out during scan reconcile. Frontend follow-ups
+stay queued.
 
 **Symptoms reported by Michael:**
 - Agent cards in PNS blink online/offline constantly (not true — they're stable).
@@ -32,6 +59,145 @@ subscription event — so a terminal save also rehits celery-workers and beat fo
   NOT already have CPU/GPU data — it's server-side from psutil.
 - [ ] **Beat status & spikes via subscription.** `/beat/status/` and `/spikes/?is_active=true`
   should likewise be event-driven — they only change when beat restarts or spikes start/end.
+
+## Smoke-Test Findings — 2026-04-28
+
+Bugs and feature gaps Michael caught while exercising the app today. Filed verbatim with
+light disambiguation; severity sort and triage to follow once we walk through together.
+`[ui]` / `[api]` / `[both]` tag indicates where the fix lands. `[both]` items have a
+companion entry in `are-self-api/TASKS.md` Known Bugs.
+
+### Still open
+
+- [ ] `[both]` **Begin Play environment inheritance.** Setting an environment on the
+  BEGIN_PLAY neuron does not propagate to child neurons in the pathway. UI side is
+  wired correctly (`CNSInspector` PATCHes `/api/v2/neurons/{id}/` with `environment`).
+  Inheritance is backend's job — see api TASKS.md Known Bugs.
+- [ ] `[both]` **Distribution mode SPECIFIC_TARGETS — targets not settable.** The
+  targets list for SPECIFIC_TARGETS distribution mode appears read-only in the UI.
+  Likely the classic DRF `read_only=True` nested-serializer pitfall — needs a writable
+  `PrimaryKeyRelatedField` counterpart on the M2M. Frontend then exposes a target
+  picker. See api TASKS.md Known Bugs.
+- [ ] `[both]` **Django server (Daphne) no longer shows up in PNS.** Investigated
+  2026-04-28: PNSPage has no filter dropping Daphne. Django servers are populated
+  *only* from `useDendrite('Django', null)` log events; there's no backend endpoint
+  for Django/Daphne registration. Backend isn't broadcasting a presence ping. Filed
+  forward as backend-only.
+- [ ] `[ui]` **CNS graph cold-start shows no starting data.** Investigated 2026-04-28:
+  `CNSPage`, `CNSTrainTimeline`, `CNSMonitorPage`, and `CNSEditPage` all cold-fetch on
+  mount. Cannot reproduce without Michael's clarification of which surface he was on.
+  *Need Michael to disambiguate.*
+- [ ] `[ui]` **Chat window doesn't update.** Reviewed 2026-04-28: ThalamusChat uses
+  `useDendrite('ReasoningTurnDigest', null)` (re-pointed from the imagined
+  `'ReasoningTurn'` receptor on 2026-04-28) and bridges `'saved'` to a custom
+  event; SessionChat uses `useDendrite('SynapseResponse', null)` keyed on sessionId.
+  Both display-side wirings are sound. Likely entangled with the api-side
+  swarm-message-queue persistence bug — see api TASKS.md → "Session chat — messages
+  not delivered or persisted." Re-test after that lands.
+- [ ] `[ui]` **Thalamus: chat history surface.** Past Thalamus conversations
+  browsable / pickable. Spec TBD — discuss with Michael whether this is per-session,
+  per-day, or a flat scrollback. Out of scope for the 2026-04-28 sweep.
+- [ ] `[api]` **Ollama no longer releases GPU memory after a model run.** Process is
+  holding memory instead of unloading between runs. Backend / hypothalamus model
+  lifecycle issue. See api TASKS.md Known Bugs.
+
+## Recently Done — Smoke-test findings + reasoning-window cold-start (2026-04-28)
+
+Two tracks landed in one pass. Track 1's first attempt built against an imagined
+backend contract (separate `'ReasoningTurn'` / `'ToolCall'` dendrites, `is_ghost`
+discriminator field, `elapsed_ms` on the digest, four new neurotransmitter
+signals). Michael had to refuse and redo the backend with a much smaller change:
+the existing `post_save(ReasoningTurn)` signal now fires earlier — the pending
+ledger is persisted before the LLM call, attached to the turn, and the same
+`ReasoningTurnDigest` Acetylcholine vesicle broadcasts. Same handler, same
+receptor, same wire shape — just two broadcasts per turn now (one at start, one
+at completion) sharing `turn_id` for upsert. Track 1 was reconciled against
+that actual contract in the same session.
+
+### Track 1 — Reasoning view feels alive while turns are in flight
+
+- **One digest stream, two broadcasts per turn.** No separate ghost stream, no
+  extra dendrites. `useSessionDigests` (the existing `ReasoningTurnDigest`
+  subscription) handles both broadcasts via upsert on `turn_id`. In-flight
+  rendering is a pure render-time distinction keyed off `digest.status_name`
+  via the `isInFlight()` helper (matches the backend's `TURN_IN_FLIGHT_STATUS_IDS`:
+  Pending / Active / Paused / Attention Required).
+- **Time-based encoding restored.** Sphere size and color both ride elapsed time
+  again (replacing the `tokens_out / running mean` heuristic the April-18 cutover
+  introduced). Continuous HSL gradient green → orange. Same `0.3x – 4.0x` clamp
+  as the pre-April-18 visual. Sourced from `digest.delta` (Django `DurationField`
+  wire shape, parsed via `parseDelta()`) on completed turns. In-flight digests
+  source elapsed from a client-side clock anchored on `digest.created`, normalized
+  against the session's running mean of completed turns — driven by the animate
+  loop using `inFlightMeshesRef: Map<turn_id, THREE.Mesh>`. The mean only counts
+  completed turns; in-flight turns don't drag it down with their partial timing.
+- **Cold-start handled by `useSessionDigests`.** F5 mid-flight reproduces the
+  live-socket view because the same `graph_data?since_turn_number=-1` endpoint
+  returns the in-flight digest on the same wire. No special parser needed.
+- **Client-side timers.** Two self-rescheduling `setTimeout` clocks above the
+  graph on `FrontalSession`: session-elapsed (anchored on `session.created`,
+  stops at terminal status) and current-turn-elapsed (anchored on the most-recent
+  in-flight digest's `created`, hidden when none). NEVER `setInterval`.
+- **Inspector handles in-flight via the existing `'turn'` branch.** No separate
+  type. The branch already fetches the full turn via
+  `/api/v2/reasoning_turns/<id>/`; the backend now persists the ledger before
+  the LLM call so `model_usage_record.request_payload` is populated mid-flight.
+  When `isInFlight(n.status_name)` is true the WHAT THE AGENT SAW accordion is
+  open by default and a "Waiting for response…" placeholder renders below — the
+  user sees the prompt currently being processed (these calls can take ~10
+  minutes).
+- **Helpers in `utils/reasoningGraphHelpers.ts`.** `parseDelta(durationString)`
+  parses the Django `DurationField` wire shape (`[D ]H:MM:SS[.ffffff]`),
+  `digestElapsedMs(digest)` returns ms (delta if present, else
+  `modified - created`), `isInFlight(statusName)` checks against
+  `IN_FLIGHT_STATUS_NAMES`, plus the existing `elapsedToRatio` /
+  `elapsedToColor`. Unit tests cover all four parse paths, the in-flight set
+  membership both directions, and the ratio clamp.
+
+### Track 2 — Smoke-test findings (UI side)
+
+- ✅ **Identity Flight Logs tab live-update.** `IdentitySheet` subscribes to
+  `useDendrite('ReasoningTurnDigest', null)` and `useDendrite('ReasoningSession',
+  null)` and re-pulls the disc detail when a vesicle's `identity_disc_id` matches
+  this disc.
+- ✅ **Spawn-disc refreshes `IdentityRoster`.** TemporalMatrix bumps a new
+  `rosterRefreshKey` after every base→disc auto-forge (both iteration and
+  iteration-definition slot_disc paths). `IdentityRoster` accepts an optional
+  `refreshKey` prop that goes into its load effect's deps.
+- ✅ **Session-list turn count updates while running.**
+  `ReasoningSidebar` adds `useDendrite('ReasoningTurnDigest', null)` to the load
+  effect's deps so per-card `Status · N turns` updates as digests land.
+- ✅ **Parietal tab consumes digests.** `ParietalActivityPanel` flattens
+  `tool_calls_summary` from every digest in the session (in-flight digests have
+  empty summaries since tool calls are only decided after the LLM responds, so
+  rows appear when the second broadcast lands).
+- ✅ **Effector Editor env-aware.** `EffectorEditorPage` calls `useEnvironment()`
+  and passes `?environment=<id>` on the effector list and executable list fetches.
+  Pre-existing CNS-UUID-migration type errors mentioned in TASKS.md were no longer
+  reproducible — `npm run build` clean.
+- ✅ **Environment Editor refetches on graft install/uninstall.** Subscribed to
+  `useDendrite('NeuralModifier', null)` and calls `refreshEnvironments()` on every
+  vesicle.
+- ✅ **Frontal Lobe node editor stops resetting cursor.** `FrontalLobeNeuronNode`
+  now keeps a local `promptDraft` mirrored from the canonical `context.prompt`,
+  commits on `onBlur` instead of every keystroke. Re-syncs only when the upstream
+  value flips for non-self reasons.
+- ✅ **Thalamus message-count + context-window pills.** New strip above the input
+  with two pills (MSGS / CTX). Message count refetches on every `'saved'`
+  ReasoningTurn vesicle. Context window probes
+  `/api/v2/thalamus/model-info/`; `—` if endpoint missing or no preferred model
+  resolved.
+- ✅ **Thalamus clear-history affordance.** Trash button next to the close button
+  in the header. Probes `/api/v2/thalamus/clear/` via `OPTIONS` on mount; if the
+  endpoint isn't exposed yet the button is disabled with a tooltip explaining
+  why. Successful POST re-keys the runtime provider so in-memory state drops.
+- ✅ **Thalamus HTML response rendering.** Custom `Text` part renderer detects
+  tag-shaped content via `looksLikeHtml`, sanitizes with DOMPurify (FORBID_TAGS:
+  script/iframe/style/object/embed; FORBID_ATTR: on*), renders as
+  `dangerouslySetInnerHTML` only after sanitization. Plain text is rendered as
+  text. `dompurify` + `@types/dompurify` added to deps.
+- ⏳ **Thalamus chat history surface** — spec is open. Filed forward in
+  "Still open" above as TBD.
 
 ## Recently Done — Modifier Garden scaffolding (April 19, 2026)
 

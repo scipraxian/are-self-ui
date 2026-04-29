@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { ReasoningTurnDigest } from '../types';
+import { isInFlight } from '../utils/reasoningGraphHelpers';
 import './ParietalActivityPanel.css';
 
 interface ParietalActivityPanelProps {
@@ -14,6 +15,7 @@ interface FlatToolRow {
     toolName: string;
     success: boolean | null;
     target: string;
+    inFlight: boolean;
 }
 
 export function ParietalActivityPanel({
@@ -23,12 +25,17 @@ export function ParietalActivityPanel({
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
     // Flatten the digest stream into one row per tool call. The digest's
-    // tool_calls_summary is the authoritative list here — full
-    // arguments/result_payload/traceback are fetched on-demand by the
-    // inspector when a row is clicked.
+    // tool_calls_summary only populates on the second broadcast (LLM
+    // completion), so a digest with status in the in-flight set will have
+    // an empty list — there's nothing to render mid-flight, which is
+    // correct: tool calls aren't decided until the model responds. The
+    // `inFlight` flag is still tracked so the row can hint at parent-turn
+    // state if the parent is somehow still in-flight by the time tool
+    // sub-summaries land (rare; defensive).
     const allTools = useMemo<FlatToolRow[]>(() => {
         const rows: FlatToolRow[] = [];
         digests.forEach((d) => {
+            const turnInFlight = isInFlight(d.status_name);
             (d.tool_calls_summary || []).forEach((tc) => {
                 rows.push({
                     turnNumber: d.turn_number,
@@ -37,6 +44,7 @@ export function ParietalActivityPanel({
                     toolName: tc.tool_name,
                     success: tc.success,
                     target: tc.target,
+                    inFlight: turnInFlight,
                 });
             });
         });
@@ -119,13 +127,21 @@ export function ParietalActivityPanel({
                 ) : (
                     <div className="parietal-rows">
                         {filteredTools.map((row) => {
-                            const icon = row.success === true ? '✓' : row.success === false ? '✗' : '◦';
-                            const statusClass =
-                                row.success === true
-                                    ? 'parietal-row-success'
+                            const icon = row.inFlight
+                                ? '⋯'
+                                : row.success === true
+                                    ? '✓'
                                     : row.success === false
-                                        ? 'parietal-row-error'
-                                        : '';
+                                        ? '✗'
+                                        : '◦';
+                            const statusClass =
+                                row.inFlight
+                                    ? 'parietal-row-inflight'
+                                    : row.success === true
+                                        ? 'parietal-row-success'
+                                        : row.success === false
+                                            ? 'parietal-row-error'
+                                            : '';
                             const action = row.target || row.toolName;
 
                             return (
@@ -143,7 +159,7 @@ export function ParietalActivityPanel({
                                         <span className="parietal-row-action">{action}</span>
                                     </div>
                                     <div className="parietal-row-status">
-                                        <span className={`parietal-row-icon-status ${row.success === true ? 'parietal-status-ok' : row.success === false ? 'parietal-status-error' : 'parietal-status-unknown'}`}>
+                                        <span className={`parietal-row-icon-status ${row.inFlight ? 'parietal-status-inflight' : row.success === true ? 'parietal-status-ok' : row.success === false ? 'parietal-status-error' : 'parietal-status-unknown'}`}>
                                             {icon}
                                         </span>
                                         {row.isRecovered && (

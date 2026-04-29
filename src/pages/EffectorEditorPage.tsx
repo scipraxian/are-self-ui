@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap, Terminal, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { apiFetch } from '../api';
 import { useBreadcrumbs } from '../context/BreadcrumbProvider';
+import { useEnvironment } from '../context/EnvironmentProvider';
 import { ThreePanel } from '../components/ThreePanel';
 import { GenomeRowControl, type GenomeRowModifierOption } from '../components/GenomeRowControl';
 import './EffectorEditorPage.css';
@@ -176,10 +177,16 @@ export function EffectorEditorPage() {
         }
     }, [routeEffectorId]);
 
-    // Fetch effector list
+    const { selectedEnvironmentId } = useEnvironment();
+
+    // Fetch effector list, env-scoped. The Django admin already shows
+    // env-filtered results — the UI just wasn't passing the filter.
     const fetchEffectors = useCallback(async () => {
         try {
-            const res = await apiFetch('/api/v2/effectors/');
+            const url = selectedEnvironmentId
+                ? `/api/v2/effectors/?environment=${selectedEnvironmentId}`
+                : '/api/v2/effectors/';
+            const res = await apiFetch(url);
             if (!res.ok) return;
             const data = await res.json();
             const items = Array.isArray(data) ? data : data.results ?? [];
@@ -187,7 +194,7 @@ export function EffectorEditorPage() {
         } catch (err) {
             console.error('Failed to fetch effectors', err);
         }
-    }, []);
+    }, [selectedEnvironmentId]);
 
     useEffect(() => { fetchEffectors(); }, [fetchEffectors]);
 
@@ -199,9 +206,12 @@ export function EffectorEditorPage() {
         let cancelled = false;
         const load = async () => {
             try {
+                const exePath = selectedEnvironmentId
+                    ? `/api/v2/executables/?environment=${selectedEnvironmentId}`
+                    : '/api/v2/executables/';
                 const [modesRes, exeRes, argsRes, modRes] = await Promise.all([
                     apiFetch('/api/v2/distribution-modes/'),
-                    apiFetch('/api/v2/executables/'),
+                    apiFetch(exePath),
                     apiFetch('/api/v2/executable-arguments/'),
                     apiFetch('/api/v2/neural-modifiers/'),
                 ]);
@@ -236,7 +246,7 @@ export function EffectorEditorPage() {
         };
         load();
         return () => { cancelled = true; };
-    }, []);
+    }, [selectedEnvironmentId]);
 
     // Imperative fetch — can be called after mutations to refresh detail in-place
     const fetchDetail = useCallback(async (id?: string) => {

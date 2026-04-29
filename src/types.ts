@@ -171,6 +171,11 @@ export interface ReasoningToolCallSummary {
     target: string;
 }
 
+// The digest is broadcast twice per turn — once at turn-start (excerpt
+// empty, tool_calls_summary empty, engram_ids empty, tokens zero, status
+// 'Active'/'Pending'/etc.) and once at LLM completion (populated, status
+// 'Completed' or terminal-non-success). Both broadcasts share turn_id;
+// the consumer upserts.
 export interface ReasoningTurnDigest {
     turn_id: string;
     session_id: string;
@@ -184,9 +189,16 @@ export interface ReasoningTurnDigest {
     engram_ids: string[];
     created: string | null;
     modified: string | null;
+    // ISO 8601 duration string from the `CreatedAndModifiedWithDelta`
+    // mixin, e.g. "0:00:01.234567". Updated each time the turn row saves;
+    // for in-flight digests the value reflects time-to-now-of-broadcast,
+    // not final elapsed (which only stabilizes on the second broadcast).
+    delta?: string | null;
 }
 
-// 3D Graph specific node injection
+// 3D Graph specific node injection. In-flight turns are still type 'turn';
+// they're distinguished at render time by status_name (Active/Pending/Paused/
+// Attention Required → in-flight; everything else → terminal).
 export interface GraphNode {
     id: string;
     type: 'turn' | 'tool' | 'goal' | 'engram' | 'conclusion' | 'session';
@@ -206,6 +218,8 @@ export interface GraphNode {
     engram_ids?: string[];
     created?: string | null;
     modified?: string | null;
+    delta?: string | null;
+    elapsed_ms?: number;
     [key: string]: unknown;
 }
 

@@ -15,6 +15,7 @@ import type {
 } from "../types.ts";
 import { getCookie } from '../api';
 import { summarizeTool } from '../utils/toolFormatters';
+import { isInFlight } from '../utils/reasoningGraphHelpers';
 
 // --- Relative time formatter for "ago" strings ---
 const formatAgo = (iso?: string): string => {
@@ -232,6 +233,10 @@ interface ReasoningSidebarProps {
 export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleChat }: ReasoningSidebarProps) => {
     const [sessions, setSessions] = useState<ReasoningSessionData[]>([]);
     const sessionEvent = useDendrite('ReasoningSession', null);
+    // Subscribing here means the per-card "N turns" meta line refreshes
+    // whenever a digest lands for any session in the list, not just when
+    // a session record itself changes.
+    const digestEvent = useDendrite('ReasoningTurnDigest', null);
 
     useEffect(() => {
         let cancelled = false;
@@ -248,7 +253,7 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
         };
         load();
         return () => { cancelled = true; };
-    }, [sessionEvent]);
+    }, [sessionEvent, digestEvent]);
 
     const handleAction = async (action: string) => {
         if (!confirm(`Are you sure you want to ${action} this session?`)) return;
@@ -383,7 +388,11 @@ export const ReasoningSidebar = ({ activeSessionId, onSelectSession, onToggleCha
 // rAF-based ticking component: updates once per second by comparing
 // performance.now() against the last tick. Avoids setInterval per the
 // CLAUDE.md dataflow rules. Renders "0.3s" / "12s" / "1m 23s" / "1h 2m".
-const TURN_ACTIVE_STATUSES = ['Active', 'Running', 'Pending', 'Thinking'];
+// Backward-compat alias kept so the few inline references below read
+// cleanly. Prefer `isInFlight()` from utils/reasoningGraphHelpers for
+// new code — it's the single source of truth, mirroring the backend's
+// TURN_IN_FLIGHT_STATUS_IDS.
+const TURN_ACTIVE_STATUSES = ['Pending', 'Active', 'Paused', 'Attention Required'];
 
 const formatElapsed = (ms: number): string => {
     if (ms < 0) return '0s';
@@ -589,9 +598,10 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                             const modelName = turn?.model_usage_record?.ai_model_provider?.ai_model?.name || digestModelName;
                             const messages = turn?.model_usage_record?.request_payload || [];
                             const hasMessages = Array.isArray(messages) && messages.length > 0;
+                            const turnInFlight = isInFlight(n.status_name);
                             const statusClass = n.status_name === 'Error'
                                 ? 'inspector-status--error'
-                                : ['Active', 'Running', 'Pending', 'Thinking'].includes(n.status_name)
+                                : turnInFlight
                                     ? 'inspector-status--active'
                                     : 'inspector-status--completed';
                             const turnNumber = turn?.turn_number ?? n.turn_number ?? '?';
@@ -680,11 +690,21 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                             </Accordion>
                         ) : null}
 
-                        {/* TIER 3: Collapsed accordions (full body required) */}
+                        {/* TIER 3: WHAT THE AGENT SAW — open by default while
+                            the turn is still in flight so the user can read
+                            the prompt that's currently being processed (these
+                            calls can take ~10 minutes). Collapsed by default
+                            once the turn completes. */}
                         {hasMessages && (
-                            <Accordion title="WHAT THE AGENT SAW" color="#38bdf8">
+                            <Accordion title="WHAT THE AGENT SAW" color="#38bdf8" open={turnInFlight}>
                                 {renderMessages(messages)}
                             </Accordion>
+                        )}
+
+                        {turnInFlight && (
+                            <div className="inspector-placeholder font-mono text-sm">
+                                Waiting for response…
+                            </div>
                         )}
 
                         {hasFullCalls && (
@@ -736,9 +756,12 @@ export const ReasoningInspector = ({ node, sessionId }: ReasoningInspectorProps)
                             // Tool sub-nodes carry only the compact
                             // {id, tool_name, success, target} summary from
                             // the digest. The full ToolCall row (arguments,
-                            // result_payload, traceback) is on the fetched
+                            // result_payload, traceback) lives on the fetched
                             // turn — we look it up by stable id so a
                             // reordered or deleted call doesn't mis-match.
+                            // Tool sub-nodes only appear in the digest after
+                            // the LLM round-trip completes, so a missing
+                            // ToolCall is just "still loading the turn body."
                             const toolCallId = (n.tool_call_id as string | undefined) || '';
                             const toolCalls: ToolCallData[] = turnDetail?.tool_calls || [];
                             const tool = toolCalls.find(

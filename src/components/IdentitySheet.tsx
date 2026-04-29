@@ -5,6 +5,7 @@ import { apiFetch } from '../api';
 import { EngramEditor } from './EngramEditor';
 import { AddonEditor } from './AddonEditor';
 import { ToolEditor } from './ToolEditor';
+import { useDendrite } from './SynapticCleft';
 import './IdentitySheet.css';
 import { ensureDynamicCss, safeCssIdent } from '../utils/styleRegistry';
 
@@ -210,6 +211,33 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     useEffect(() => {
         fetchModelPreview();
     }, [fetchModelPreview]);
+
+    // Flight Logs tab live-update: any digest landing for a session
+    // owned by this disc should re-pull the disc detail (which carries
+    // reasoning_session[].current_turn / focus / level). Filter is
+    // client-side because the dendrite isn't keyed on identity_disc_id.
+    const digestEvent = useDendrite('ReasoningTurnDigest', null);
+    const reasoningSessionEvent = useDendrite('ReasoningSession', null);
+    useEffect(() => {
+        if (type !== 'disc') return;
+        if (!digestEvent && !reasoningSessionEvent) return;
+        const ownsSession = (vesicle: unknown): boolean => {
+            if (!vesicle || typeof vesicle !== 'object') return false;
+            const ownerId = (vesicle as Record<string, unknown>).identity_disc_id
+                ?? (vesicle as Record<string, unknown>).disc_id;
+            if (!ownerId) {
+                // No disc filter on the vesicle — fall back to refetching.
+                // Cheaper than guessing wrong.
+                return true;
+            }
+            return String(ownerId) === String(id);
+        };
+        const matchedDigest = digestEvent && ownsSession(digestEvent.vesicle);
+        const matchedSession = reasoningSessionEvent && ownsSession(reasoningSessionEvent.vesicle);
+        if (matchedDigest || matchedSession) {
+            fetchData();
+        }
+    }, [digestEvent, reasoningSessionEvent, type, id, fetchData]);
 
     const refreshCatalogs = useCallback(async () => {
         try {

@@ -24,6 +24,26 @@ export const FrontalLobeNeuronNode = ({ data, id }: { data: FrontalLobeNodeData;
     const ro = !!data.readonly;
     const [discs, setDiscs] = useState<IdentityDisc[]>([]);
 
+    // Local-state textarea so React doesn't fight the user's caret.
+    // updateContext refetches NeuronContext on every PATCH, which would
+    // otherwise re-mount the controlled value mid-keystroke and reset
+    // the cursor. We mirror the canonical context.prompt into local
+    // state on mount / when the underlying value changes from elsewhere
+    // (someone editing the same node in Django admin), and commit the
+    // local edit on blur.
+    const [promptDraft, setPromptDraft] = useState('');
+    const promptVal = context.prompt || context.PROMPT || '';
+
+    // Re-sync local draft if the canonical value changes for reasons
+    // other than this user typing — e.g., a fresh fetch hands back a
+    // newer value. We don't sync if the user has unsaved local edits.
+    useEffect(() => {
+        setPromptDraft(promptVal);
+        // Intentional: only re-pull when the upstream value flips, not
+        // when the local draft does.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [promptVal]);
+
     // Fetch available identity discs for the selector
     useEffect(() => {
         let cancelled = false;
@@ -38,8 +58,12 @@ export const FrontalLobeNeuronNode = ({ data, id }: { data: FrontalLobeNodeData;
         return () => { cancelled = true; };
     }, []);
 
-    const promptVal = context.prompt || context.PROMPT || '';
     const discVal = context.identity_disc || '';
+
+    const handlePromptBlur = () => {
+        if (promptDraft === promptVal) return;
+        updateContext('prompt', promptDraft);
+    };
 
     return (
         <div className={`custom-node custom-node--frontal-lobe${ro ? ' custom-node--readonly' : ''}`}>
@@ -71,9 +95,10 @@ export const FrontalLobeNeuronNode = ({ data, id }: { data: FrontalLobeNodeData;
                             <span className="custom-node-field-label">PROMPT</span>
                             <textarea
                                 className="nodrag custom-node-field-textarea"
-                                value={promptVal}
+                                value={promptDraft}
                                 placeholder="reasoning prompt..."
-                                onChange={e => updateContext('prompt', e.target.value)}
+                                onChange={e => setPromptDraft(e.target.value)}
+                                onBlur={handlePromptBlur}
                             />
                         </div>
                     </>

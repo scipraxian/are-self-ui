@@ -17,13 +17,16 @@ import {
     type ThreadMessage,
     type ThreadAssistantMessagePart,
 } from '@assistant-ui/react';
+import { Trash2 } from 'lucide-react';
 import { apiFetch } from '../api';
 import { stripHumanTag } from '../utils/humanTag';
+import { SafeText } from '../utils/safeText';
 import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
 import './ThalamusChat.css';
 
 const INTERACT_URL = '/api/v2/thalamus/interact/';
 const MESSAGES_URL = '/api/v2/thalamus/messages/';
+const CLEAR_URL = '/api/v2/thalamus/clear/';
 
 // ---------------------------------------------------------------------------
 // Local JSON type aliases — mirrors assistant-ui's ReadonlyJSONObject without
@@ -420,6 +423,14 @@ const CustomMessageTools: React.FC<CustomMessageToolsProps> = ({ content }) => (
     </>
 );
 
+// Bind the `thalamus-message-html` className to the shared SafeText so
+// existing CSS targeting that class still applies. Detection +
+// sanitization live in `utils/safeText.tsx` and are shared with
+// SessionChat.
+const ThalamusSafeText: React.FC<{ text?: string }> = (props) => (
+    <SafeText text={props.text} className="thalamus-message-html" />
+);
+
 function ThalamusThreadInner(): React.JSX.Element {
     return (
         <ThreadPrimitive.Root className="thalamus-thread">
@@ -435,8 +446,6 @@ function ThalamusThreadInner(): React.JSX.Element {
 
                 <ThreadPrimitive.Messages>
                     {({ message }) => {
-                        // Narrowed cast: we only pass assistant content to CustomMessageTools,
-                        // and only when the role is actually 'assistant'.
                         const assistantContent: readonly ThreadAssistantMessagePart[] =
                             message.role === 'assistant'
                                 ? (message.content as readonly ThreadAssistantMessagePart[])
@@ -447,7 +456,11 @@ function ThalamusThreadInner(): React.JSX.Element {
                                 <MessagePrimitive.Root>
                                     <div className="thalamus-message-text">
                                         <MessagePrimitive.Parts
-                                            components={{ ChainOfThought }}
+                                            components={{
+                                                ChainOfThought,
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                Text: ThalamusSafeText as any,
+                                            }}
                                         />
                                         {message.role === 'assistant' && (
                                             <CustomMessageTools content={assistantContent} />
@@ -479,11 +492,16 @@ function ThalamusThreadInner(): React.JSX.Element {
     );
 }
 
+interface ThalamusModelInfo {
+    model_name: string | null;
+    context_window: number | null;
+}
+
 function ThalamusRuntimeProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
     const [initialMessages, setInitialMessages] = useState<ThreadMessage[]>([]);
     const [isSyncing, setIsSyncing] = useState(true);
 
-    const newTurnPacket = useDendrite('ReasoningTurn', null);
+    const newTurnPacket = useDendrite('ReasoningTurnDigest', null);
 
     useEffect(() => {
         if (newTurnPacket?.activity === 'saved') {
@@ -528,30 +546,164 @@ function ThalamusRuntimeProvider({ children }: { children: React.ReactNode }): R
     );
 }
 
+// Compact pills above the input area: standing-thread message count
+// (re-fetched after each assistant 'saved' tick) + resolved model
+// context window in tokens. Shows '—' when the SelectionFilter hasn't
+// resolved a preferred model yet.
+function ThalamusMetaPills() {
+    const [messageCount, setMessageCount] = useState<number | null>(null);
+    const [modelInfo, setModelInfo] = useState<ThalamusModelInfo>({ model_name: null, context_window: null });
+    const turnPacket = useDendrite('ReasoningTurnDigest', null);
+
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const res = await apiFetch(MESSAGES_URL);
+                if (!res.ok || cancelled) return;
+                const data = await res.json() as { messages?: BackendMessage[] };
+                if (cancelled) return;
+                setMessageCount((data.messages ?? []).length);
+            } catch (err) {
+                console.error('Failed to count thalamus messages', err);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [turnPacket]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const res = await apiFetch('/api/v2/thalamus/model-info/');
+                if (!res.ok || cancelled) return;
+                const data = await res.json() as ThalamusModelInfo;
+                if (cancelled) return;
+                setModelInfo(data);
+            } catch {
+                // Endpoint may not exist yet; pills fall back to '—'.
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, []);
+
+    return (
+        <div className="thalamus-meta-pills">
+            <div className="thalamus-meta-pill" title="Messages in standing thread">
+                <span className="thalamus-meta-pill-label">MSGS</span>
+                <span className="thalamus-meta-pill-value">
+                    {messageCount === null ? '—' : messageCount}
+                </span>
+            </div>
+            <div className="thalamus-meta-pill" title="Resolved model context window (tokens)">
+                <span className="thalamus-meta-pill-label">CTX</span>
+                <span className="thalamus-meta-pill-value">
+                    {modelInfo.context_window
+                        ? `${modelInfo.context_window.toLocaleString()} tok`
+                        : '—'}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+interface ThalamusClearButtonProps {
+    onCleared: () => void;
+}
+
+function ThalamusClearButton({ onCleared }: ThalamusClearButtonProps) {
+    const [endpointAvailable, setEndpointAvailable] = useState<boolean | null>(null);
+    const [isClearing, setIsClearing] = useState(false);
+
+    // OPTIONS probe — disable the button if the backend doesn't expose
+    // the clear endpoint yet, with a tooltip pointing at the missing
+    // wiring. Avoids the user repeatedly clicking a no-op.
+    useEffect(() => {
+        let cancelled = false;
+        const probe = async () => {
+            try {
+                const res = await apiFetch(CLEAR_URL, { method: 'OPTIONS' });
+                if (cancelled) return;
+                setEndpointAvailable(res.ok);
+            } catch {
+                if (!cancelled) setEndpointAvailable(false);
+            }
+        };
+        probe();
+        return () => { cancelled = true; };
+    }, []);
+
+    const handleClick = async () => {
+        if (!endpointAvailable) return;
+        if (!window.confirm('Clear the Thalamus standing thread? Past messages cannot be recovered.')) return;
+        setIsClearing(true);
+        try {
+            const res = await apiFetch(CLEAR_URL, { method: 'POST' });
+            if (res.ok) {
+                onCleared();
+            }
+        } catch (err) {
+            console.error('Failed to clear thalamus history', err);
+        } finally {
+            setIsClearing(false);
+        }
+    };
+
+    const disabled = endpointAvailable !== true || isClearing;
+    const title = endpointAvailable === false
+        ? 'Clear endpoint not yet exposed by the backend.'
+        : isClearing
+            ? 'Clearing…'
+            : 'Clear standing thread';
+
+    return (
+        <button
+            type="button"
+            className="thalamus-clear-btn"
+            disabled={disabled}
+            onClick={handleClick}
+            title={title}
+            aria-label="Clear chat history"
+        >
+            <Trash2 size={14} />
+        </button>
+    );
+}
+
 export interface ThalamusChatProps {
     onClose?: () => void;
 }
 
 export function ThalamusChat({ onClose }: ThalamusChatProps): React.JSX.Element {
+    // Re-key the runtime provider on cleared() to drop in-memory state
+    // and re-pull from the cleared backend.
+    const [providerKey, setProviderKey] = useState(0);
+
     return (
         <div className="thalamus-chat glass-panel">
             <div className="thalamus-chat-header">
                 <h2 className="glass-panel-title thalamus-chat-title">
                     THALAMUS
                 </h2>
-                {onClose && (
-                    <button
-                        type="button"
-                        className="panel-close-btn"
-                        onClick={onClose}
-                        aria-label="Close chat"
-                    >
-                        ✕
-                    </button>
-                )}
+                <div className="thalamus-chat-header-actions">
+                    <ThalamusClearButton onCleared={() => setProviderKey(k => k + 1)} />
+                    {onClose && (
+                        <button
+                            type="button"
+                            className="panel-close-btn"
+                            onClick={onClose}
+                            aria-label="Close chat"
+                        >
+                            ✕
+                        </button>
+                    )}
+                </div>
             </div>
+            <ThalamusMetaPills />
             <div className="thalamus-chat-body">
-                <ThalamusRuntimeProvider>
+                <ThalamusRuntimeProvider key={providerKey}>
                     <ThalamusThreadInner />
                 </ThalamusRuntimeProvider>
             </div>

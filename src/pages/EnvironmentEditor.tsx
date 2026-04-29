@@ -6,6 +6,7 @@ import { useBreadcrumbs } from '../context/BreadcrumbProvider';
 import { useEnvironment } from '../context/EnvironmentProvider';
 import type { ContextVariable, Environment } from '../context/EnvironmentProvider';
 import { ThreePanel } from '../components/ThreePanel';
+import { useDendrite } from '../components/SynapticCleft';
 import './EnvironmentEditor.css';
 
 interface EnvironmentType {
@@ -56,6 +57,16 @@ export function EnvironmentEditor() {
             doc: 'docs/ui/environments',
         }]);
     }, [setCrumbs]);
+
+    // Refetch the env list when a NeuralModifier bundle (which can ship a
+    // ProjectEnvironment) is installed / uninstalled / enabled / disabled.
+    // Backend fires Acetylcholine with receptor_class='NeuralModifier'
+    // after each lifecycle op.
+    const modifierEvent = useDendrite('NeuralModifier', null);
+    useEffect(() => {
+        if (!modifierEvent) return;
+        refreshEnvironments();
+    }, [modifierEvent, refreshEnvironments]);
 
     // Fetch lookup data
     useEffect(() => {

@@ -56,11 +56,40 @@ actively reasoning.
 **Reasoning view** with three-tier turn inspector: headline (model/duration/tokens), Parietal Lobe
 narrative (semantic tool summaries with thought field + error recovery), collapsed deep dive (filtered input
 context + raw payloads). Session overview card when nothing selected (summary, tool stats, token budget,
-identity). Parietal Activity tab with all tool calls chronologically, filter chips by tool name. Graph hover
-cards on all node types. Turn markers in chat. System prompt deduplication.
+identity). Parietal Activity tab with all tool calls chronologically (sourced from each turn's
+`tool_calls_summary` once the LLM responds), filter chips by tool name. Graph hover cards on all node
+types. Turn markers in chat. System prompt deduplication.
+
+**In-flight turn rendering.** A turn shows up on the 3D graph the moment the Frontal Lobe persists its
+pending ledger — well before the LLM round-trip completes. Mechanics: the backend now saves the
+`AIModelProviderUsageRecord` with `request_payload` populated *before* the LLM call, attaches it to the
+turn, and the existing `post_save(ReasoningTurn)` signal fires the same `ReasoningTurnDigest`
+Acetylcholine vesicle the UI already subscribes to. The digest broadcasts twice per turn — once at
+turn-start (status `'Active'`, empty `excerpt`, empty `tool_calls_summary`, zero tokens) and once at
+LLM completion (populated, status `'Completed'` or terminal-non-success). Both broadcasts share
+`turn_id` so the UI just upserts. There is **no separate ghost stream** and **no extra dendrites** —
+in-flight rendering is purely a render-time distinction keyed off `status_name`. F5 mid-flight is
+covered by the same `graph_data/?since_turn_number=-1` pull-fallback (it returns the in-flight digest
+on the same wire). When the user clicks an in-flight turn, the existing per-turn fetch
+(`/api/v2/reasoning_turns/<id>/`) returns the row with `model_usage_record.request_payload` populated,
+and the inspector renders it immediately with the WHAT THE AGENT SAW accordion open by default plus a
+"Waiting for response…" placeholder.
+
+**Time-based visual encoding (restored).** Sphere size and color both ride elapsed time, sourced from
+`digest.delta` (Django `DurationField` wire shape, parsed via `parseDelta()`) on completed turns and
+from `Date.now() - new Date(digest.created).getTime()` on in-flight turns via the animate loop.
+Continuous HSL gradient: green = fastest, orange = slowest. Same `0.3x – 4.0x` clamp as the pre-April-18
+visual. Tokens still appear in the inspector as reference but no longer key the geometry.
+
+**Session-view header timers.** Two self-rescheduling `setTimeout` clocks above the graph:
+session-elapsed (anchored on `session.created`, stops at terminal status) and current-turn-elapsed
+(anchored on the most-recent in-flight digest's `created`, hidden when none). NEVER `setInterval`.
 
 **Shared utility:** `toolFormatters.ts` — semantic one-liner rendering for known tools with fallback for
 unknown. `summarizeTool()` for structured data, `toolOneLiner()` for compact strings.
+`reasoningGraphHelpers.ts` — pure helpers (`parseDelta`, `digestElapsedMs`, `elapsedToRatio`,
+`elapsedToColor`, `isInFlight`, plus the `IN_FLIGHT_STATUS_NAMES` constant set mirroring the backend's
+`TURN_IN_FLIGHT_STATUS_IDS`) extracted for unit testing.
 
 ## PFC (Prefrontal Cortex) — `/pfc`
 
@@ -76,7 +105,9 @@ IdentityRoster as drag source.
 
 Drag from roster → drop into shift → auto-forges base identities into discs. Remove disc from shift.
 Definition editor with add/remove shift columns, turn limit editing, rename, delete. Incept from definition
-creates a live iteration.
+creates a live iteration. After every base→disc auto-forge, the embedded `IdentityRoster` is nudged to
+refetch via a `refreshKey` prop so the new disc shows up immediately, even if the backend hasn't
+broadcast `IdentityDisc` yet.
 
 ## Identity — `/identity`
 
@@ -86,7 +117,9 @@ IdentitySheet with tabbed detail editor:
 - **Loadout tab:** Name, AI model dropdown, tools/addons/tags as toggleable pills. SelectionFilter and
   Budget fields click through to Hypothalamus. Live model preview via routing engine.
 - **Memories tab:** Full engram CRUD via EngramEditor.
-- **Flight Logs tab:** Reasoning sessions with click-through to `/frontal/{sessionId}`.
+- **Flight Logs tab:** Reasoning sessions with click-through to `/frontal/{sessionId}`. Re-pulls the
+  disc detail (which carries `reasoning_session[]`) whenever a `ReasoningTurnDigest` or
+  `ReasoningSession` vesicle lands for this disc, so flight logs update live during a running session.
 
 **Addon editor** with all IdentityAddon fields: name, description, phase dropdown, function_slug.
 
@@ -118,14 +151,90 @@ dropdowns, toggleable M2M pills for capabilities, providers, categories, tags, r
 **Model Inspector:** Editable description with AIModelDescription CRUD, description relationships panel
 (M2M pills), provider status, circuit breaker reset, model enable/disable.
 
+## Neuroplasticity — `/modifiers`
+
+The bundle install / lifecycle surface for `NeuralModifier` (Are-Self's word for an installable
+extension bundle) plus the cross-cutting genome editor that lets any owned row be reassigned to a
+different bundle.
+
+### Modifier Garden — `/modifiers`
+
+ThreePanel page with status filter chips and search on the left, sortable table in the center
+(slug / name / version / status / contribution count / last event / actions), and an inspector on the
+right. Inspector shows manifest dump and recent installation events via `ModifierEventList`.
+`ModifierStatusPill` renders the lifecycle pill. `ModifierInstallButton` is a zip picker that POSTs the
+multipart install. Uninstall fetches `/impact/` and opens a confirmation dialog showing the contribution
+breakdown by ContentType before the final POST. Live-updates via `useDendrite('NeuralModifier', null)`.
+
+**Edit-target mutex.** Exactly one bundle is the active workspace at a time, marked
+`selected_for_edit = true` on the `NeuralModifier` row. The garden table exposes a "workspace" affordance
+per row — clicking it PATCHes `{selected_for_edit: true}`; the backend flips every other row to false in
+the same transaction. New rows stamped via the begin-play genome dropdown land in whichever bundle is
+currently the workspace. Save serializes the workspace bundle's owned rows back into its archive (always
+patch-bumps the manifest version).
+
+### `/modifiers/:slug`
+
+`ModifierDetailPage` — full manifest dump plus the bundle's installation history via `ModifierEventList`.
+
+### Genome editor (cross-cutting)
+
+Owned-model rows (Effector, Executable, NeuralPathway, EffectorContext, EffectorArgumentAssignment,
+ExecutableArgumentAssignment, ExecutableSupplementaryFileOrPath, etc.) carry a writable `genome` UUID FK
+exposed by their V2 serializers, paired with a read-only `genome_slug` mirror. The frontend edits genome
+via plain V2 PATCH on the row's existing viewset — no special action endpoint:
+
+```
+PATCH /api/v2/<viewset>/<row-id>/    body: { "genome": "<uuid>" }
+```
+
+**`GenomeRowControl`** (`src/components/GenomeRowControl.tsx`) — reusable per-row genome editor.
+`compact` and `full` variants. CANONICAL is filtered out of the dropdown. If the row itself is on
+CANONICAL, the dropdown is replaced by an inline "canonical — read-only" block (matches the backend's
+read-only refusal without making the user trigger it). 400 `{"detail": "..."}` from the backend is
+surfaced inline. The parent owns the shared installed-bundle list (one fetch per page, not per control)
+and is notified via `onGenomeChanged` so it can mirror the new state without refetching. Currently
+integrated on `EffectorEditorPage`; spreads to other owned-model editors as those land.
+
+**Pathway-level genome control** lives directly in `CNSInspector.tsx` — PATCHing `genome` on the pathway
+promotes the pathway *and* fans the new genome out to its direct cascade children (Neurons, Axons,
+NeuronContexts) atomically server-side. Children that are themselves leaf rows (e.g. an
+`EffectorArgumentAssignment` added to a canonical Effector) promote independently via their own row
+control.
+
+**`GENOME` constants** (`src/components/genomeConstants.ts`) — `CANONICAL` and `INCUBATOR` UUIDs
+mirrored from `NeuralModifier.CANONICAL` / `.INCUBATOR` on the Python side. Same convention as
+`nodeConstants.ts` for canonical effectors. Helpers `isCanonical(id)` / `isIncubator(id)`.
+
+### Restart overlay (cross-cutting)
+
+`install`, `uninstall`, `catalog_install`, `save`, and any `genome` PATCH that actually changes the FK
+return `restart_imminent: true` on the response body. The frontend catches that flag globally and raises
+a blocking overlay that polls `GET /api/v2/health/` until Daphne is back, then dismisses itself.
+
+- **`RestartOverlayProvider`** (`src/context/RestartOverlayProvider.tsx`) — wraps the app in
+  `LayoutShell`. Exposes `triggerRestart()`, `dismissRestart()`, and the `isRestarting` flag.
+- **`maybeFlagRestart(payload, trigger)`** — dependency-free helper any handler runs against its
+  response body. Detects the boolean `restart_imminent: true` and triggers the overlay.
+- **`RestartOverlay`** (`src/components/RestartOverlay.tsx`) — the blocking UI itself. Self-rescheduling
+  `setTimeout` probe loop (750ms, follows the no-`setInterval` rule) hitting `/api/v2/health/`. After the
+  first 200 OK, waits a 250ms settle delay before dismissing — gives other dendrite subscribers room to
+  reconnect cleanly.
+
 ## Environments — `/environments`
 
 Full CRUD editor. Inline context variable editing with "+ Key" button. Set-as-active. Auto-save on blur.
+Subscribes to `useDendrite('NeuralModifier', null)` so a graft install/uninstall that ships a
+`ProjectEnvironment` shows up live without a page refresh.
 
 ## Thalamus
 
 ThalamusBubble floating chat on every page. ThalamusChat with `@assistant-ui/react` and `useLocalRuntime`.
-Real-time sync via dendrite.
+Real-time sync via dendrite. Header strip carries two badges (standing-thread message count + resolved
+model context window in tokens) and a clear-history button (probes the backend `/clear/` endpoint via
+OPTIONS — disabled with tooltip when not yet exposed). Assistant text parts go through a sanitized-HTML
+renderer (DOMPurify) when the model emits markup, plain-text otherwise — never raw
+`dangerouslySetInnerHTML`.
 
 ## PNS (Peripheral Nervous System) — `/pns`
 

@@ -18,8 +18,19 @@ import {
 } from '@assistant-ui/react';
 import { apiFetch } from '../api';
 import { stripHumanTag } from '../utils/humanTag';
+import { SafeText } from '../utils/safeText';
 import { useDendrite, type Neurotransmitter } from './SynapticCleft.tsx';
 import './ThalamusChat.css'; // Reusing the glassmorphic styles
+
+// Same shared SafeText as ThalamusChat — render sanitized HTML if the
+// model produced markup, plain text otherwise. assistant-ui passes
+// `{ text }` flat, NOT `{ part: { text } }` (this was the 2026-04-28
+// blank-bubble regression on Thalamus). The CSS class matches the
+// shared `.thalamus-message-html` rule because SessionChat reuses
+// ThalamusChat's stylesheet.
+const SessionSafeText: React.FC<{ text?: string }> = (props) => (
+    <SafeText text={props.text} className="thalamus-message-html" />
+);
 
 // Assuming a standard REST structure for your session endpoints
 
@@ -613,7 +624,13 @@ function SessionThreadInner() {
                                     <div className={`thalamus-message thalamus-message--${message.role}`}>
                                         <MessagePrimitive.Root>
                                             <div className="thalamus-message-text">
-                                                <MessagePrimitive.Parts components={{ ChainOfThought }} />
+                                                <MessagePrimitive.Parts
+                                                    components={{
+                                                        ChainOfThought,
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        Text: SessionSafeText as any,
+                                                    }}
+                                                />
                                                 {message.role === 'assistant' && (
                                                     <CustomMessageTools content={assistantContent} />
                                                 )}

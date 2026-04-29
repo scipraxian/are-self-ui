@@ -172,6 +172,60 @@
     color: #facc15;
 }
 
+/* --- Ghost (in-flight turn) inspector --- */
+.inspector-ghost-pill {
+    font-family: Outfit, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.05em;
+    border: 1px solid currentColor;
+}
+
+.inspector-ghost-pill--running {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+}
+
+.inspector-ghost-pill--tool {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+
+.inspector-ghost-pill--complete {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.inspector-ghost-pill--failover {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.inspector-ghost-failover {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-left: 2px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.08);
+    color: #f59e0b;
+    font-size: 0.75rem;
+    font-family: var(--font-mono, monospace);
+}
+
+.inspector-ghost-pending {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px dashed rgba(148, 163, 184, 0.3);
+    border-radius: 6px;
+    color: #94a3b8;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    text-align: center;
+    font-style: italic;
+}
+
 /* --- Thought text --- */
 .inspector-thought-text {
     white-space: pre-wrap;

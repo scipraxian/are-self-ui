@@ -19,9 +19,13 @@ interface IdentityDisc {
 
 interface IdentityRosterProps {
     onSelectIdentity: (id: string, type: 'base' | 'disc') => void;
+    // Optional refresh nudge — the parent (e.g., TemporalMatrix) bumps
+    // this after a slot_disc auto-forge so the roster reflects the new
+    // disc even if the backend hasn't broadcast IdentityDisc yet.
+    refreshKey?: number;
 }
 
-export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
+export const IdentityRoster = ({ onSelectIdentity, refreshKey = 0 }: IdentityRosterProps) => {
     const [templates, setTemplates] = useState<BaseIdentity[]>([]);
     const [discs, setDiscs] = useState<IdentityDisc[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +58,7 @@ export const IdentityRoster = ({ onSelectIdentity }: IdentityRosterProps) => {
 
         load();
         return () => { cancelled = true; };
-    }, [discEvent]);
+    }, [discEvent, refreshKey]);
 
     if (isLoading) {
         return (

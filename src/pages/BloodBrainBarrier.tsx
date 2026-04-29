@@ -185,7 +185,7 @@ export function BloodBrainBarrier() {
                         />
                         <h1 className="bbb-title">ARE-SELF</h1>
                     </div>
-                    <p className="bbb-subtitle">Neurologically-Inspired AI Reasoning Engine</p>
+                    <p className="bbb-subtitle">Why do for yourself what Are-Self can do for you?</p>
                 </div>
             </div>
 
