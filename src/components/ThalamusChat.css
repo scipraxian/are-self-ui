@@ -577,6 +577,23 @@
     gap: 6px;
 }
 
+/* Override the global `.panel-close-btn` absolute-positioning when the
+   close button lives inside the actions cluster — otherwise it stacks on
+   top of the trash icon (both end up pinned to the top-right of the
+   panel). Static positioning lets the flex container place them
+   side-by-side with the cluster's `gap` between them. */
+.thalamus-chat-header-actions .panel-close-btn {
+    position: static;
+    top: auto;
+    right: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    line-height: 1;
+}
+
 .thalamus-clear-btn {
     display: inline-flex;
     align-items: center;
