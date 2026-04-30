@@ -652,6 +652,16 @@
     font-weight: 700;
 }
 
+/* Model names can be long (e.g. `qwen2.5-coder:32b-instruct`). Cap the
+   value width so the pill cluster doesn't blow out the chat header on
+   narrow widths; the full name lives in the pill's `title` tooltip. */
+.thalamus-meta-pill-value--model {
+    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* --- Sanitized HTML rendering inside message bubbles --- */
 .thalamus-message-html {
     color: inherit;

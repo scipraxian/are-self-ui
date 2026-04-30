@@ -495,7 +495,18 @@ function ThalamusThreadInner(): React.JSX.Element {
 interface ThalamusModelInfo {
     model_name: string | null;
     context_window: number | null;
+    current_tokens: number | null;
 }
+
+// Compact token formatter — 9234 → "9.2k", 131072 → "131k". Falls back
+// to a comma-separated form for the tooltip when the user wants the
+// exact count.
+const formatTokensShort = (n: number): string => {
+    if (n < 1000) return String(n);
+    if (n < 100000) return `${(n / 1000).toFixed(1)}k`;
+    if (n < 1000000) return `${Math.round(n / 1000)}k`;
+    return `${(n / 1000000).toFixed(1)}M`;
+};
 
 function ThalamusRuntimeProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
     const [initialMessages, setInitialMessages] = useState<ThreadMessage[]>([]);
@@ -552,7 +563,7 @@ function ThalamusRuntimeProvider({ children }: { children: React.ReactNode }): R
 // resolved a preferred model yet.
 function ThalamusMetaPills() {
     const [messageCount, setMessageCount] = useState<number | null>(null);
-    const [modelInfo, setModelInfo] = useState<ThalamusModelInfo>({ model_name: null, context_window: null });
+    const [modelInfo, setModelInfo] = useState<ThalamusModelInfo>({ model_name: null, context_window: null, current_tokens: null });
     const turnPacket = useDendrite('ReasoningTurnDigest', null);
 
     useEffect(() => {
@@ -587,7 +598,7 @@ function ThalamusMetaPills() {
         };
         load();
         return () => { cancelled = true; };
-    }, []);
+    }, [turnPacket]);
 
     return (
         <div className="thalamus-meta-pills">
@@ -597,12 +608,30 @@ function ThalamusMetaPills() {
                     {messageCount === null ? '—' : messageCount}
                 </span>
             </div>
-            <div className="thalamus-meta-pill" title="Resolved model context window (tokens)">
-                <span className="thalamus-meta-pill-label">CTX</span>
+            <div
+                className="thalamus-meta-pill thalamus-meta-pill--model"
+                title={modelInfo.model_name
+                    ? `Resolved model: ${modelInfo.model_name}`
+                    : 'No preferred model resolved'}
+            >
+                <span className="thalamus-meta-pill-label">MODEL</span>
+                <span className="thalamus-meta-pill-value thalamus-meta-pill-value--model">
+                    {modelInfo.model_name ?? '—'}
+                </span>
+            </div>
+            <div
+                className="thalamus-meta-pill"
+                title={
+                    modelInfo.context_window
+                        ? `${(modelInfo.current_tokens ?? 0).toLocaleString()} of ${modelInfo.context_window.toLocaleString()} tokens used`
+                        : 'No resolved model'
+                }
+            >
+                <span className="thalamus-meta-pill-label">USED</span>
                 <span className="thalamus-meta-pill-value">
-                    {modelInfo.context_window
-                        ? `${modelInfo.context_window.toLocaleString()} tok`
-                        : '—'}
+                    {modelInfo.context_window == null
+                        ? '—'
+                        : `${formatTokensShort(modelInfo.current_tokens ?? 0)} / ${formatTokensShort(modelInfo.context_window)}`}
                 </span>
             </div>
         </div>
