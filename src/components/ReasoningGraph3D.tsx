@@ -121,12 +121,13 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
     const [conclusion, setConclusion] = useState<SessionConclusionData | null>(null);
     const engramRefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const completedMeshesRef = useRef<THREE.Mesh[]>([]);
     // Map<turn_id, mesh> for in-flight turns — animate loop walks this
     // map and re-sizes/recolors using current elapsed (Date.now() -
-    // digest.created). Once the second digest broadcast lands and the
-    // turn flips out of the in-flight status set, the mesh is
-    // re-registered as a completed-turn mesh on the next rebuild.
+    // digest.created). Completed turns are NOT tracked: their final
+    // size/color is baked into the geometry by renderNode and stays
+    // static. Once the second digest broadcast lands and the turn flips
+    // out of the in-flight set, the next graph rebuild re-creates the
+    // mesh as a static one.
     const inFlightMeshesRef = useRef<Map<string, THREE.Mesh>>(new Map());
     const meanElapsedMsRef = useRef<number>(0);
     const [bubblePositions, setBubblePositions] = useState<Record<string, BubblePosition>>({});
@@ -348,13 +349,11 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
             });
         });
 
-        // Clear the mesh registries in lockstep with the graph rebuild.
-        // ForceGraph3D repopulates them via nodeThreeObject as it
+        // Clear the in-flight mesh registry in lockstep with the graph
+        // rebuild. ForceGraph3D repopulates it via nodeThreeObject as it
         // renders the new graph; without the clear, stale meshes would
         // accumulate across rebuilds and keep receiving scale updates
         // in the animate loop.
-        // eslint-disable-next-line react-hooks/refs
-        completedMeshesRef.current = [];
         // eslint-disable-next-line react-hooks/refs
         inFlightMeshesRef.current = new Map();
         return { nodes, links };
@@ -386,28 +385,27 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         publish();
     }, [digests, onStatsUpdate]);
 
+    // Skip the RAF entirely when nothing is in-flight: completed turns
+    // are static, so a session with no live turns should sit still.
+    const hasInFlightTurns = useMemo(
+        () => digests.some(d => isInFlight(d.status_name)),
+        [digests],
+    );
+
     useEffect(() => {
+        if (!hasInFlightTurns) return;
         let frameId: number;
         const animate = () => {
             const time = Date.now() * 0.003;
             const scale = 1.0 + Math.abs(Math.sin(time)) * 0.3;
             const intensity = 0.5 + Math.abs(Math.sin(time));
 
-            completedMeshesRef.current.forEach(mesh => {
-                if (mesh) {
-                    mesh.scale.set(scale, scale, scale);
-                    if (mesh.material instanceof THREE.MeshPhongMaterial) {
-                        mesh.material.emissiveIntensity = intensity;
-                    }
-                }
-            });
-
             // In-flight meshes: size + color ride live elapsed (Date.now()
             // - digest.created), normalized to the running mean of
             // completed turns. Once the second digest broadcast lands and
             // status flips out of the in-flight set, the next graph
-            // rebuild re-registers the mesh as a completed-turn mesh and
-            // the static delta-based size takes over.
+            // rebuild re-creates the mesh as a static one (sized off
+            // delta in renderNode) and this loop stops touching it.
             const meanMs = meanElapsedMsRef.current;
             inFlightMeshesRef.current.forEach((mesh, turnId) => {
                 const digest = digestByTurnId.get(turnId);
@@ -430,7 +428,7 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
         };
         animate();
         return () => cancelAnimationFrame(frameId);
-    }, [digestByTurnId]);
+    }, [digestByTurnId, hasInFlightTurns]);
 
     useEffect(() => {
         const fg = fgRef.current;
@@ -569,12 +567,8 @@ export const ReasoningGraph3D = memo(function ReasoningGraph3D({
 
         const mesh = new THREE.Mesh(geometry, material);
 
-        if (node.type === 'turn' && node.turn_id) {
-            if (isInFlight(node.status_name)) {
-                inFlightMeshesRef.current.set(node.turn_id, mesh);
-            } else {
-                completedMeshesRef.current.push(mesh);
-            }
+        if (node.type === 'turn' && node.turn_id && isInFlight(node.status_name)) {
+            inFlightMeshesRef.current.set(node.turn_id, mesh);
         }
 
         return mesh;
