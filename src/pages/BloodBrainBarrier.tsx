@@ -5,9 +5,17 @@ import {
     BookOpen, Activity
 } from 'lucide-react';
 import { apiFetch } from '../api';
+import { AvatarTile } from '../components/AvatarTile';
 import { useDendrite } from '../components/SynapticCleft';
-import type { Spike, ReasoningSessionData } from '../types';
+import type { Avatar, Spike, ReasoningSessionData } from '../types';
 import './BloodBrainBarrier.css';
+
+interface DiscAvatarLookup {
+    id: string;
+    name: string;
+    avatar: Avatar | null;
+    composite_vector: number[] | null;
+}
 
 interface ReasoningSession extends Partial<ReasoningSessionData> {
     id: string;
@@ -15,7 +23,8 @@ interface ReasoningSession extends Partial<ReasoningSessionData> {
     status_name?: string;
     created: string;
     modified: string;
-    identity_disc?: { name?: string };
+    identity_disc?: { id?: string; name?: string };
+    identity_disc_id?: string;
     identity_disc_name?: string;
     turns_count?: number;
 }
@@ -57,6 +66,7 @@ export function BloodBrainBarrier() {
     const [isLoading, setIsLoading] = useState(true);
     const [latestSpikes, setLatestSpikes] = useState<Spike[]>([]);
     const [latestSessions, setLatestSessions] = useState<ReasoningSession[]>([]);
+    const [discLookup, setDiscLookup] = useState<Map<string, DiscAvatarLookup>>(new Map());
     const [stats, setStats] = useState<SystemStats>({
         identity_disc_count: 0,
         ai_model_count: 0,
@@ -67,6 +77,8 @@ export function BloodBrainBarrier() {
     // Spikes update on spike events only; sessions+stats on session events only.
     const spikeEvent = useDendrite('Spike', null);
     const sessionEvent = useDendrite('ReasoningSession', null);
+    const discEvent = useDendrite('IdentityDisc', null);
+    const avatarEvent = useDendrite('Avatar', null);
 
     // Debounce refs — coalesce rapid dendrite bursts into single fetches (500ms).
     // Skip debounce on mount so the dashboard loads instantly.
@@ -79,10 +91,11 @@ export function BloodBrainBarrier() {
 
         const load = async () => {
             try {
-                const [spikesRes, sessionsRes, statsRes] = await Promise.all([
+                const [spikesRes, sessionsRes, statsRes, discsRes] = await Promise.all([
                     apiFetch('/api/v2/latest-spikes/'),
                     apiFetch('/api/v2/latest-sessions/'),
                     apiFetch('/api/v2/stats/'),
+                    apiFetch('/api/v2/identity-discs/'),
                 ]);
                 if (cancelled) return;
                 if (spikesRes.ok) {
@@ -96,6 +109,25 @@ export function BloodBrainBarrier() {
                 if (statsRes.ok) {
                     const data = await statsRes.json();
                     setStats(data);
+                }
+                if (discsRes.ok) {
+                    const data = await discsRes.json();
+                    const discList: Array<{
+                        id: string;
+                        name: string;
+                        avatar?: Avatar | null;
+                        composite_vector?: number[] | null;
+                    }> = Array.isArray(data) ? data : data.results ?? [];
+                    const byId = new Map<string, DiscAvatarLookup>();
+                    for (const d of discList) {
+                        byId.set(d.id, {
+                            id: d.id,
+                            name: d.name,
+                            avatar: d.avatar ?? null,
+                            composite_vector: d.composite_vector ?? null,
+                        });
+                    }
+                    setDiscLookup(byId);
                 }
             } catch (err) {
                 console.error('Failed to fetch dashboard data:', err);
@@ -162,6 +194,41 @@ export function BloodBrainBarrier() {
 
         return () => { cancelled = true; clearTimeout(timer); };
     }, [sessionEvent]);
+
+    // --- Disc avatar lookup (debounced; refresh on disc / avatar / digest events) ---
+    useEffect(() => {
+        if (!mountedRef.current) return;
+        let cancelled = false;
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await apiFetch('/api/v2/identity-discs/');
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                const discList: Array<{
+                    id: string;
+                    name: string;
+                    avatar?: Avatar | null;
+                    composite_vector?: number[] | null;
+                }> = Array.isArray(data) ? data : data.results ?? [];
+                if (cancelled) return;
+                const byId = new Map<string, DiscAvatarLookup>();
+                for (const d of discList) {
+                    byId.set(d.id, {
+                        id: d.id,
+                        name: d.name,
+                        avatar: d.avatar ?? null,
+                        composite_vector: d.composite_vector ?? null,
+                    });
+                }
+                setDiscLookup(byId);
+            } catch (err) {
+                console.error('Failed to refresh disc lookup:', err);
+            }
+        }, 500);
+
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [discEvent, avatarEvent]);
 
     if (isLoading) {
         return (
@@ -275,22 +342,33 @@ export function BloodBrainBarrier() {
                         {latestSessions.length === 0 ? (
                             <div className="empty-state">No sessions yet</div>
                         ) : (
-                            latestSessions.map(session => (
-                                <div
-                                    key={session.id}
-                                    className="session-item"
-                                    onClick={() => navigate(`/frontal/${session.id}`)}
-                                >
-                                    <div className={`session-status session-status--${getStatusColor(session.status ?? session.status_name ?? '')}`} />
-                                    <div className="session-info">
-                                        <p className="session-identity">
-                                            {session.identity_disc_name || session.identity_disc?.name || 'Unassigned'}
-                                        </p>
-                                        <p className="session-time">{formatTimeAgo(session.modified)}</p>
+                            latestSessions.map(session => {
+                                const discId = session.identity_disc_id ?? session.identity_disc?.id ?? null;
+                                const discName = session.identity_disc_name ?? session.identity_disc?.name ?? null;
+                                const lookup = discId ? discLookup.get(discId) ?? null : null;
+                                return (
+                                    <div
+                                        key={session.id}
+                                        className="session-item"
+                                        onClick={() => navigate(`/frontal/${session.id}`)}
+                                    >
+                                        <div className={`session-status session-status--${getStatusColor(session.status ?? session.status_name ?? '')}`} />
+                                        <AvatarTile
+                                            avatar={lookup?.avatar ?? null}
+                                            compositeVector={lookup?.composite_vector ?? null}
+                                            size={28}
+                                            className="session-avatar"
+                                        />
+                                        <div className="session-info">
+                                            <p className="session-identity">
+                                                {discName || 'Unassigned'}
+                                            </p>
+                                            <p className="session-time">{formatTimeAgo(session.modified)}</p>
+                                        </div>
+                                        <span className="session-turns">{session.turns_count || 0} turns</span>
                                     </div>
-                                    <span className="session-turns">{session.turns_count || 0} turns</span>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>

@@ -562,3 +562,35 @@ export interface NeuralModifierCatalogEntry {
     archive_name: string;
     installed: boolean;
 }
+
+// --- AVATAR TYPES ---
+
+// AvatarSelectedDisplayType protocol enum — fixture-pinned, do NOT change.
+// Mirrors `identity.models.AvatarSelectedDisplayType` constants.
+export const AVATAR_DISPLAY = {
+    GENERATED: 1,
+    FILE: 2,
+    URL: 3,
+    EMOJI: 4,
+} as const;
+
+export type AvatarDisplayId = typeof AVATAR_DISPLAY[keyof typeof AVATAR_DISPLAY];
+
+export interface AvatarDisplay {
+    id: AvatarDisplayId;
+    name: string;
+}
+
+export interface Avatar {
+    id: string;
+    name: string;
+    description: string;
+    display: AvatarDisplay;
+    original_filename: string | null;
+    stored_filename: string | null;
+    url: string | null;
+    emoji: string | null;
+    tint_color: string | null;
+    genome: string;
+    genome_slug: string | null;
+}

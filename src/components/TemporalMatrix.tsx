@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { Play, MoreVertical, ChevronLeft, ChevronRight, Loader2, Network, Plus, Trash2, X } from 'lucide-react';
 import { apiFetch } from '../api';
+import type { Avatar } from '../types';
+import { AvatarTile } from './AvatarTile';
 import { useDendrite } from './SynapticCleft';
 import { IdentityRoster } from './IdentityRoster';
 import './TemporalMatrix.css';
@@ -12,6 +14,8 @@ interface DiscData {
     level: number;
     xp: number;
     available: boolean;
+    avatar?: Avatar | null;
+    composite_vector?: number[] | null;
 }
 
 interface ParticipantData {
@@ -59,6 +63,8 @@ interface DefinitionParticipantDetail {
         available: boolean;
         level: number;
         xp: number;
+        avatar?: Avatar | null;
+        composite_vector?: number[] | null;
     };
 }
 
@@ -254,6 +260,12 @@ function DefinitionEditor({
                                 {shiftDef.participants?.map((p) => (
                                     <div key={p.id} className="slotted-card">
                                         <div className="slotted-card-header">
+                                            <AvatarTile
+                                                avatar={p.participant_detail?.avatar ?? null}
+                                                compositeVector={p.participant_detail?.composite_vector ?? null}
+                                                size={28}
+                                                className="slotted-card-avatar"
+                                            />
                                             <span className="slotted-card-title">{p.participant_detail?.name ?? `Disc ${p.identity_disc}`}</span>
                                             <button
                                                 type="button"
@@ -1011,6 +1023,12 @@ export const TemporalMatrix = ({ onSelectionChange }: TemporalMatrixProps = {}) 
                                                 {shift.participants?.map((participant: ParticipantData) => (
                                                     <div key={participant.id} className="slotted-card">
                                                         <div className="slotted-card-header">
+                                                            <AvatarTile
+                                                                avatar={participant.disc.avatar ?? null}
+                                                                compositeVector={participant.disc.composite_vector ?? null}
+                                                                size={28}
+                                                                className="slotted-card-avatar"
+                                                            />
                                                             <div className="common-layout-15">
                                                                 <span className="slotted-card-title">{participant.disc.name}</span>
                                                                 {isActive && <span className="status-dot status-active-pulse"></span>}

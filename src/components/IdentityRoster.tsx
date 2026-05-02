@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Star, GripVertical, Cpu, ShieldAlert, Loader2 } from 'lucide-react';
 import { apiFetch } from '../api';
+import type { Avatar } from '../types';
+import { AvatarTile } from './AvatarTile';
 import { useDendrite } from './SynapticCleft';
 import './IdentityRoster.css';
 
 interface BaseIdentity {
     id: string;
     name: string;
+    avatar?: Avatar | null;
 }
 
 interface IdentityDisc {
@@ -15,6 +18,8 @@ interface IdentityDisc {
     level: number;
     xp: number;
     available: boolean;
+    avatar?: Avatar | null;
+    composite_vector?: number[] | null;
 }
 
 interface IdentityRosterProps {
@@ -31,33 +36,66 @@ export const IdentityRoster = ({ onSelectIdentity, refreshKey = 0 }: IdentityRos
     const [isLoading, setIsLoading] = useState(true);
 
     const discEvent = useDendrite('IdentityDisc', null);
+    const isMountedRef = useRef(true);
+    const lastFireAtRef = useRef(0);
+    const trailingTimerRef = useRef<number | null>(null);
 
     useEffect(() => {
-        let cancelled = false;
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (trailingTimerRef.current !== null) {
+                window.clearTimeout(trailingTimerRef.current);
+                trailingTimerRef.current = null;
+            }
+        };
+    }, []);
 
+    // Leading + trailing throttle. IdentityDisc events fire constantly
+    // during active sessions; we want the first event in a burst to
+    // refetch immediately (so a freshly spawned disc shows up right
+    // away), then suppress for 500ms, then trail-fetch once more if
+    // more events arrived during the cooldown.
+    useEffect(() => {
         const load = async () => {
             try {
                 const [idRes, discRes] = await Promise.all([
                     apiFetch('/api/v2/identities/'),
                     apiFetch('/api/v2/identity-discs/')
                 ]);
-                if (cancelled) return;
+                if (!isMountedRef.current) return;
                 if (idRes.ok && discRes.ok) {
                     const idData = await idRes.json();
                     const discData = await discRes.json();
-                    if (cancelled) return;
+                    if (!isMountedRef.current) return;
                     setTemplates(idData.results || idData);
                     setDiscs(discData.results || discData);
                 }
             } catch (error) {
                 console.error("Neural fetch failed:", error);
             } finally {
-                if (!cancelled) setIsLoading(false);
+                if (isMountedRef.current) setIsLoading(false);
             }
         };
 
-        load();
-        return () => { cancelled = true; };
+        const now = Date.now();
+        const elapsed = now - lastFireAtRef.current;
+
+        if (elapsed >= 500) {
+            if (trailingTimerRef.current !== null) {
+                window.clearTimeout(trailingTimerRef.current);
+                trailingTimerRef.current = null;
+            }
+            lastFireAtRef.current = now;
+            load();
+        } else if (trailingTimerRef.current === null) {
+            trailingTimerRef.current = window.setTimeout(() => {
+                trailingTimerRef.current = null;
+                if (!isMountedRef.current) return;
+                lastFireAtRef.current = Date.now();
+                load();
+            }, 500 - elapsed);
+        }
     }, [discEvent, refreshKey]);
 
     if (isLoading) {
@@ -93,6 +131,12 @@ export const IdentityRoster = ({ onSelectIdentity, refreshKey = 0 }: IdentityRos
                     ) : (
                         <ShieldAlert size={14} color="var(--accent-red)" className="roster-item-handle" />
                     )}
+                    <AvatarTile
+                        avatar={disc.avatar ?? null}
+                        compositeVector={disc.composite_vector}
+                        size={32}
+                        className="roster-item-avatar"
+                    />
                     <div className="roster-item-content">
                         <div className="roster-item-header">
                             <span className={`font-display roster-item-title ${!disc.available ? 'strike' : ''}`}>
@@ -126,6 +170,11 @@ export const IdentityRoster = ({ onSelectIdentity, refreshKey = 0 }: IdentityRos
                     }}
                 >
                     <GripVertical size={14} color="var(--text-muted)" />
+                    <AvatarTile
+                        avatar={template.avatar ?? null}
+                        size={32}
+                        className="roster-item-avatar"
+                    />
                     <div className="roster-base-content">
                         <span className="font-display roster-base-title">
                             {template.name}

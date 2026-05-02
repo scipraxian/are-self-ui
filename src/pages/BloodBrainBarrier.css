@@ -362,6 +362,10 @@
     flex-shrink: 0;
 }
 
+.session-avatar {
+    flex: none;
+}
+
 .session-status--success {
     background: var(--accent-green);
     box-shadow: 0 0 8px var(--accent-green);

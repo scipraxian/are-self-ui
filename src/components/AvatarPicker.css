@@ -1,0 +1,368 @@
+.avatar-picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.avatar-picker-dialog {
+    background: rgba(15, 20, 32, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    width: min(720px, 92vw);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    color: rgba(230, 235, 245, 1);
+}
+
+.avatar-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.avatar-picker-title {
+    margin: 0;
+    font-size: 14px;
+    font-family: var(--font-display, system-ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.avatar-picker-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    padding: 4px;
+}
+
+.avatar-picker-close:hover {
+    color: rgba(255, 255, 255, 1);
+}
+
+.avatar-picker-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.avatar-picker-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 10px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.avatar-picker-tab:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.avatar-picker-tab--active {
+    color: rgba(56, 189, 248, 1);
+    border-bottom-color: rgba(56, 189, 248, 1);
+}
+
+.avatar-picker-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.avatar-picker-loading,
+.avatar-picker-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: rgba(255, 255, 255, 0.55);
+    gap: 8px;
+    font-size: 12px;
+}
+
+.avatar-picker-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.avatar-picker-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.avatar-picker-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.avatar-picker-chip--active {
+    background: rgba(56, 189, 248, 0.18);
+    border-color: rgba(56, 189, 248, 0.6);
+    color: rgba(186, 230, 253, 1);
+}
+
+.avatar-picker-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.avatar-picker-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.avatar-picker-grid-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    text-align: center;
+}
+
+.avatar-picker-grid-name {
+    font-size: 12px;
+    color: rgba(230, 235, 245, 1);
+}
+
+.avatar-picker-grid-bundle {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    font-family: var(--font-mono, monospace);
+}
+
+.avatar-picker-grid-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.avatar-picker-mini-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.75);
+    padding: 3px 6px;
+    font-size: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.avatar-picker-mini-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.avatar-picker-mini-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.avatar-picker-mini-btn--danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: rgba(254, 202, 202, 1);
+}
+
+.avatar-picker-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.avatar-picker-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.avatar-picker-field input {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(230, 235, 245, 1);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.avatar-picker-field input[type="color"] {
+    height: 36px;
+    padding: 2px;
+}
+
+.avatar-picker-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+}
+
+.avatar-picker-hint code {
+    color: rgba(186, 230, 253, 1);
+    background: rgba(56, 189, 248, 0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.avatar-picker-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(252, 165, 165, 1);
+    background: rgba(127, 29, 29, 0.25);
+    border: 1px solid rgba(252, 165, 165, 0.3);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 8px 16px 0;
+}
+
+.avatar-picker-form .avatar-picker-error {
+    margin: 0;
+}
+
+.avatar-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.avatar-picker-action {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(230, 235, 245, 1);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.avatar-picker-action:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.avatar-picker-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.avatar-picker-action--primary {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.6);
+    color: rgba(186, 230, 253, 1);
+}
+
+.avatar-picker-action--primary:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.3);
+}
+
+.avatar-picker-gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.65);
+    padding: 32px 16px;
+}
+
+.avatar-picker-gate p {
+    max-width: 360px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.avatar-picker-preview {
+    display: flex;
+    justify-content: center;
+}
+
+.avatar-picker-preview img {
+    max-width: 160px;
+    max-height: 160px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-picker-emoji-preview {
+    width: 96px;
+    height: 96px;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-picker-promote-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.avatar-picker-promote-dialog {
+    background: rgba(20, 26, 40, 1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 16px;
+    width: min(420px, 90%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.avatar-picker-promote-dialog h3 {
+    margin: 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.avatar-picker-promote-select {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(230, 235, 245, 1);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}

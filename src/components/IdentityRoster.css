@@ -79,6 +79,10 @@
     margin-top: 2px;
 }
 
+.roster-item-avatar {
+    flex: none;
+}
+
 .roster-item-content {
     flex: 1;
     min-width: 0;

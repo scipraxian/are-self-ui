@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2, RefreshCw, Settings } from 'lucide-react';
+import { Cpu, Loader2, Database, Wrench, Zap, Activity, Trash2, RefreshCw, Settings, ImagePlus } from 'lucide-react';
 import { apiFetch } from '../api';
+import type { Avatar } from '../types';
+import { AvatarPicker } from './AvatarPicker';
+import { AvatarTile } from './AvatarTile';
 import { EngramEditor } from './EngramEditor';
 import { AddonEditor } from './AddonEditor';
 import { ToolEditor } from './ToolEditor';
@@ -27,6 +30,7 @@ interface BaseIdentityData {
     ai_model?: OutlierData | null;
     selection_filter?: OutlierData | null;
     budget?: OutlierData | null;
+    avatar?: Avatar | null;
 }
 
 interface Engram {
@@ -70,6 +74,7 @@ interface IdentityDiscData extends BaseIdentityData {
     last_message_to_self: string;
     memories?: Engram[];
     reasoning_session?: ReasoningSession[];
+    composite_vector?: number[] | null;
 }
 
 interface IdentitySheetProps {
@@ -128,6 +133,7 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     // Editor visibility states
     const [showAddonEditor, setShowAddonEditor] = useState(false);
     const [showToolEditor, setShowToolEditor] = useState(false);
+    const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
     const isDisc = type === 'disc';
     const discData = isDisc && data ? (data as IdentityDiscData) : null;
@@ -218,6 +224,32 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     // client-side because the dendrite isn't keyed on identity_disc_id.
     const digestEvent = useDendrite('ReasoningTurnDigest', null);
     const reasoningSessionEvent = useDendrite('ReasoningSession', null);
+    const avatarEvent = useDendrite('Avatar', null);
+
+    useEffect(() => {
+        if (!avatarEvent) return;
+        const vesicle = avatarEvent.vesicle as { id?: string } | undefined;
+        if (!vesicle) return;
+        if (baseData?.avatar?.id && vesicle.id === baseData.avatar.id) {
+            fetchData();
+        }
+    }, [avatarEvent, baseData?.avatar?.id, fetchData]);
+    // Leading + trailing throttle on the session/digest dendrite.
+    // Without leading-edge, continuous turn activity holds the trailing
+    // timer open forever and the disc detail never updates. With both
+    // edges we get an immediate refetch on the first event in a burst,
+    // then a single trailing refetch ~1s later for whatever changed
+    // during the cooldown.
+    const sessionLastFireAtRef = useRef(0);
+    const sessionTrailingTimerRef = useRef<number | null>(null);
+    const sessionCleanupRef = useRef(false);
+    useEffect(() => () => {
+        sessionCleanupRef.current = true;
+        if (sessionTrailingTimerRef.current !== null) {
+            window.clearTimeout(sessionTrailingTimerRef.current);
+            sessionTrailingTimerRef.current = null;
+        }
+    }, []);
     useEffect(() => {
         if (type !== 'disc') return;
         if (!digestEvent && !reasoningSessionEvent) return;
@@ -226,16 +258,32 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
             const ownerId = (vesicle as Record<string, unknown>).identity_disc_id
                 ?? (vesicle as Record<string, unknown>).disc_id;
             if (!ownerId) {
-                // No disc filter on the vesicle — fall back to refetching.
-                // Cheaper than guessing wrong.
+                // Backend didn't include disc owner — refetch is the
+                // safe fallback, but the throttle below keeps it cheap.
                 return true;
             }
             return String(ownerId) === String(id);
         };
         const matchedDigest = digestEvent && ownsSession(digestEvent.vesicle);
         const matchedSession = reasoningSessionEvent && ownsSession(reasoningSessionEvent.vesicle);
-        if (matchedDigest || matchedSession) {
+        if (!matchedDigest && !matchedSession) return;
+
+        const now = Date.now();
+        const elapsed = now - sessionLastFireAtRef.current;
+        if (elapsed >= 1000) {
+            if (sessionTrailingTimerRef.current !== null) {
+                window.clearTimeout(sessionTrailingTimerRef.current);
+                sessionTrailingTimerRef.current = null;
+            }
+            sessionLastFireAtRef.current = now;
             fetchData();
+        } else if (sessionTrailingTimerRef.current === null) {
+            sessionTrailingTimerRef.current = window.setTimeout(() => {
+                sessionTrailingTimerRef.current = null;
+                if (sessionCleanupRef.current) return;
+                sessionLastFireAtRef.current = Date.now();
+                fetchData();
+            }, 1000 - elapsed);
         }
     }, [digestEvent, reasoningSessionEvent, type, id, fetchData]);
 
@@ -346,6 +394,25 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
         }
     };
 
+    const handleAvatarPicked = async (avatar: Avatar) => {
+        setError(null);
+        try {
+            const endpoint = type === 'disc'
+                ? `/api/v2/identity-discs/${id}/`
+                : `/api/v2/identities/${id}/`;
+            const res = await apiFetch(endpoint, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ avatar: avatar.id }),
+            });
+            if (!res.ok) throw new Error(`Avatar update failed (${res.status})`);
+            await fetchData();
+        } catch (err) {
+            console.error('Avatar update failed', err);
+            setError(err instanceof Error ? err.message : 'Failed to update avatar.');
+        }
+    };
+
     const handleSpawnDisc = async () => {
         setError(null);
         try {
@@ -403,6 +470,22 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
     return (
         <div className="identity-sheet-container scroll-hidden">
             <div className="sheet-header">
+                <div className="sheet-avatar-block">
+                    <AvatarTile
+                        avatar={baseData?.avatar ?? null}
+                        compositeVector={discData?.composite_vector ?? null}
+                        size={56}
+                    />
+                    <button
+                        type="button"
+                        className="btn-action btn-secondary sheet-avatar-edit"
+                        onClick={() => setShowAvatarPicker(true)}
+                        title="Pick or upload avatar"
+                    >
+                        <ImagePlus size={12} />
+                        EDIT AVATAR
+                    </button>
+                </div>
                 <div className="sheet-title-group">
                     <h2 className="font-display sheet-title">
                         {data.name}
@@ -910,6 +993,13 @@ export const IdentitySheet = ({ id, type }: IdentitySheetProps) => {
                     )}
                 </div>
             )}
+
+            <AvatarPicker
+                open={showAvatarPicker}
+                onClose={() => setShowAvatarPicker(false)}
+                onPick={handleAvatarPicked}
+                compositeVector={discData?.composite_vector ?? null}
+            />
 
             {activeTab === 'flight' && (
                 <div className="sheet-body">

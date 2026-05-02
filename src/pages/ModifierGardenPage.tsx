@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { apiFetch } from '../api';
-import { GENOME } from '../components/genomeConstants';
+import { GENOME, isIncubator } from '../components/genomeConstants';
 import { ModifierEventList } from '../components/ModifierEventList';
 import { ModifierInstallButton } from '../components/ModifierInstallButton';
 import { ModifierStatusPill } from '../components/ModifierStatusPill';
@@ -175,6 +175,15 @@ export function ModifierGardenPage() {
     });
     const [createError, setCreateError] = useState<string | null>(null);
     const [createBusy, setCreateBusy] = useState<boolean>(false);
+    // Save As dialog state. `savingAsSourceSlug` is the slug we're saving
+    // FROM (deep-clone source); the dialog form is the new bundle's
+    // identity. POST /api/v2/neural-modifiers/<sourceSlug>/save-as/
+    // accepts {slug, name?} and returns the freshly-installed new
+    // genome with restart_imminent: true.
+    const [savingAsSourceSlug, setSavingAsSourceSlug] = useState<string | null>(null);
+    const [saveAsForm, setSaveAsForm] = useState({ slug: '', name: '' });
+    const [saveAsError, setSaveAsError] = useState<string | null>(null);
+    const [saveAsBusy, setSaveAsBusy] = useState<boolean>(false);
     // Inline 400 surfaced next to a row's Workspace button. Slug-keyed so
     // a refusal on bundle A doesn't pollute bundle B's row.
     const [workspaceErrorBySlug, setWorkspaceErrorBySlug] = useState<Record<string, string>>({});
@@ -476,6 +485,66 @@ export function ModifierGardenPage() {
         }
     };
 
+    const openSaveAs = (modifier: NeuralModifierSummary) => {
+        setSavingAsSourceSlug(modifier.slug);
+        setSaveAsForm({ slug: '', name: '' });
+        setSaveAsError(null);
+    };
+
+    const submitSaveAs = async () => {
+        if (!savingAsSourceSlug) return;
+        const newSlug = saveAsForm.slug.trim();
+        if (!newSlug) {
+            setSaveAsError('slug is required');
+            return;
+        }
+        setSaveAsBusy(true);
+        setSaveAsError(null);
+        try {
+            const res = await apiFetch(
+                `/api/v2/neural-modifiers/${savingAsSourceSlug}/save-as/`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        slug: newSlug,
+                        name: saveAsForm.name.trim() || newSlug,
+                    }),
+                },
+            );
+            if (!res.ok) {
+                const detail = await res.json().catch(() => null);
+                if (res.status === 409) {
+                    setSaveAsError(
+                        (detail && detail.detail) || `A bundle with slug "${newSlug}" already exists.`,
+                    );
+                } else {
+                    setSaveAsError(
+                        (detail && detail.detail) || `Save As failed (${res.status}).`,
+                    );
+                }
+                return;
+            }
+            // 201 Created — the new genome is installed live; backend has
+            // already triggered restart. Mirror the new row locally so the
+            // garden reflects it before Acetylcholine round-trips. Source
+            // row is untouched per the endpoint's contract.
+            const data = (await res.json()) as NeuralModifierDetail & { restart_imminent?: boolean };
+            setModifiers((prev) => {
+                const without = prev.filter((m) => m.slug !== data.slug);
+                return [...without, data];
+            });
+            setSavingAsSourceSlug(null);
+            setSaveAsForm({ slug: '', name: '' });
+            setSelectedSlug(data.slug);
+            maybeFlagRestart(data, triggerRestart);
+        } catch (err) {
+            setSaveAsError(String(err));
+        } finally {
+            setSaveAsBusy(false);
+        }
+    };
+
     const saveBundle = async (modifier: NeuralModifierSummary) => {
         if (busySlug) return;
         const slug = modifier.slug;
@@ -691,6 +760,7 @@ export function ModifierGardenPage() {
 
                         const modifier = entry.row;
                         const isCanonicalRow = modifier.id === GENOME.CANONICAL;
+                        const isIncubatorRow = isIncubator(modifier.id);
                         const isWorkspace = modifier.selected_for_edit === true;
                         const wsErr = workspaceErrorBySlug[modifier.slug];
                         return (
@@ -736,7 +806,7 @@ export function ModifierGardenPage() {
                                     onClick={(ev) => ev.stopPropagation()}
                                 >
                                     {renderActionButton(entry)}
-                                    {!isCanonicalRow && !isWorkspace && (
+                                    {!isCanonicalRow && !isIncubatorRow && !isWorkspace && (
                                         <button
                                             type="button"
                                             className="modifier-garden-action modifier-garden-action--workspace"
@@ -747,23 +817,36 @@ export function ModifierGardenPage() {
                                             Set as Workspace
                                         </button>
                                     )}
-                                    <button
-                                        type="button"
-                                        className="modifier-garden-action modifier-garden-action--danger"
-                                        onClick={() => openUninstall(modifier)}
-                                        disabled={isBusy}
-                                        title="Uninstall and remove all contribution rows."
-                                    >
-                                        Uninstall
-                                    </button>
+                                    {!isIncubatorRow && (
+                                        <button
+                                            type="button"
+                                            className="modifier-garden-action modifier-garden-action--danger"
+                                            onClick={() => openUninstall(modifier)}
+                                            disabled={isBusy}
+                                            title="Uninstall and remove all contribution rows."
+                                        >
+                                            Uninstall
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className="modifier-garden-action modifier-garden-action--save"
-                                        onClick={(ev) => { ev.stopPropagation(); saveBundle(modifier); }}
+                                        onClick={(ev) => {
+                                            ev.stopPropagation();
+                                            if (isIncubatorRow) {
+                                                openSaveAs(modifier);
+                                            } else {
+                                                saveBundle(modifier);
+                                            }
+                                        }}
                                         disabled={isBusy}
-                                        title="Serialize bundle-owned rows back into the genome zip. Always bumps the patch version."
+                                        title={
+                                            isIncubatorRow
+                                                ? 'Save the workspace contents out as a new bundle.'
+                                                : 'Serialize bundle-owned rows back into the genome zip. Always bumps the patch version.'
+                                        }
                                     >
-                                        Save
+                                        {isIncubatorRow ? 'Save As' : 'Save'}
                                     </button>
                                     <Link
                                         to={`/modifiers/${modifier.slug}`}
@@ -978,6 +1061,64 @@ export function ModifierGardenPage() {
                                 disabled={busySlug === deleting.slug}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {savingAsSourceSlug && (
+                <div className="modifier-garden-dialog-overlay" role="presentation">
+                    <div role="dialog" aria-modal="true" className="modifier-garden-dialog">
+                        <h2>Save As — from {savingAsSourceSlug}</h2>
+                        <p>
+                            Deep-clones the workspace's owned rows + media into a new
+                            bundle. The source row stays untouched. The new bundle is
+                            packed and installed live.
+                        </p>
+                        <div className="modifier-garden-dialog-form">
+                            <label>
+                                <span>New slug</span>
+                                <input
+                                    type="text"
+                                    value={saveAsForm.slug}
+                                    onChange={(e) => setSaveAsForm({ ...saveAsForm, slug: e.target.value })}
+                                    placeholder="my-bundle"
+                                    autoFocus
+                                />
+                            </label>
+                            <label>
+                                <span>Name</span>
+                                <input
+                                    type="text"
+                                    value={saveAsForm.name}
+                                    onChange={(e) => setSaveAsForm({ ...saveAsForm, name: e.target.value })}
+                                    placeholder="(defaults to slug)"
+                                />
+                            </label>
+                        </div>
+                        {saveAsError && (
+                            <p className="modifier-garden-dialog-error">{saveAsError}</p>
+                        )}
+                        <div className="modifier-garden-dialog-actions">
+                            <button
+                                type="button"
+                                className="modifier-garden-action"
+                                onClick={() => {
+                                    setSavingAsSourceSlug(null);
+                                    setSaveAsError(null);
+                                }}
+                                disabled={saveAsBusy}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="modifier-garden-action modifier-garden-action--save"
+                                onClick={submitSaveAs}
+                                disabled={saveAsBusy || !saveAsForm.slug.trim()}
+                            >
+                                {saveAsBusy ? 'Saving…' : 'Save As'}
                             </button>
                         </div>
                     </div>
