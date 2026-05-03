@@ -364,6 +364,8 @@ export function ModifierGardenPage() {
     const confirmUninstall = async () => {
         if (!confirming) return;
         const slug = confirming.slug;
+        const sourceModifier = modifiers.find((m) => m.slug === slug);
+        const isReinstall = isIncubator(sourceModifier?.id);
         setBusySlug(slug);
         try {
             const res = await apiFetch(
@@ -375,12 +377,21 @@ export function ModifierGardenPage() {
                 return;
             }
             const payload = await res.json().catch(() => ({}));
-            // Optimistic local update. The backend also fires Acetylcholine
-            // for other tabs, but the originating client can't depend on
-            // the WS round-trip beating the user's next action.
-            setModifiers((prev) => prev.filter((m) => m.slug !== slug));
-            setSelectedSlug((prev) => (prev === slug ? null : prev));
-            setConfirming(null);
+            if (isReinstall) {
+                // INCUBATOR: backend cleared the rows + re-grafted, but the
+                // incubator row itself stays installed. Don't filter it
+                // out; let the modifierEvent dendrite refetch update the
+                // contribution_count once Acetylcholine lands. Keep the
+                // selection on incubator so the inspector stays relevant.
+                setConfirming(null);
+            } else {
+                // Optimistic local removal. Backend also fires Acetylcholine
+                // for other tabs, but the originating client can't depend
+                // on the WS round-trip beating the user's next action.
+                setModifiers((prev) => prev.filter((m) => m.slug !== slug));
+                setSelectedSlug((prev) => (prev === slug ? null : prev));
+                setConfirming(null);
+            }
             maybeFlagRestart(payload, triggerRestart);
         } finally {
             setBusySlug(null);
@@ -817,17 +828,19 @@ export function ModifierGardenPage() {
                                             Set as Workspace
                                         </button>
                                     )}
-                                    {!isIncubatorRow && (
-                                        <button
-                                            type="button"
-                                            className="modifier-garden-action modifier-garden-action--danger"
-                                            onClick={() => openUninstall(modifier)}
-                                            disabled={isBusy}
-                                            title="Uninstall and remove all contribution rows."
-                                        >
-                                            Uninstall
-                                        </button>
-                                    )}
+                                    <button
+                                        type="button"
+                                        className="modifier-garden-action modifier-garden-action--danger"
+                                        onClick={() => openUninstall(modifier)}
+                                        disabled={isBusy}
+                                        title={
+                                            isIncubatorRow
+                                                ? 'Clear all workspace rows and re-graft from incubator.zip. The incubator stays installed; only its contents are reset.'
+                                                : 'Uninstall and remove all contribution rows.'
+                                        }
+                                    >
+                                        {isIncubatorRow ? 'Reinstall' : 'Uninstall'}
+                                    </button>
                                     <button
                                         type="button"
                                         className="modifier-garden-action modifier-garden-action--save"
@@ -973,18 +986,37 @@ export function ModifierGardenPage() {
         <>
             <ThreePanel left={left} center={center} right={right} />
 
-            {confirming && (
+            {confirming && (() => {
+                const confirmingModifier = modifiers.find((m) => m.slug === confirming.slug);
+                const confirmingIsIncubator = isIncubator(confirmingModifier?.id);
+                return (
                 <div className="modifier-garden-dialog-overlay" role="presentation">
                     <div
                         role="dialog"
                         aria-modal="true"
                         className="modifier-garden-dialog modifier-garden-dialog--cascade"
                     >
-                        <h2>Uninstall {confirming.slug}?</h2>
+                        <h2>
+                            {confirmingIsIncubator ? 'Reinstall' : 'Uninstall'} {confirming.slug}?
+                        </h2>
                         <p>
-                            This will remove <strong>{confirming.row_count}</strong>{' '}
-                            row{confirming.row_count === 1 ? '' : 's'} the bundle owns, plus every
-                            row reached via CASCADE. Set-null and protected rows are listed below.
+                            {confirmingIsIncubator ? (
+                                <>
+                                    This clears <strong>{confirming.row_count}</strong>{' '}
+                                    row{confirming.row_count === 1 ? '' : 's'} the workspace
+                                    owns, plus every row reached via CASCADE, then re-grafts
+                                    the empty incubator from <code>incubator.zip</code>. The
+                                    incubator itself stays installed. Set-null and protected
+                                    rows are listed below.
+                                </>
+                            ) : (
+                                <>
+                                    This will remove <strong>{confirming.row_count}</strong>{' '}
+                                    row{confirming.row_count === 1 ? '' : 's'} the bundle owns,
+                                    plus every row reached via CASCADE. Set-null and protected
+                                    rows are listed below.
+                                </>
+                            )}
                         </p>
                         {confirming.protected.length > 0 && (
                             <CascadeBucket
@@ -1031,12 +1063,13 @@ export function ModifierGardenPage() {
                                     || confirming.protected.length > 0
                                 }
                             >
-                                Uninstall
+                                {confirmingIsIncubator ? 'Reinstall' : 'Uninstall'}
                             </button>
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {deleting && (
                 <div className="modifier-garden-dialog-overlay" role="presentation">
