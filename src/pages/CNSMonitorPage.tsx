@@ -1,5 +1,5 @@
 import './CNSMonitorPage.css';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Network } from 'lucide-react';
 import ReactFlow, {
@@ -123,6 +123,59 @@ function spikeVariant(spike: Spike | null): 'default' | 'success' | 'failed' | '
     if (status === 'failed') return 'failed';
     if (status === 'running' || status === 'pending') return 'running';
     return 'default';
+}
+
+/* ── Runtime data accordion (axoplasm / CSF) ─────────────── */
+
+// Read-only collapsible JSON viewer for spike-axoplasm and train-CSF.
+// Both fields are JSONField on the backend; render dict entries as
+// key + pretty-printed value so the user can scan a run's runtime
+// state without leaving the monitor surface.
+function RuntimeAccordion({
+    title,
+    accent,
+    children,
+}: {
+    title: string;
+    accent: 'blue' | 'yellow';
+    children: ReactNode;
+}) {
+    return (
+        <details className={`cns-monitor-runtime cns-monitor-runtime--${accent}`}>
+            <summary className="cns-monitor-runtime-summary">{title}</summary>
+            <div className="cns-monitor-runtime-body">{children}</div>
+        </details>
+    );
+}
+
+function renderRuntimeJson(value: unknown): ReactNode {
+    if (value === undefined) {
+        return <div className="cns-monitor-runtime-empty">Loading…</div>;
+    }
+    if (value === null) {
+        return <div className="cns-monitor-runtime-empty">(empty)</div>;
+    }
+    if (typeof value !== 'object') {
+        return <pre className="cns-monitor-runtime-value">{String(value)}</pre>;
+    }
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (entries.length === 0) {
+        return <div className="cns-monitor-runtime-empty">(empty)</div>;
+    }
+    return (
+        <div className="cns-monitor-runtime-list">
+            {entries.map(([k, v]) => (
+                <div key={k} className="cns-monitor-runtime-entry">
+                    <div className="cns-monitor-runtime-key">{k}</div>
+                    <pre className="cns-monitor-runtime-value">
+                        {typeof v === 'object' && v !== null
+                            ? JSON.stringify(v, null, 2)
+                            : String(v)}
+                    </pre>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 /* ── Inner graph component (needs ReactFlowProvider) ─────── */
@@ -288,6 +341,15 @@ export function CNSMonitorPage() {
     const [selectedNeuron, setSelectedNeuron] = useState<Neuron | null>(null);
     const [autoPan, setAutoPan] = useState(true);
 
+    // Axoplasm lives on the spike, but the nested SpikeSerializer used
+    // inside the train payload omits it (intentionally — keeps the
+    // train fetch light). The retrieve endpoint uses SpikeDetailSerializer,
+    // which carries it. So when a neuron is clicked we fetch the spike
+    // detail by id. The result is tagged with the spike id it was loaded
+    // for, so a fast switch between neurons doesn't show the prior
+    // spike's axoplasm under the new selection (filtered at render time).
+    const [axoplasmState, setAxoplasmState] = useState<{ spikeId: string; value: unknown } | null>(null);
+
     // Real-time events — these change reference when a new event fires
     // Listen to ALL spike events (unfiltered) — the thalamus broadcasts
     // dendrite_id=spike.id, not spike_train_id, so we cannot filter here.
@@ -363,6 +425,29 @@ export function CNSMonitorPage() {
             if (debounceRef.current) clearTimeout(debounceRef.current);
         };
     }, [spiketrainId, spikeEvent, trainEvent]);
+
+    // Axoplasm fetch: hit the SpikeDetail endpoint when a spike is selected.
+    // Re-runs on dendrite events so axoplasm stays current during a live run
+    // (the train-level CSF is already covered by the train refetch above).
+    // Skipped when nothing is selected — no neuron clicked, nothing to load.
+    useEffect(() => {
+        const spikeId = selectedSpike?.id;
+        if (!spikeId) return;
+        let cancelled = false;
+
+        apiFetch(`/api/v2/spikes/${encodeURIComponent(spikeId)}/`)
+            .then(res => (res.ok ? res.json() : null))
+            .then(data => {
+                if (cancelled) return;
+                setAxoplasmState({ spikeId, value: data?.axoplasm ?? null });
+            })
+            .catch(err => {
+                console.error('Failed to fetch spike detail for axoplasm', err);
+                if (!cancelled) setAxoplasmState({ spikeId, value: null });
+            });
+
+        return () => { cancelled = true; };
+    }, [selectedSpike?.id, spikeEvent, trainEvent]);
 
     // Breadcrumbs — include parent context if we drilled from a parent train
     useEffect(() => {
@@ -469,6 +554,13 @@ export function CNSMonitorPage() {
 
     if (!spiketrainId) return null;
 
+    // Stale-fetch guard: only show axoplasm if it belongs to the currently
+    // selected spike. While a fresh fetch is in flight after switching
+    // selection this is undefined → renders "Loading…".
+    const currentAxoplasm = (axoplasmState && selectedSpike && axoplasmState.spikeId === selectedSpike.id)
+        ? axoplasmState.value
+        : undefined;
+
     return (
         <ThreePanel
             centerClassName="three-panel-center--cns-graph"
@@ -523,6 +615,9 @@ export function CNSMonitorPage() {
                                         variant={selectedSpike.result_code === 0 ? 'success' : 'failed'}
                                     />
                                 )}
+                                <RuntimeAccordion title="AXOPLASM" accent="blue">
+                                    {renderRuntimeJson(currentAxoplasm)}
+                                </RuntimeAccordion>
                                 <button
                                     className="btn-action cns-monitor-inspector-btn"
                                     onClick={() => navigate(`/cns/spike/${selectedSpike.id}`)}
@@ -548,6 +643,9 @@ export function CNSMonitorPage() {
                             <div className="cns-monitor-inspector-train">
                                 <CNSMetaPill label="Train" value={`#${String(train.id).substring(0, 8)}`} />
                                 <CNSMetaPill label="Train Status" value={train.status_name} />
+                                <RuntimeAccordion title="CEREBROSPINAL FLUID" accent="yellow">
+                                    {renderRuntimeJson(train.cerebrospinal_fluid ?? null)}
+                                </RuntimeAccordion>
                             </div>
                         )}
                     </div>

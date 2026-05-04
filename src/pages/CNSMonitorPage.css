@@ -62,3 +62,84 @@
     flex-direction: column;
     gap: 8px;
 }
+
+/* Runtime data accordions — read-only spike axoplasm and train CSF.
+   Default-closed; the dict body is dense JSON so collapsing keeps the
+   inspector scannable. Accent color hints at scope (blue = per-spike,
+   yellow = per-train). */
+.cns-monitor-runtime {
+    margin-top: 4px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cns-monitor-runtime--blue {
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.cns-monitor-runtime--yellow {
+    border-color: rgba(250, 204, 21, 0.45);
+}
+
+.cns-monitor-runtime-summary {
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cns-monitor-runtime--blue .cns-monitor-runtime-summary {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.cns-monitor-runtime--yellow .cns-monitor-runtime-summary {
+    background: rgba(250, 204, 21, 0.15);
+    color: #facc15;
+}
+
+.cns-monitor-runtime-body {
+    padding: 10px;
+}
+
+.cns-monitor-runtime-empty {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-style: italic;
+}
+
+.cns-monitor-runtime-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cns-monitor-runtime-key {
+    color: #cbd5e1;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.cns-monitor-runtime-value {
+    margin: 4px 0 0 0;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 220px;
+    overflow: auto;
+}
