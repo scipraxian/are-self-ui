@@ -1,91 +1,29 @@
+<p align="center">
+  <a href="https://are-self.com">
+    <img src="https://are-self.com/img/ui/cns-graph-hero.png" alt="The Are-Self CNS pathway editor — Begin, List Location, Frontal Lobe, Gate, Retry, and Delay nodes wired together with success and fail edges on a dotted dark canvas." width="900">
+  </a>
+</p>
+
 # Are-Self UI
 
-**The brain you can see.**
+### The brain you can see.
 
-React frontend for [Are-Self](https://github.com/scipraxian/are-self-api), an open-source AI reasoning engine with
-neurologically-inspired architecture. Every UI component maps to a brain region. The backend is Django REST Framework —
-this repo consumes the DRF API.
+**React frontend for [Are-Self](https://github.com/scipraxian/are-self-api)** — an open-source, neurologically-inspired AI reasoning swarm engine. Free. Local. Private. MIT licensed.
 
-## 📺 See It In Action
+`Open · Local · MIT · Built solo since January 2026 · React 19 · Vite · TypeScript`
 
-[![Are-Self — The Grid Is Free](https://img.youtube.com/vi/UUX-T2aTZlI/maxresdefault.jpg)](https://youtu.be/UUX-T2aTZlI)
+Every component maps to a brain region. The 3D pathway editor, the spike-train forensics, the Frontal Lobe's reasoning graph, the floating Thalamus chat — all of it sits on top of the Django REST Framework API in [are-self-api](https://github.com/scipraxian/are-self-api).
 
-**Full documentation, guides, and FAQ:** [are-self.com](https://are-self.com)
+[**Read the site →**](https://are-self.com)  ·  [**See it run end-to-end →**](https://are-self.com/docs/end-to-end)  ·  [**Install →**](https://are-self.com/docs/quick-start)  ·  [**Come along →**](https://are-self.com/docs/state#how-to-come-along)
 
 ---
 
-## Quick Start
+## Install
 
-### Prerequisites
-
-- **Node.js 20+**
-- **Python 3.12+** (required by the backend)
-- **Docker Desktop** (required by the backend for PostgreSQL + Redis)
-- The Are-Self backend running (see [are-self-api](https://github.com/scipraxian/are-self-api))
-
-#### Installing Node.js
-
-1. Go to [https://nodejs.org](https://nodejs.org)
-2. Download the **LTS** version (make sure it's 20 or higher — it will say the version number on the button).
-3. Run the installer:
-   - **Windows:** Run the `.msi` file. Click Next through the prompts. Make sure "Add to PATH" is checked (it is by default).
-   - **Mac:** Run the `.pkg` file. Follow the prompts — it installs everything you need.
-   - **Linux:** The easiest way is through NodeSource. Run these commands in your terminal:
-     ```bash
-     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-     sudo apt-get install -y nodejs
-     ```
-     For other distros, see [https://nodejs.org/en/download/package-manager](https://nodejs.org/en/download/package-manager).
-4. Verify it works by opening a **new** terminal window and running:
-   ```
-   node --version
-   ```
-   You should see `v20.x.x` or higher.
-
-#### Installing Python
-
-Python is needed by the Are-Self backend. Even though you're setting up the frontend here, the backend won't run without it.
-
-1. Go to [https://www.python.org/downloads/](https://www.python.org/downloads/)
-2. Download Python **3.12 or higher** (the big yellow button usually has the latest version — check that the number starts with 3.12 or above).
-3. Run the installer:
-   - **Windows:** Run the `.exe` file. **Important:** On the very first screen, check the box that says "Add python.exe to PATH" — this is easy to miss and things will break without it. Then click "Install Now".
-   - **Mac:** Run the `.pkg` file and follow the prompts. If you have Homebrew, you can also run:
-     ```bash
-     brew install python@3.12
-     ```
-   - **Linux (Ubuntu/Debian):**
-     ```bash
-     sudo apt update
-     sudo apt install python3.12 python3.12-venv python3-pip
-     ```
-     For other distros, see [https://www.python.org/downloads/](https://www.python.org/downloads/) or use your package manager.
-4. Verify it works by opening a **new** terminal window and running:
-   ```
-   python --version
-   ```
-   You should see `Python 3.12.x` or higher. On Linux/Mac you may need to use `python3 --version` instead.
-
-#### Installing Docker Desktop
-
-Docker is needed by the Are-Self backend to run PostgreSQL and Redis. Even though you're setting up the frontend here, the backend won't start without it.
-
-1. Go to [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
-2. Download the installer for your operating system:
-   - **Windows:** Click "Download for Windows". Run the `.exe` installer and follow the prompts. You may need to enable WSL 2 when asked — the installer will guide you.
-   - **Mac:** Click "Download for Mac". Choose **Apple chip** if you have an M1/M2/M3/M4 Mac, or **Intel chip** if you have an older Mac. Open the `.dmg` file and drag Docker to your Applications folder.
-   - **Linux:** Follow the instructions for your distro at [https://docs.docker.com/desktop/install/linux/](https://docs.docker.com/desktop/install/linux/). For Ubuntu/Debian, there's a `.deb` package you can download and install directly.
-3. Open Docker Desktop after installing. It needs to be running before you start the Are-Self backend.
-4. Verify it works by opening a terminal and running:
-   ```
-   docker --version
-   ```
-   You should see something like `Docker version 27.x.x`.
-
-### Install and run
+The UI repo is half of a pair — the backend ([are-self-api](https://github.com/scipraxian/are-self-api)) needs to be running for the UI to do anything interesting. Get the backend up first per its README, then:
 
 ```bash
-git clone https://github.com/scipraxian/are-self-ui.git
+git clone https://github.com/scipraxian/are-self-ui
 cd are-self-ui
 npm install
 npm run dev
@@ -93,9 +31,11 @@ npm run dev
 
 Open `http://localhost:5173`. You'll see a brain.
 
-## What You're Looking At
+Full setup (one-click `are-self-install.bat` for Windows, manual step list for macOS/Linux, troubleshooting) is at **[are-self.com/docs/quick-start](https://are-self.com/docs/quick-start)**. Prerequisite: Node.js 20+.
 
-Each route is a brain region. Each brain region does what its biological namesake does.
+## What you're looking at
+
+Each route is a brain region. Each region does what its biological namesake does.
 
 | Route | Brain Region | What It Shows |
 |---|---|---|
@@ -114,21 +54,15 @@ The Thalamus chat bubble floats on every page — talk to the system from anywhe
 
 ## Architecture
 
-**Layout:** LayoutShell provides the 3D background, NavBar, page outlet, and Thalamus bubble. Most pages use the
-ThreePanel layout (left=navigation, center=stage, right=inspector). Some views manage their own layout.
+**Layout:** LayoutShell provides the 3D background, NavBar, page outlet, and Thalamus bubble. Most pages use the ThreePanel layout (left=navigation, center=stage, right=inspector). Some views manage their own layout.
 
-**Real-time:** No polling anywhere. All live updates flow through the Synaptic Cleft — a WebSocket event bus with typed
-neurotransmitter events (Dopamine, Cortisol, Acetylcholine, Glutamate, Norepinephrine). The `useDendrite` hook
-subscribes to events and triggers React effects that refetch data automatically.
+**Real-time:** No polling anywhere. All live updates flow through the Synaptic Cleft — a WebSocket event bus with typed neurotransmitter events (Dopamine, Cortisol, Acetylcholine, Glutamate, Norepinephrine). The `useDendrite` hook subscribes to events and triggers React effects that refetch data automatically.
 
-**Navigation:** The URL is the single source of truth. Every user action that changes what you're looking at changes
-the URL. F5 returns exactly where you were. ESC walks backward through the URL chain.
+**Navigation:** The URL is the single source of truth. Every user action that changes what you're looking at changes the URL. F5 returns exactly where you were. ESC walks backward through the URL chain.
 
-**State:** Local state + React context. No Redux, no Zustand. Data fetching follows a strict pattern with async
-functions inside `useEffect` bodies and dendrite events in dependency arrays.
+**State:** Local state + React context. No Redux, no Zustand. Data fetching follows a strict pattern with async functions inside `useEffect` bodies and dendrite events in dependency arrays.
 
-**Styling:** CSS files only. No Tailwind, no utility classes. Semantic class names with `{component}-{element}`
-convention. Glassmorphic `.glass-surface` treatment on form containers.
+**Styling:** CSS files only. No Tailwind, no utility classes. Semantic class names with `{component}-{element}` convention. Glassmorphic `.glass-surface` treatment on form containers.
 
 ## Stack
 
@@ -139,7 +73,7 @@ convention. Glassmorphic `.glass-surface` treatment on form containers.
 - **Chat:** @assistant-ui/react with useLocalRuntime
 - **Icons:** lucide-react
 
-## Project Structure
+## Project structure
 
 ```
 src/
@@ -149,18 +83,36 @@ src/
   context/       React context providers
 ```
 
-## Documentation
+## How to come along
 
-See [FEATURES.md](FEATURES.md) for a complete list of what's built.
-See [TASKS.md](TASKS.md) for what's next.
-See [are-self.com](https://are-self.com) for the full documentation site with guides, FAQ, and videos.
+Are-Self is solo for now. Everyone is welcome. The mission is free local AI in the hands of the kid who otherwise wouldn't get any. There are real doors in, most of which don't go through me at all:
+
+- **Put a machine in a kid's hands.** A used 16GB laptop runs the whole stack. Gift one to a kid in your family, your neighborhood, your school, your congregation.
+- **Get a community org to deploy it.** Library, school, church, after-school program, 501(c)(3). Broker an intro to anyone who wants free AI in front of kids who don't have it.
+- **Write code on the UI** — pick a `TASKS.md` item, ship a fix, build a brain-region view that doesn't exist yet. PRs on `CLAUDE.md` and the operating-notes files are welcome too.
+- **Curriculum, papers, the rest of the doors** — full list at [are-self.com/docs/state#how-to-come-along](https://are-self.com/docs/state#how-to-come-along).
+- **If you'd like this project to keep going at the pace it's been going** — roughly $5–7/day, out-of-pocket — sponsoring the human typing it forward is one direct lever: [GitHub Sponsors](https://github.com/sponsors/scipraxian) · [Ko-fi](https://ko-fi.com/scipraxian) · [Buy Me a Coffee](https://buymeacoffee.com/scipraxian) · [Patreon](https://patreon.com/scipraxian).
+
+The work happens either way.
+
+## Working with AI, in the open
+
+This repo (and the api repo) carries a `CLAUDE.md` and a small set of operating-notes files at its root — the actual prompts, conventions, and session protocols this project uses to cooperate with AI day to day. They're committed, public, and forkable. PRs against those files are as welcome as PRs against the code; the cooperation pattern is one of the things this project wants to be good at, and the audience for that pattern is anyone who reads it.
+
+## More
+
+Local repo docs: [FEATURES.md](FEATURES.md) · [TASKS.md](TASKS.md)
+
+The fuller documentation — UI walkthroughs page-by-page, brain-region deep dives, FAQ, the philosophy underneath — is at [are-self.com](https://are-self.com).
+
+## Find us
+
+[YouTube](https://youtube.com/@scipraxian) · [Discord](https://discord.gg/nGFFcxxV) · [Facebook](https://facebook.com/scipraxian) · [X](https://x.com/scipraxian) · [Truth Social](https://truthsocial.com/@scipraxian) · [TikTok](https://tiktok.com/@scipraxian) · [Instagram](https://instagram.com/scipraxian/) · [Reddit](https://reddit.com/user/Scipraxian/)
 
 ## License
 
-MIT. Free as in freedom, free as in beer.
+MIT. The Grid is free.
 
-## Contributing
+---
 
-Are-Self is built by [Michael](https://github.com/scipraxian) with the mission of making AI accessible to underserved
-communities. Contributions welcome — especially from educators, students, and anyone who believes AI should be a public
-good.
+If any of this caught you, the real welcome is at **[are-self.com](https://are-self.com)**. Star this if you want a kid with a laptop to be able to run a real AI swarm without paying a corporation a dime.
