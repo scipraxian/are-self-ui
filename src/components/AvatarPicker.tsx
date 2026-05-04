@@ -360,11 +360,11 @@ function UploadTab({ workspaceBundle, onCreated }: UploadTabProps) {
             <div className="avatar-picker-body avatar-picker-gate">
                 <AlertCircle size={20} />
                 <p>
-                    Uploads land in your active workspace bundle. There isn't one selected
-                    right now — pick a non-canonical bundle from the Modifier Garden first.
+                    Uploads land in your active workspace genome. There isn't one selected
+                    right now — pick a non-canonical genome from Genomes first.
                 </p>
-                <Link to="/modifiers" className="avatar-picker-action">
-                    Open Modifier Garden
+                <Link to="/neuroplasticity" className="avatar-picker-action">
+                    Open Genomes
                 </Link>
             </div>
         );

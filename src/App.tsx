@@ -76,8 +76,8 @@ function App() {
                                 <Route path="environments" element={<EnvironmentEditor />} />
                                 <Route path="hippocampus" element={<HippocampusPage />} />
                                 <Route path="hypothalamus" element={<HypothalamusPage />} />
-                                <Route path="modifiers" element={<ModifierGardenPage />} />
-                                <Route path="modifiers/:slug" element={<ModifierDetailPage />} />
+                                <Route path="neuroplasticity" element={<ModifierGardenPage />} />
+                                <Route path="neuroplasticity/:slug" element={<ModifierDetailPage />} />
                                 <Route path="pns" element={<PNSPage />} />
                                 <Route path="pns/monitor" element={<PNSMonitorPage />} />
                             </Route>

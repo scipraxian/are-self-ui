@@ -144,10 +144,10 @@ export const NavBar = ({ gpuSaver, onGpuSaverChange }: NavBarProps) => {
                         <span className="nav-dd-route">Hypothalamus</span>
                         <span className="nav-dd-label">Models</span>
                     </Link>
-                    <Link to="/modifiers" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
+                    <Link to="/neuroplasticity" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         <Puzzle size={15} className="nav-dd-icon" style={{ color: '#c084fc' }} />
                         <span className="nav-dd-route">Neuroplasticity</span>
-                        <span className="nav-dd-label">Modifiers</span>
+                        <span className="nav-dd-label">Genomes</span>
                     </Link>
                     <Link to="/identity" className="navbar-dropdown-item" onClick={() => setMenuOpen(false)}>
                         <Brain size={15} className="nav-dd-icon" style={{ color: '#38bdf8' }} />

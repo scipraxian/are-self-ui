@@ -42,20 +42,20 @@ export function ModifierInstallButton({
             const payload = await res.json().catch(() => ({}));
             if (!res.ok) {
                 const detail = (payload as { detail?: string }).detail
-                    ?? `Install failed (${res.status}).`;
+                    ?? `Graft failed (${res.status}).`;
                 setMessage(detail);
                 setMessageKind('error');
                 return;
             }
-            const bundleName = (payload as { name?: string; slug?: string }).name
+            const genomeName = (payload as { name?: string; slug?: string }).name
                 ?? (payload as { slug?: string }).slug
-                ?? 'bundle';
+                ?? 'genome';
             onInstalled?.(payload as NeuralModifierDetail);
-            setMessage(`Installed ${bundleName}.`);
+            setMessage(`Grafted ${genomeName}.`);
             setMessageKind('info');
             maybeFlagRestart(payload, triggerRestart);
         } catch (err) {
-            setMessage(err instanceof Error ? err.message : 'Install failed.');
+            setMessage(err instanceof Error ? err.message : 'Graft failed.');
             setMessageKind('error');
         } finally {
             setIsBusy(false);
@@ -71,7 +71,7 @@ export function ModifierInstallButton({
                 disabled={isBusy}
             >
                 <Upload size={14} />
-                <span>{isBusy ? 'Installing…' : 'Install bundle'}</span>
+                <span>{isBusy ? 'Grafting…' : 'Graft genome'}</span>
             </button>
             <input
                 ref={fileInputRef}

@@ -593,8 +593,11 @@ strings. Always import from here when rendering tool calls; do not reinvent per-
 
 The philosophy this project lives inside. When a design question touches *why*
 something is free, local, or shaped the way it is, the answer usually traces back
-here. **Twelve Variables, not three** — the three-variable version is the
-kid-scale compression used in the curriculum only. Are-Self is Michael's solo
+here. The working layer is the **Twelve Variables**. The first three
+(Inclusion, Humility, Inquiry) are the storybook's working-memory-friendly
+entry point and the spine of the curriculum — they are not a kid-only
+ceiling. The full twelve are real and available to any reader, including
+the kid, when ready. Are-Self is Michael's solo
 handiwork; the sister franchise Haunted Space Hotel
 ([hauntedspacehotel.com](https://hauntedspacehotel.com)) is a joint effort with
 Andrew Piper and is deliberately kept off the scipraxian GitHub profile. Full

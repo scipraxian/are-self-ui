@@ -20,8 +20,8 @@ export function ModifierDetailPage() {
 
     useEffect(() => {
         setCrumbs([
-            { label: 'Neuroplasticity', path: '/modifiers' },
-            { label: slug, path: `/modifiers/${slug}` },
+            { label: 'Neuroplasticity', path: '/neuroplasticity' },
+            { label: slug, path: `/neuroplasticity/${slug}` },
         ]);
         return () => setCrumbs([]);
     }, [slug, setCrumbs]);

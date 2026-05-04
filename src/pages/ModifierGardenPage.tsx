@@ -196,8 +196,8 @@ export function ModifierGardenPage() {
         setCrumbs([
             {
                 label: 'Neuroplasticity',
-                path: '/modifiers',
-                tip: 'Neuroplasticity governs installed NeuralModifier bundles — the extension surface.',
+                path: '/neuroplasticity',
+                tip: 'Neuroplasticity governs grafted NeuralModifier genomes — the extension surface.',
             },
         ]);
         return () => setCrumbs([]);
@@ -602,9 +602,9 @@ export function ModifierGardenPage() {
                     className="modifier-garden-action modifier-garden-action--install"
                     onClick={(e) => { e.stopPropagation(); installFromCatalog(entry.entry); }}
                     disabled={isBusy}
-                    title="Install this bundle so its rows land in the database."
+                    title="Graft this genome so its rows land in the database."
                 >
-                    Install
+                    Graft
                 </button>
             );
         }
@@ -659,9 +659,9 @@ export function ModifierGardenPage() {
                     type="button"
                     className="modifier-garden-action modifier-garden-action--install"
                     onClick={() => { setCreateError(null); setCreating(true); }}
-                    title="Scaffold a brand-new empty bundle. Stamp rows into it via the begin-play genome dropdown, then Save to pack the first archive."
+                    title="Scaffold a brand-new empty genome. Stamp rows into it via the begin-play genome dropdown, then Save to pack the first archive."
                 >
-                    New Bundle
+                    New Genome
                 </button>
             </div>
         </div>
@@ -670,11 +670,11 @@ export function ModifierGardenPage() {
     const center = (
         <div className="modifier-garden-center">
             <header className="modifier-garden-header">
-                <h1 className="modifier-garden-title">Modifier Garden</h1>
+                <h1 className="modifier-garden-title">Genomes</h1>
                 <p className="modifier-garden-subtitle">
-                    Bundles live here as zip files. Install lands a bundle's rows in the
-                    database; the bundle's tools become available immediately. Uninstall
-                    clears the rows but keeps the zip. Delete removes the zip too.
+                    Genomes live here as zip files. Grafting a genome lands its rows in
+                    the database; the genome's tools become available immediately.
+                    Uninstall clears the rows but keeps the zip. Delete removes the zip too.
                 </p>
             </header>
 
@@ -789,7 +789,7 @@ export function ModifierGardenPage() {
                                     {isWorkspace && (
                                         <span
                                             className="modifier-garden-workspace-badge"
-                                            title="New rows you create default to this bundle."
+                                            title="New rows you create default to this genome."
                                         >
                                             WORKSPACE
                                         </span>
@@ -823,7 +823,7 @@ export function ModifierGardenPage() {
                                             className="modifier-garden-action modifier-garden-action--workspace"
                                             onClick={(ev) => { ev.stopPropagation(); setAsWorkspace(modifier); }}
                                             disabled={isBusy}
-                                            title="Make this the active workspace. New rows you create default into this bundle."
+                                            title="Make this the active workspace. New rows you create default into this genome."
                                         >
                                             Set as Workspace
                                         </button>
@@ -855,14 +855,14 @@ export function ModifierGardenPage() {
                                         disabled={isBusy}
                                         title={
                                             isIncubatorRow
-                                                ? 'Save the workspace contents out as a new bundle.'
-                                                : 'Serialize bundle-owned rows back into the genome zip. Always bumps the patch version.'
+                                                ? 'Save the workspace contents out as a new genome.'
+                                                : 'Serialize genome-owned rows back into the genome zip. Always bumps the patch version.'
                                         }
                                     >
                                         {isIncubatorRow ? 'Save As' : 'Save'}
                                     </button>
                                     <Link
-                                        to={`/modifiers/${modifier.slug}`}
+                                        to={`/neuroplasticity/${modifier.slug}`}
                                         className="modifier-garden-action modifier-garden-action--link"
                                     >
                                         Details
@@ -971,7 +971,7 @@ export function ModifierGardenPage() {
                         </div>
 
                         <Link
-                            to={`/modifiers/${detail.slug}`}
+                            to={`/neuroplasticity/${detail.slug}`}
                             className="modifier-garden-action modifier-garden-action--link modifier-garden-inspector-deep-link"
                         >
                             Open full detail
@@ -1012,7 +1012,7 @@ export function ModifierGardenPage() {
                             ) : (
                                 <>
                                     This will remove <strong>{confirming.row_count}</strong>{' '}
-                                    row{confirming.row_count === 1 ? '' : 's'} the bundle owns,
+                                    row{confirming.row_count === 1 ? '' : 's'} the genome owns,
                                     plus every row reached via CASCADE. Set-null and protected
                                     rows are listed below.
                                 </>
@@ -1027,7 +1027,7 @@ export function ModifierGardenPage() {
                         )}
                         {confirming.direct.length > 0 && (
                             <CascadeBucket
-                                label="Direct (bundle owns)"
+                                label="Direct (genome owns)"
                                 tone="direct"
                                 rows={confirming.direct}
                             />
@@ -1074,10 +1074,10 @@ export function ModifierGardenPage() {
             {deleting && (
                 <div className="modifier-garden-dialog-overlay" role="presentation">
                     <div role="dialog" aria-modal="true" className="modifier-garden-dialog">
-                        <h2>Delete {deleting.name} bundle?</h2>
+                        <h2>Delete {deleting.name} genome?</h2>
                         <p>
                             This removes <code>{deleting.archive_name}</code> from your computer.
-                            You'll need to re-obtain it to install again.
+                            You'll need to re-obtain it to graft again.
                         </p>
                         <div className="modifier-garden-dialog-actions">
                             <button
@@ -1106,8 +1106,8 @@ export function ModifierGardenPage() {
                         <h2>Save As — from {savingAsSourceSlug}</h2>
                         <p>
                             Deep-clones the workspace's owned rows + media into a new
-                            bundle. The source row stays untouched. The new bundle is
-                            packed and installed live.
+                            genome. The source row stays untouched. The new genome is
+                            packed and grafted live.
                         </p>
                         <div className="modifier-garden-dialog-form">
                             <label>
@@ -1116,7 +1116,7 @@ export function ModifierGardenPage() {
                                     type="text"
                                     value={saveAsForm.slug}
                                     onChange={(e) => setSaveAsForm({ ...saveAsForm, slug: e.target.value })}
-                                    placeholder="my-bundle"
+                                    placeholder="my-genome"
                                     autoFocus
                                 />
                             </label>
@@ -1161,9 +1161,9 @@ export function ModifierGardenPage() {
             {creating && (
                 <div className="modifier-garden-dialog-overlay" role="presentation">
                     <div role="dialog" aria-modal="true" className="modifier-garden-dialog">
-                        <h2>New bundle</h2>
+                        <h2>New genome</h2>
                         <p>
-                            Scaffolds an empty bundle. After creating, stamp pathways
+                            Scaffolds an empty genome. After creating, stamp pathways
                             into it via the begin-play genome dropdown, then Save to
                             pack the first archive.
                         </p>
@@ -1174,7 +1174,7 @@ export function ModifierGardenPage() {
                                     type="text"
                                     value={createForm.slug}
                                     onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
-                                    placeholder="my-bundle"
+                                    placeholder="my-genome"
                                     autoFocus
                                 />
                             </label>
