@@ -19,13 +19,13 @@ editor + Restart overlay. The remaining frontend work is integration breadth, no
 - [x] Pathway-level genome control inline in `CNSInspector.tsx` — PATCH on the pathway, with the
   parent's save() fan-out doing the cascade-children atomic move server-side.
 - [x] `EffectorEditorPage` integrated.
-- [x] Modifier Garden `selected_for_edit` mutex — exactly one workspace bundle at a time, where
+- [x] Genomes `selected_for_edit` mutex — exactly one workspace genome at a time, where
   newly-stamped rows land.
 - [ ] Spread `GenomeRowControl` to the remaining owned-model editors that are currently leaf-row
   promote-able: `EffectorArgumentAssignment`, `EffectorContext`, `Executable`,
   `ExecutableArgumentAssignment`, `ExecutableSupplementaryFileOrPath`. Each is plain V2 PATCH on
   its own viewset; the row only needs a `genome_id` / `genome_slug` pair on the serializer (already
-  present per `GenomeWritableMixin`) and the parent page owns the shared `installedModifiers` fetch.
+  present per `GenomeWritableMixin`) and the parent page owns the shared `installedGenomes` fetch.
 - [ ] Documentation pass (paired with backend "tie a bow on genome editor work" — see open-threads).
 
 ## In Progress — PNS Dashboard Churn (April 11, 2026)
@@ -199,7 +199,7 @@ that actual contract in the same session.
 - ⏳ **Thalamus chat history surface** — spec is open. Filed forward in
   "Still open" above as TBD.
 
-## Recently Done — Modifier Garden scaffolding (April 19, 2026)
+## Recently Done — Genomes scaffolding (April 19, 2026)
 
 FE-1, FE-2, FE-4 of `are-self-api/NEURAL_MODIFIER_COMPLETION_PLAN.md` §Frontend track
 landed in one pass alongside the thin DRF surface the UI needs.
@@ -209,29 +209,30 @@ landed in one pass alongside the thin DRF surface the UI needs.
   `NeuralModifierImpact` in `types.ts`.
 - **Components.** `ModifierStatusPill` (5-state color pill),
   `ModifierEventList` (per-log timeline with expand/collapse + icons per
-  event type), `ModifierInstallButton` (zip picker → POST multipart).
-- **Pages.** `ModifierGardenPage` at `/modifiers` — ThreePanel with status
+  event type), `ModifierInstallButton` (zip picker → POST multipart;
+  button reads "Graft genome").
+- **Pages.** `ModifierGardenPage` at `/neuroplasticity` — ThreePanel with status
   filter chips + search on the left, sortable table in the center
   (slug / name / version / status / contribution count / last event /
   actions), inline enable/disable toggle per row, uninstall button that
   fetches `/impact/` and opens a confirmation dialog showing the
   contribution breakdown by ContentType before the final POST. Selection
   opens an inspector on the right with manifest + recent events.
-  `ModifierDetailPage` at `/modifiers/:slug` — full manifest dump +
-  installation history via `ModifierEventList`.
+  `ModifierDetailPage` at `/neuroplasticity/:slug` — full manifest dump +
+  lifecycle history via `ModifierEventList`.
 - **Real-time.** `useDendrite('NeuralModifier', null)` drives refetch of
   both list and detail; backend fires Acetylcholine with
   `receptor_class='NeuralModifier'` from the viewset after each
-  lifecycle op (install / uninstall / enable / disable).
-- **Nav + routes.** `App.tsx` registers `/modifiers` and
-  `/modifiers/:slug`. HamburgerMenu entry "Neuroplasticity / Modifiers"
+  lifecycle op (graft / uninstall / enable / disable).
+- **Nav + routes.** `App.tsx` registers `/neuroplasticity` and
+  `/neuroplasticity/:slug`. HamburgerMenu entry "Neuroplasticity / Genomes"
   with a Puzzle icon, slotted between Hypothalamus and Identity.
 - **Identity tool picker soft-lookup (FE-4).** Edit-mode view in
   `IdentitySheet.tsx` now derives orphan IDs by diffing
   `formState.enabled_tool_ids` against `allTools`. Orphans render as
   gray dashed `.badge-unresolved` chips reading "unknown tool · {first 8}"
-  with a tooltip explaining the bundle is uninstalled. Orphans are
-  preserved on save — not stripped — so reinstalling the bundle
+  with a tooltip explaining the genome is uninstalled. Orphans are
+  preserved on save — not stripped — so regrafting the genome
   restores the assignment.
 
 ### Not yet landed (follow-up prompts)
@@ -239,7 +240,7 @@ landed in one pass alongside the thin DRF surface the UI needs.
 - **FE-3 — Row-provenance chip.** Needs a cross-cutting per-row lookup
   endpoint. Design deferred to its own prompt. See
   `are-self-api/NEURAL_MODIFIER_COMPLETION_PLAN.md` §FE-3.
-- **FE-5 / FE-6 / FE-7.** Deep-inspector polish, bundle marketplace
+- **FE-5 / FE-6 / FE-7.** Deep-inspector polish, genome marketplace
   search, manifest linter — out of scope for this pass; same plan doc.
 
 ## Recently Done — Conclusion node back on reasoning graph (April 19, 2026)

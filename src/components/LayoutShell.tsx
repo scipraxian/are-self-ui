@@ -4,6 +4,7 @@ import { BackgroundCanvas } from './BackgroundCanvas';
 import { NavBar } from './NavBar';
 import { RestartOverlay } from './RestartOverlay';
 import { SpikeSetBar } from './SpikeSetBar';
+import { SystemThinkingPill } from './SystemThinkingPill';
 import { WorkerSetBar } from './WorkerSetBar';
 import { ThalamusBubble } from './ThalamusBubble';
 import { useGABA } from '../context/GABAProvider';
@@ -97,6 +98,7 @@ export function LayoutShell() {
 
                 {/* Lobe page content via React Router */}
                 <Outlet />
+                <SystemThinkingPill />
                 <ThalamusBubble />
             </div>
 

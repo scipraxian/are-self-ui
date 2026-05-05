@@ -151,31 +151,32 @@ dropdowns, toggleable M2M pills for capabilities, providers, categories, tags, r
 **Model Inspector:** Editable description with AIModelDescription CRUD, description relationships panel
 (M2M pills), provider status, circuit breaker reset, model enable/disable.
 
-## Neuroplasticity — `/modifiers`
+## Neuroplasticity — `/neuroplasticity`
 
-The bundle install / lifecycle surface for `NeuralModifier` (Are-Self's word for an installable
-extension bundle) plus the cross-cutting genome editor that lets any owned row be reassigned to a
-different bundle.
+The graft / lifecycle surface for `NeuralModifier` (Are-Self's installable extension genomes — a genome
+is a zip; a grafted genome is a NeuralModifier row whose contributions live in the database) plus the
+cross-cutting genome editor that lets any owned row be reassigned to a different genome.
 
-### Modifier Garden — `/modifiers`
+### Genomes — `/neuroplasticity`
 
 ThreePanel page with status filter chips and search on the left, sortable table in the center
 (slug / name / version / status / contribution count / last event / actions), and an inspector on the
-right. Inspector shows manifest dump and recent installation events via `ModifierEventList`.
+right. Inspector shows manifest dump and recent lifecycle events via `ModifierEventList`.
 `ModifierStatusPill` renders the lifecycle pill. `ModifierInstallButton` is a zip picker that POSTs the
-multipart install. Uninstall fetches `/impact/` and opens a confirmation dialog showing the contribution
-breakdown by ContentType before the final POST. Live-updates via `useDendrite('NeuralModifier', null)`.
+multipart graft (`/api/v2/neural-modifiers/install/`). Uninstall fetches `/impact/` and opens a
+confirmation dialog showing the contribution breakdown by ContentType before the final POST.
+Live-updates via `useDendrite('NeuralModifier', null)`.
 
-**Edit-target mutex.** Exactly one bundle is the active workspace at a time, marked
-`selected_for_edit = true` on the `NeuralModifier` row. The garden table exposes a "workspace" affordance
+**Edit-target mutex.** Exactly one genome is the active workspace at a time, marked
+`selected_for_edit = true` on the `NeuralModifier` row. The Genomes table exposes a "workspace" affordance
 per row — clicking it PATCHes `{selected_for_edit: true}`; the backend flips every other row to false in
-the same transaction. New rows stamped via the begin-play genome dropdown land in whichever bundle is
-currently the workspace. Save serializes the workspace bundle's owned rows back into its archive (always
+the same transaction. New rows stamped via the begin-play genome dropdown land in whichever genome is
+currently the workspace. Save serializes the workspace genome's owned rows back into its archive (always
 patch-bumps the manifest version).
 
-### `/modifiers/:slug`
+### `/neuroplasticity/:slug`
 
-`ModifierDetailPage` — full manifest dump plus the bundle's installation history via `ModifierEventList`.
+`ModifierDetailPage` — full manifest dump plus the genome's lifecycle history via `ModifierEventList`.
 
 ### Genome editor (cross-cutting)
 
@@ -192,7 +193,7 @@ PATCH /api/v2/<viewset>/<row-id>/    body: { "genome": "<uuid>" }
 `compact` and `full` variants. CANONICAL is filtered out of the dropdown. If the row itself is on
 CANONICAL, the dropdown is replaced by an inline "canonical — read-only" block (matches the backend's
 read-only refusal without making the user trigger it). 400 `{"detail": "..."}` from the backend is
-surfaced inline. The parent owns the shared installed-bundle list (one fetch per page, not per control)
+surfaced inline. The parent owns the shared installed-genome list (one fetch per page, not per control)
 and is notified via `onGenomeChanged` so it can mirror the new state without refetching. Currently
 integrated on `EffectorEditorPage`; spreads to other owned-model editors as those land.
 
